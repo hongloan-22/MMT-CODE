@@ -1,0 +1,174 @@
+------Buổi 1:
+	Bài 1: Cài đặt dịch vụ ssh
+Bước 1: Cài đặt dịch vụ OpenSSH Server
+Tiến hành cài đặt gói phần mềm cho phép máy ảo nhận kết nối SSH:
+
+$sudo apt update
+$sudo apt install openssh-server -y
+Bước 2: Kích hoạt và kiểm tra trạng thái SSH
+Sau khi cài đặt xong, bạn hãy chạy lệnh sau để khởi động SSH 
+và cho phép nó tự động chạy mỗi khi máy ảo khởi động:
+$sudo systemctl enable --now ssh
+Kiểm tra xem dịch vụ đã báo đèn xanh (Active: active (running)) chưa:
+
+$sudo systemctl status ssh
+(Nhấn phím q để thoát khỏi màn hình trạng thái nếu cần).
+
+Bước 3: Mở tường lửa cho cổng 22 (Port 22)
+Đôi khi tường lửa mặc định của Ubuntu (UFW) chặn các kết nối từ bên ngoài vào. 
+Bạn cần cấp quyền cho dịch vụ SSH đi qua:
+
+$sudo ufw allow ssh
+$sudo ufw enable
+$sudo ufw reload
+
+Bước 4: Kiểm tra ip máy ubuntu
+$ip a 
+Sau khi hoàn tất 3 bước trên, bạn hãy quay trở lại máy tính thật và gõ lại lệnh kết nối:
+
+Command line gõ trên máy windows
+ssh username@"ip máy ubuntu"
+
+
+
+		Bài 2: Cấu hình dịch vụ vsftpd
+Bước 1: Cài đặt dịch vụ
+$sudo apt-get update
+$sudo apt-get install vsftpd
+Bước 2: Cấu hình cơ bản Tệp cấu hình chính nằm tại /etc/vsftpd.conf. 
+Chúng ta cần chỉnh sửa để cho phép người dùng có quyền ghi (upload) 
+tệp tin lên máy chủ. 
+Mở tệp: $$sudo nano /etc/vsftpd.conf
+Tìm và bỏ dấu # trước các dòng sau để kích hoạt:
+write_enable=YES (Cho phép tải tệp lên)
+local_enable=YES (Cho phép người dùng cụcbộđăngnhập)
+chroot_local_user=YES (Giới hạn người dùng trong thư mục cá nhân 
+của họ để bảo mật)
+Bước 3: Khởi động lại và kiểm tra
+$sudo systemctl restart vsftpd
+$sudo systemctl enable vsftpd
+Bước 4: Để dịch vụ FTP có thể hoat động, chúng ta cần cấu hình trên 
+dịch vụ tường lửa của hệ thống để bỏ chặn. 
+Mở tường lửa (UFW) FTP sử dụng cổng 21 cho điều khiển 
+và dải cổng khác cho dữ liệu. 
+$sudo ufw allow 20/tcp
+$sudo ufw allow 21/tcp
+$sudo ufw status
+
+		Bài 3: 
+Phần 1: CẤU HÌNH NGINX VÀ THIẾT LẬP DOMAIN CHO WEBSITE (TRANG 20–22)
+Mục tiêu: Cấu hình Nginx làm Reverse Proxy để tiếp nhận 
+request từ tên miền cục bộ demo.local (cổng 80) 
+và chuyển tiếp tới Backend Web Server chạy trên cổng 8080.  
+
+Bước 1: Cài đặt các dịch vụ cần thiếtMở terminal trên Ubuntu Server 
+và tiến hành cập nhật hệ thống, cài đặt Nginx cùng OpenSSL:  
+sudo apt update && sudo apt upgrade -y
+sudo apt install nginx openssl -y
+
+Bước 2: Tạo domain local (truy cập không cần Internet)
+Để hệ thống nhận diện tên miền demo.local về máy cục bộ, 
+cần chỉnh sửa file /etc/hosts:  
+sudo nano /etc/hosts
+
+Thêm bản ghi sau vào cuối file rồi lưu lại 
+(Ctrl + O $\rightarrow$ Enter $\rightarrow$ Ctrl + X)
+:  127.0.0.1 demo.local
+
+Bước 3: Chuẩn bị Backend Web Server (Cổng 8080)Tạo thư mục 
+và file HTML trang chủ mẫu để làm trang web backend:  
+sudo mkdir -p /var/www/backend
+sudo nano /var/www/backend/index.html
+
+Nhập nội dung mẫu (ví dụ):  
+HTML<h1>Backend web server port 8080</h1>
+<p>nginx lam reverse proxy</p>
+
+Tiếp theo, khởi chạy backend bằng máy chủ web tích hợp sẵn của 
+Python 3 trên cổng 8080.  Mẹo quản lý tiến trình Linux: 
+Thay vì phải giữ terminal luôn mở, có thể chạy ngầm (background) 
+trực tiếp bằng cách thêm ký tự & ở cuối lệnh, 
+hoặc dùng quy trình Ctrl + Z kết hợp lệnh bg:
+cd /var/www/backend && python3 -m http.server 8080 &
+
+Bước 4: Cấu hình Nginx làm Reverse Proxy (Giao thức HTTP - Cổng 80)
+Tạo file cấu hình Virtual Host mới cho demo.local:
+sudo nano /etc/nginx/sites-available/demo.local
+Dán cấu hình cơ bản sau:  
+server {
+    listen 80;
+    server_name demo.local;
+
+    # Reverse proxy đến backend port 8080
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+Kích hoạt website bằng cách tạo Symlink sang sites-enabled, 
+xóa site mặc định và khởi động lại Nginx:  
+sudo ln -s /etc/nginx/sites-available/demo.local /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+
+Kiểm tra kết quả Bài 1: Mở trình duyệt và truy cập [http://demo.local](http://demo.local) $\rightarrow$ Trang web HTML của cổng 8080 sẽ hiển thị thành công.  
+
+Phần 2: CẤU HÌNH HTTPS CHO WEBSITE SỬ DỤNG OPENSSL (TRANG 23–25)
+Mục tiêu: Nâng cấp cấu hình Nginx của Bài 1 để hỗ trợ mã hóa HTTPS 
+(cổng 443) bằng chứng chỉ SSL tự ký (Self-signed Certificate), 
+đồng thời tự động chuyển hướng các truy cập HTTP thường sang HTTPS.  
+Bước 1: Tạo Self-Signed SSL Certificate bằng OpenSSL
+Tạo thư mục lưu khóa SSL cho Nginx và sinh cặp khóa Khóa riêng (.key) 
+/ Chứng chỉ (.crt) thời hạn 365 ngày:
+ 
+sudo mkdir -p /etc/nginx/ssl
+cd /etc/nginx/ssl
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout demo.local.key \
+  -out demo.local.crt \
+  -subj "/C=VN/ST=ThaiNguyen/O=LabWebServer/CN=demo.local"
+  
+Giải thích tham số quan trọng:  
+-x509: Tạo chứng chỉ chuẩn x509 tự ký.  
+-nodes: Không mã hóa khóa riêng (để Nginx có thể đọc tự động khi khởi động mà không cần gõ mật khẩu).  -keyout / -out: Đường dẫn lưu tệp khóa riêng và chứng thực.  
+Bước 2: Bật HTTPS và cấu hình lại NginxMở lại file cấu hình 
+Virtual Host của demo.local để nâng cấp lên SSL:  
+
+sudo nano /etc/nginx/sites-available/demo.local
+
+Thay thế toàn bộ nội dung file bằng cấu hình hỗ trợ HTTPS và tự động Redirect:
+
+#Khối 1: Tự động chuyển hướng (Redirect 301) từ HTTP (80) sang HTTPS (443)
+server {
+    listen 80;
+    server_name demo.local;
+    return 301 https://$host$request_uri;
+}
+
+# Khối 2: Lắng nghe HTTPS và Reverse Proxy về Backend
+server {
+    listen 443 ssl;
+    server_name demo.local;
+
+    # Cấu hình đường dẫn chứng chỉ SSL
+    ssl_certificate /etc/nginx/ssl/demo.local.crt;
+    ssl_certificate_key /etc/nginx/ssl/demo.local.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+Kiểm tra cú pháp cấu hình và khởi động lại Nginx:  Bashsudo nginx -t
+sudo systemctl restart nginx
+Bước 3: Kiểm tra và Gỡ lỗi (Debug)Kiểm tra trên trình duyệt:  Truy cập [http://demo.local](http://demo.local) $\rightarrow$ 
+Trình duyệt sẽ tự động chuyển hướng sang [https://demo.local](https://demo.local).  Do chứng chỉ là tự ký, trình duyệt sẽ báo cảnh báo "Your connection is not private" / "Not Secure". Anh ấn Advanced (Nâng cao) $\rightarrow$ Proceed to demo.local (unsafe) / Tiếp tục truy cập để vào trang nội dung Backend. 
