@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Đăng ký - Smart Bus</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f9ff;
+            color: #12345b;
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 40px 20px;
+        }
+
+        /* KHUNG ĐĂNG KÝ */
+
+        .register-container {
+            width: 100%;
+            max-width: 650px;
+
+            background: white;
+
+            border: 1px solid #dce9f4;
+            border-radius: 24px;
+
+            padding: 45px 55px;
+
+            box-shadow:
+                0 10px 35px rgba(0, 85, 170, 0.10);
+        }
+
+        /* HEADER */
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .logo {
+            width: 55px;
+            height: 55px;
+
+            background: #087df5;
+
+            border-radius: 15px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            margin: 0 auto 12px;
+
+            font-size: 28px;
+        }
+
+        .register-header h1 {
+            color: #123c75;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .register-header p {
+            color: #7890a8;
+            font-size: 14px;
+        }
+
+        /* FORM */
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            color: #294e72;
+
+            margin-bottom: 8px;
+        }
+
+        .required {
+            color: red;
+        }
+
+        .input-box {
+            width: 100%;
+            height: 52px;
+
+            border: 1px solid #d5e3ef;
+            border-radius: 10px;
+
+            display: flex;
+            align-items: center;
+
+            padding: 0 15px;
+
+            background: #fbfdff;
+
+            transition: 0.25s;
+        }
+
+        .input-box:hover {
+            border-color: #9dccf7;
+        }
+
+        .input-box:focus-within {
+            border-color: #087df5;
+
+            background: white;
+
+            box-shadow:
+                0 0 0 3px rgba(8, 125, 245, 0.08);
+        }
+
+        .input-icon {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .input-box input,
+        .input-box select {
+            width: 100%;
+            height: 100%;
+
+            border: none;
+            outline: none;
+
+            background: transparent;
+
+            color: #294e72;
+
+            font-size: 14px;
+        }
+
+        .input-box input::placeholder {
+            color: #9aabbc;
+        }
+
+        /* NGÀY SINH + GIỚI TÍNH */
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        /* ĐIỀU KHOẢN */
+
+        .terms {
+            display: flex;
+
+            align-items: flex-start;
+
+            gap: 8px;
+
+            margin: 5px 0 25px;
+
+            font-size: 13px;
+
+            line-height: 1.5;
+
+            color: #71899f;
+        }
+
+        .terms input {
+            margin-top: 3px;
+
+            width: 16px;
+            height: 16px;
+
+            accent-color: #087df5;
+
+            cursor: pointer;
+        }
+
+        .terms a {
+            color: #087df5;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        /* NÚT ĐĂNG KÝ */
+
+        .register-button {
+            width: 100%;
+
+            height: 52px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: #087df5;
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition: 0.25s;
+
+            box-shadow:
+                0 7px 18px rgba(8, 125, 245, 0.25);
+        }
+
+        .register-button:hover {
+            background: #0566cf;
+
+            transform: translateY(-2px);
+        }
+
+        /* ĐĂNG NHẬP */
+
+        .login-text {
+            text-align: center;
+
+            margin-top: 22px;
+
+            color: #7890a8;
+
+            font-size: 14px;
+        }
+
+        .login-text a {
+            color: #087df5;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            text-align: center;
+
+            margin-top: 25px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid #edf2f7;
+
+            color: #9aabbc;
+
+            font-size: 12px;
+        }
+
+        .footer strong {
+            color: #087df5;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 20px 15px;
+            }
+
+            .register-container {
+                padding: 30px 22px;
+                border-radius: 18px;
+            }
+
+            .register-header h1 {
+                font-size: 24px;
+            }
+
+            .row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="register-container">
+
+
+        <!-- HEADER -->
+
+        <div class="register-header">
+
+            <div class="logo">
+                🚌
+            </div>
+
+            <h1>ĐĂNG KÝ</h1>
+
+            <p>
+                Tạo tài khoản để sử dụng Smart Bus
+            </p>
+
+        </div>
+
+
+        <!-- FORM -->
+
+        <form id="registerForm">
+
+
+            <!-- HỌ TÊN -->
+
+            <div class="form-group">
+
+                <label>
+                    Họ và tên
+                    <span class="required">*</span>
+                </label>
+
+                <div class="input-box">
+
+                    <span class="input-icon">
+                        👤
+                    </span>
+
+                    <input
+                        type="text"
+                        name="fullName"
+                        placeholder="Nhập họ và tên"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- SỐ ĐIỆN THOẠI -->
+
+            <div class="form-group">
+
+                <label>
+                    Số điện thoại
+                    <span class="required">*</span>
+                </label>
+
+                <div class="input-box">
+
+                    <span class="input-icon">
+                        📱
+                    </span>
+
+                    <input
+                        type="tel"
+                        name="phone"
+                        placeholder="Nhập số điện thoại"
+                        required
+                        pattern="[0-9]{10}"
+                        title="Số điện thoại phải gồm 10 chữ số"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label>
+                    Email
+                    <span class="required">*</span>
+                </label>
+
+                <div class="input-box">
+
+                    <span class="input-icon">
+                        ✉️
+                    </span>
+
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Nhập email"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- NGÀY SINH + GIỚI TÍNH -->
+
+            <div class="row">
+
+
+                <!-- NGÀY SINH -->
+
+                <div class="form-group">
+
+                    <label>
+                        Ngày sinh
+                        <span class="required">*</span>
+                    </label>
+
+                    <div class="input-box">
+
+                        <span class="input-icon">
+                            📅
+                        </span>
+
+                        <input
+                            type="date"
+                            name="birthday"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- GIỚI TÍNH -->
+
+                <div class="form-group">
+
+                    <label>
+                        Giới tính
+                        <span class="required">*</span>
+                    </label>
+
+                    <div class="input-box">
+
+                        <span class="input-icon">
+                            ⚧
+                        </span>
+
+                        <select
+                            name="gender"
+                            required
+                        >
+
+                            <option value="">
+                                Chọn giới tính
+                            </option>
+
+                            <option value="Nam">
+                                Nam
+                            </option>
+
+                            <option value="Nữ">
+                                Nữ
+                            </option>
+
+                            <option value="Khác">
+                                Khác
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- MẬT KHẨU -->
+
+            <div class="form-group">
+
+                <label>
+                    Mật khẩu
+                    <span class="required">*</span>
+                </label>
+
+                <div class="input-box">
+
+                    <span class="input-icon">
+                        🔒
+                    </span>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Nhập mật khẩu"
+                        minlength="6"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- NHẬP LẠI MẬT KHẨU -->
+
+            <div class="form-group">
+
+                <label>
+                    Nhập lại mật khẩu
+                    <span class="required">*</span>
+                </label>
+
+                <div class="input-box">
+
+                    <span class="input-icon">
+                        🔒
+                    </span>
+
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Nhập lại mật khẩu"
+                        minlength="6"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- ĐIỀU KHOẢN -->
+
+            <div class="terms">
+
+                <input
+                    type="checkbox"
+                    id="terms"
+                    required
+                >
+
+                <div>
+
+                    Tôi đồng ý với
+
+                    <a href="#">
+                        điều khoản sử dụng
+                    </a>
+
+                    và
+
+                    <a href="#">
+                        chính sách bảo mật
+                    </a>
+
+                    của Smart Bus.
+
+                </div>
+
+            </div>
+
+
+            <!-- NÚT ĐĂNG KÝ -->
+
+            <button
+                type="submit"
+                class="register-button"
+            >
+
+                Đăng ký
+
+            </button>
+
+
+        </form>
+
+
+        <!-- ĐĂNG NHẬP -->
+
+        <div class="login-text">
+
+            Bạn đã có tài khoản?
+
+            <a href="#">
+                Đăng nhập
+            </a>
+
+        </div>
+
+
+        <!-- FOOTER -->
+
+        <div class="footer">
+
+            🚌
+
+            <strong>
+                Smart Bus
+            </strong>
+
+            -
+
+            Hệ thống đặt vé xe thông minh
+
+        </div>
+
+
+    </div>
+
+
+    <!-- KIỂM TRA FORM -->
+
+    <script>
+
+        document
+            .getElementById("registerForm")
+            .addEventListener("submit", function(event) {
+
+                event.preventDefault();
+
+                const password =
+                    document.getElementById("password").value;
+
+                const confirmPassword =
+                    document.getElementById("confirmPassword").value;
+
+
+                // Kiểm tra mật khẩu
+
+                if (password !== confirmPassword) {
+
+                    alert(
+                        "Mật khẩu nhập lại không khớp!"
+                    );
+
+                    return;
+                }
+
+
+                // Nếu tất cả thông tin hợp lệ
+
+                alert(
+                    "Đăng ký thành công!"
+                );
+
+            });
+
+    </script>
+
+
+</body>
+
+</html>
