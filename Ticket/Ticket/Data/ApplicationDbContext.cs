@@ -10,6 +10,9 @@ namespace SmartBusTicketing.Data
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+        public DbSet<Trip> Trips { get; set; }
+        public DbSet<Station> Stations { get; set; }
+        public DbSet<Route> Routes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,13 +38,11 @@ namespace SmartBusTicketing.Data
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 3. Khởi tạo Dữ liệu Mẫu (Seed Data)
             SeedData(modelBuilder);
         }
 
         private static void SeedData(ModelBuilder modelBuilder)
         {
-            // Seed Roles
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = 1, RoleCode = "ADMIN", RoleName = "Quản trị hệ thống", Description = "Toàn quyền quản lý tài khoản, phân quyền và xem nhật ký an ninh", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) },
                 new Role { RoleId = 2, RoleCode = "MANAGER", RoleName = "Quản lý", Description = "Quản lý tuyến xe, lịch chạy, điều xe, duyệt ưu đãi và xem báo cáo", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) },
@@ -49,7 +50,6 @@ namespace SmartBusTicketing.Data
                 new Role { RoleId = 4, RoleCode = "USER", RoleName = "Người dùng", Description = "Tra cứu tuyến, chọn ghế, thanh toán vé, đăng ký vé tháng và xem bản đồ GPS", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) }
             );
 
-            // Seed Users
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
