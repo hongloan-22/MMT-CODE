@@ -1,0 +1,13 @@
+## Thư mục build của .NET
+[Bb]in/
+[Oo]bj/
+
+## Cấu hình cá nhân của Visual Studio & VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+## File cơ sở dữ liệu tạm thời
+*.mdf
+*.ldf
