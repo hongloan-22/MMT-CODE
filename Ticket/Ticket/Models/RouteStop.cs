@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Smart_Bus_Ticketing_System.Models
+namespace Ticket.Models
 {
     public class RouteStop
     {

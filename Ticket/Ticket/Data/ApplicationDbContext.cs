@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using SmartBusTicketing.Models;
+using Ticket.Models;
 
-namespace SmartBusTicketing.Data
+namespace Ticket.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -35,7 +35,7 @@ namespace SmartBusTicketing.Data
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 3. Khởi tạo Dữ liệu Mẫu (Seed Data)
+            // Khởi tạo Dữ liệu Mẫu (Seed Data)
             SeedData(modelBuilder);
         }
 
@@ -49,26 +49,25 @@ namespace SmartBusTicketing.Data
                 new Role { RoleId = 4, RoleCode = "USER", RoleName = "Người dùng", Description = "Tra cứu tuyến, chọn ghế, thanh toán vé, đăng ký vé tháng và xem bản đồ GPS", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) }
             );
 
-            // Seed Users
+            // Seed Users (PasswordHash = SHA256(password + salt))
             modelBuilder.Entity<User>().HasData(
-                new User
-                {
-                    UserId = "usr-adm-001",
-                    Email = "admin@gmail.com",
-                    PasswordHash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
-                    Salt = "a1b2c3d4",
-                    FullName = "Admin",
-                    PhoneEncrypted = "enc_aes_0981234567",
-                    IdentityCardEncrypted = "enc_aes_ADM01",
-                    RoleId = 1, // ADMIN
-                    Status = "ACTIVE",
-                    CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc)
-                },
+              new User
+              {
+                  UserId = "usr-adm-001",
+                  FullName = "Admin",
+                  Email = "admin@gmail.com",
+                  Salt = "a1b2c3d4",
+                  // Cập nhật chuỗi hash chuẩn này:
+                  PasswordHash = "9058ca8b5620bb5eb2c88085b19830013ea2ab152245a58d9202f5c56582151f",
+                  RoleId = 1,
+                  Status = "ACTIVE",
+                  CreatedAt = DateTime.UtcNow
+              },
                 new User
                 {
                     UserId = "usr-opr-001",
                     Email = "manager@gmail.com",
-                    PasswordHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                    PasswordHash = "e2a0f8b1c4112e4f0dc2fecba72da9bf747167a5bf7bf2eeac54508ecfef591d", // manager123 + b2c3d4e5
                     Salt = "b2c3d4e5",
                     FullName = "Quản Lý",
                     PhoneEncrypted = "enc_aes_0972345678",
@@ -81,7 +80,7 @@ namespace SmartBusTicketing.Data
                 {
                     UserId = "usr-drv-001",
                     Email = "taixe@gmail.com",
-                    PasswordHash = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+                    PasswordHash = "b347b5ae177db5523dc34cb740d216fce7c093a39e802a466a3d6cb46f90119e", // taixe123 + c3d4e5f6
                     Salt = "c3d4e5f6",
                     FullName = "Lê Văn Tài",
                     PhoneEncrypted = "enc_aes_0963456789",
@@ -94,12 +93,12 @@ namespace SmartBusTicketing.Data
                 {
                     UserId = "usr-cus-001",
                     Email = "user@gmail.com",
-                    PasswordHash = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+                    PasswordHash = "ae473c4ee4003d7398e7a0e5b3ee581b7e42d76535542dfba0a109a138096f4b", // user123 + e5f6g7h8
                     Salt = "e5f6g7h8",
                     FullName = "Hoàng Minh Đức",
                     PhoneEncrypted = "enc_aes_0915678901",
                     IdentityCardEncrypted = "enc_aes_NV01",
-                    RoleId = 4, // USER (Mặc định)
+                    RoleId = 4, // USER
                     Status = "ACTIVE",
                     CreatedAt = new DateTime(2026, 9, 5, 10, 15, 0, DateTimeKind.Utc)
                 }
@@ -116,5 +115,5 @@ namespace SmartBusTicketing.Data
                 }
             );
         }
-}
+    }
 }
