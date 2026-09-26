@@ -20,6 +20,7 @@ namespace Ticket.Models
 
         // Quan hệ 1 - N: Một tuyến bao gồm danh sách nhiều trạm dừng theo thứ tự
         public ICollection<RouteStop> RouteStops { get; set; } = new List<RouteStop>();
-
+        public ICollection<Trip> Trips { get; set; }
+        = new List<Trip>();
     }
 }
