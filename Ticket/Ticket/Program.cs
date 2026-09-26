@@ -7,7 +7,7 @@ using SmartBusTicketing.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers + Views & chống lặp JSON
+// Controllers + Views & chống lặp tuần tự hóa JSON
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
@@ -61,7 +61,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // 1. Trạm dừng mẫu
+        // 1. Seed Trạm xe buýt chuẩn (BusStops - US24)
         if (!db.BusStops.Any())
         {
             var stops = new List<BusStop>
@@ -75,7 +75,7 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
 
-        // 2. Tuyến xe mẫu
+        // 2. Seed Tuyến xe buýt chuẩn (BusRoutes - US15, US30)
         if (!db.BusRoutes.Any())
         {
             var routes = new List<BusRoute>
@@ -99,27 +99,37 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
 
-        // 3. Chuyến xe mẫu
-        if (!db.Trips.Any())
+        // 3. Seed Trạm xe (Stations) và Chuyến xe (Trips - US31)
+        if (!db.Stations.Any())
         {
+            var st1 = new Station { StationId = 1, StationName = "Bến xe Gia Lâm" };
+            var st2 = new Station { StationId = 2, StationName = "Bến xe Yên Nghĩa" };
+            var st3 = new Station { StationId = 3, StationName = "Bến xe Mỹ Đình" };
+
+            db.Stations.AddRange(st1, st2, st3);
+            db.SaveChanges();
+
             var route = db.BusRoutes.FirstOrDefault();
-            if (route != null)
+
+            db.Trips.Add(new Trip
             {
-                db.Trips.Add(new Trip
-                {
-                    TripCode = "TRIP01",
-                    RouteId = route.Id,
-                    OriginStationId = 1,
-                    DestinationStationId = 2,
-                    TotalSeats = 40,
-                    AvailableSeats = 35,
-                    BookedSeats = 5,
-                    Price = 50000,
-                    IsActive = true,
-                    Status = "Active"
-                });
-                db.SaveChanges();
-            }
+                TripCode = "TRIP01",
+                RouteId = route != null ? route.Id : 1,
+                OriginStation = st1,
+                OriginStationId = 1,
+                DestinationStation = st2,
+                DestinationStationId = 2,
+                TripDate = DateTime.Today,
+                DepartureTime = new TimeSpan(8, 0, 0),
+                TotalSeats = 40,
+                AvailableSeats = 35,
+                BookedSeats = 5,
+                Price = 50000,
+                IsActive = true,
+                Status = "Active"
+            });
+            db.SaveChanges();
+            Console.WriteLine("--> [Seed Data] Da nap BusRoutes, Stations va Trip mau thanh cong!");
         }
     }
     catch (Exception ex)
