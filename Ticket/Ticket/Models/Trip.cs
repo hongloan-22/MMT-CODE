@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Ticket.Models
@@ -7,6 +7,13 @@ namespace Ticket.Models
     {
         [Key]
         public int Id { get; set; }
+
+        [NotMapped]
+        public int TripId
+        {
+            get => Id;
+            set => Id = value;
+        }
 
         public int RouteId { get; set; }
 
@@ -25,15 +32,39 @@ namespace Ticket.Models
 
         public string Status { get; set; } = "SCHEDULED";
 
-        public int TotalSeats { get; set; }
+        public int TotalSeats { get; set; } = 40;
 
-        public int AvailableSeats { get; set; }
+        public int AvailableSeats { get; set; } = 40;
+
+        public int BookedSeats { get; set; } = 0;
+
+        public decimal Price { get; set; } = 0;
+
+        public bool IsActive { get; set; } = true;
 
         public string? Note { get; set; }
 
+        public int? OriginStationId { get; set; }
+        public Station? OriginStation { get; set; }
 
-        // Các lịch trình của chuyến
+        public int? DestinationStationId { get; set; }
+        public Station? DestinationStation { get; set; }
+
         public ICollection<TripSchedule> Schedules { get; set; }
             = new List<TripSchedule>();
+    }
+
+    public class Station
+    {
+        [Key]
+        public int StationId { get; set; }
+        public string StationName { get; set; } = string.Empty;
+    }
+
+    public class Route
+    {
+        [Key]
+        public int RouteId { get; set; }
+        public string RouteName { get; set; } = string.Empty;
     }
 }

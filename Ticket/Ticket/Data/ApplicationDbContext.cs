@@ -23,6 +23,8 @@ namespace Ticket.Data
         public DbSet<BusRoute> BusRoutes { get; set; } = null!;
         public DbSet<BusStop> BusStops { get; set; } = null!;
         public DbSet<RouteStop> RouteStops { get; set; } = null!;
+        public DbSet<Station> Stations { get; set; } = null!;
+        public DbSet<Ticket.Models.Route> Routes { get; set; } = null!;
 
         // =========================
         // CHUYẾN XE & LỊCH TRÌNH
@@ -107,7 +109,6 @@ namespace Ticket.Data
 
         private static void SeedData(ModelBuilder modelBuilder)
         {
-            // Seed Roles
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = 1, RoleCode = "ADMIN", RoleName = "Quản trị hệ thống", Description = "Toàn quyền quản lý tài khoản, phân quyền và xem nhật ký an ninh", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) },
                 new Role { RoleId = 2, RoleCode = "MANAGER", RoleName = "Quản lý", Description = "Quản lý tuyến xe, lịch chạy, điều xe, duyệt ưu đãi và xem báo cáo", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) },
@@ -115,7 +116,6 @@ namespace Ticket.Data
                 new Role { RoleId = 4, RoleCode = "USER", RoleName = "Người dùng", Description = "Tra cứu tuyến, chọn ghế, thanh toán vé, đăng ký vé tháng và xem bản đồ GPS", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) }
             );
 
-            // Seed Users (PasswordHash = SHA256(password + salt))
             modelBuilder.Entity<User>().HasData(
                 new User
                 {

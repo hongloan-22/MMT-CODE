@@ -2,19 +2,25 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using Ticket.Data;
 using Ticket.Models;
+using SmartBusTicketing.DTOs;
+using SmartBusTicketing.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers + Views
+// Controllers + Views & chống lặp JSON
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Cấu hình Database InMemory phục vụ kiểm thử
+// Đăng ký Service tìm kiếm chuyến xe US-31
+builder.Services.AddScoped<ITripService, TripServices>();
+
+// Cấu hình Database InMemory
 bool useInMemory = builder.Configuration.GetValue<bool>("UseInMemory", true);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -31,7 +37,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-// Khởi tạo Database và nạp Seed Data
+// Khởi tạo Database và Seed Data
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -49,13 +55,13 @@ using (var scope = app.Services.CreateScope())
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Warning] Bỏ qua lỗi Migrate CSDL Local: {ex.Message}");
+            Console.WriteLine($"[Warning] Migrate CSDL: {ex.Message}");
         }
     }
 
     try
     {
-        // 1. Chèn danh sách Trạm dừng mẫu nếu chưa có
+        // 1. Trạm dừng mẫu
         if (!db.BusStops.Any())
         {
             var stops = new List<BusStop>
@@ -69,7 +75,7 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
 
-        // 2. Chèn danh sách Tuyến xe mẫu nếu chưa có (US-15)
+        // 2. Tuyến xe mẫu
         if (!db.BusRoutes.Any())
         {
             var routes = new List<BusRoute>
@@ -92,7 +98,8 @@ using (var scope = app.Services.CreateScope())
             db.BusRoutes.AddRange(routes);
             db.SaveChanges();
         }
-        // 3. Seed chuyến xe mẫu để test Lịch trình (US-24)
+
+        // 3. Chuyến xe mẫu
         if (!db.Trips.Any())
         {
             var route = db.BusRoutes.FirstOrDefault();
@@ -102,10 +109,16 @@ using (var scope = app.Services.CreateScope())
                 {
                     TripCode = "TRIP01",
                     RouteId = route.Id,
+                    OriginStationId = 1,
+                    DestinationStationId = 2,
+                    TotalSeats = 40,
+                    AvailableSeats = 35,
+                    BookedSeats = 5,
+                    Price = 50000,
+                    IsActive = true,
                     Status = "Active"
                 });
                 db.SaveChanges();
-                Console.WriteLine("--> Seed Trip mẫu thành công với TripId = 1");
             }
         }
     }
@@ -115,7 +128,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Kích hoạt Swagger UI
+// Swagger UI
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -123,7 +136,6 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
