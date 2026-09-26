@@ -9,7 +9,7 @@ namespace Ticket.Models
         [Key]
         [MaxLength(36)]
         [Column("user_id")]
-        public string UserId { get; set; } = Guid.NewGuid().ToString();
+        public string UserId { get; set; } = Guid.NewGuid().ToString(); // UUIDs
 
         [Required]
         [MaxLength(100)]
@@ -55,6 +55,7 @@ namespace Ticket.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        public bool IsActive { get; set; } = true;
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     }
 }

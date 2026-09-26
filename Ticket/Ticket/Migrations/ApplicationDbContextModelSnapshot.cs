@@ -167,6 +167,9 @@ namespace Ticket.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("identity_card_encrypted");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -215,12 +218,13 @@ namespace Ticket.Migrations
                             Email = "admin@gmail.com",
                             FullName = "Admin",
                             IdentityCardEncrypted = "enc_aes_ADM01",
+                            IsActive = true,
                             PasswordHash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
                             PhoneEncrypted = "enc_aes_0981234567",
                             RoleId = 1,
                             Salt = "a1b2c3d4",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 24, 15, 34, 8, 252, DateTimeKind.Utc).AddTicks(3043)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3231)
                         },
                         new
                         {
@@ -229,12 +233,13 @@ namespace Ticket.Migrations
                             Email = "manager@gmail.com",
                             FullName = "Quản Lý",
                             IdentityCardEncrypted = "enc_aes_QL01",
+                            IsActive = true,
                             PasswordHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                             PhoneEncrypted = "enc_aes_0972345678",
                             RoleId = 2,
                             Salt = "b2c3d4e5",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 24, 15, 34, 8, 252, DateTimeKind.Utc).AddTicks(3061)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3241)
                         },
                         new
                         {
@@ -243,12 +248,13 @@ namespace Ticket.Migrations
                             Email = "taixe@gmail.com",
                             FullName = "Lê Văn Tài",
                             IdentityCardEncrypted = "enc_aes_TX01",
+                            IsActive = true,
                             PasswordHash = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
                             PhoneEncrypted = "enc_aes_0963456789",
                             RoleId = 3,
                             Salt = "c3d4e5f6",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 24, 15, 34, 8, 252, DateTimeKind.Utc).AddTicks(3065)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3254)
                         },
                         new
                         {
@@ -257,104 +263,14 @@ namespace Ticket.Migrations
                             Email = "user@gmail.com",
                             FullName = "Hoàng Minh Đức",
                             IdentityCardEncrypted = "enc_aes_NV01",
+                            IsActive = true,
                             PasswordHash = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
                             PhoneEncrypted = "enc_aes_0915678901",
                             RoleId = 4,
                             Salt = "e5f6g7h8",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 24, 15, 34, 8, 252, DateTimeKind.Utc).AddTicks(3068)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3258)
                         });
-                });
-
-            modelBuilder.Entity("Smart_Bus_Ticketing_System.Models.BusRoute", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<TimeSpan>("EstimatedDuration")
-                        .HasColumnType("time");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("RouteName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<double>("TotalDistanceKm")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BusRoutes");
-                });
-
-            modelBuilder.Entity("Smart_Bus_Ticketing_System.Models.BusStop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("Longitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("BusStops");
-                });
-
-            modelBuilder.Entity("Smart_Bus_Ticketing_System.Models.RouteStop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<double>("DistanceFromStartKm")
-                        .HasColumnType("float");
-
-                    b.Property<int>("RouteId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StopId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StopOrder")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TravelTimeFromStartMinutes")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RouteId");
-
-                    b.HasIndex("StopId");
-
-                    b.ToTable("RouteStops");
                 });
 
             modelBuilder.Entity("Ticket.Models.AuditLog", b =>
@@ -379,25 +295,6 @@ namespace Ticket.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("Smart_Bus_Ticketing_System.Models.RouteStop", b =>
-                {
-                    b.HasOne("Smart_Bus_Ticketing_System.Models.BusRoute", "Route")
-                        .WithMany("RouteStops")
-                        .HasForeignKey("RouteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Smart_Bus_Ticketing_System.Models.BusStop", "BusStop")
-                        .WithMany("RouteStops")
-                        .HasForeignKey("StopId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BusStop");
-
-                    b.Navigation("Route");
-                });
-
             modelBuilder.Entity("Ticket.Models.Role", b =>
                 {
                     b.Navigation("Users");
@@ -406,16 +303,6 @@ namespace Ticket.Migrations
             modelBuilder.Entity("Ticket.Models.User", b =>
                 {
                     b.Navigation("AuditLogs");
-                });
-
-            modelBuilder.Entity("Smart_Bus_Ticketing_System.Models.BusRoute", b =>
-                {
-                    b.Navigation("RouteStops");
-                });
-
-            modelBuilder.Entity("Smart_Bus_Ticketing_System.Models.BusStop", b =>
-                {
-                    b.Navigation("RouteStops");
                 });
 #pragma warning restore 612, 618
         }

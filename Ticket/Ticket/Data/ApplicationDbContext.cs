@@ -13,6 +13,7 @@ namespace Ticket.Data
         public DbSet<BusRoute> BusRoutes { get; set; } = null!;
         public DbSet<BusStop> BusStops { get; set; } = null!;
         public DbSet<RouteStop> RouteStops { get; set; } = null!;
+        public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

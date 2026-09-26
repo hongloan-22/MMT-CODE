@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Ticket.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUserTable : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -43,7 +43,8 @@ namespace Ticket.Migrations
                     role_id = table.Column<int>(type: "int", nullable: false),
                     status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     created_at = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -91,13 +92,13 @@ namespace Ticket.Migrations
 
             migrationBuilder.InsertData(
                 table: "users",
-                columns: new[] { "user_id", "created_at", "email", "full_name", "identity_card_encrypted", "password_hash", "phone_encrypted", "role_id", "salt", "status", "updated_at" },
+                columns: new[] { "user_id", "created_at", "email", "full_name", "identity_card_encrypted", "IsActive", "password_hash", "phone_encrypted", "role_id", "salt", "status", "updated_at" },
                 values: new object[,]
                 {
-                    { "usr-adm-001", new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", "Admin", "enc_aes_ADM01", "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918", "enc_aes_0981234567", 1, "a1b2c3d4", "ACTIVE", new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7946) },
-                    { "usr-cus-001", new DateTime(2026, 9, 5, 10, 15, 0, 0, DateTimeKind.Utc), "user@gmail.com", "Hoàng Minh Đức", "enc_aes_NV01", "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", "enc_aes_0915678901", 4, "e5f6g7h8", "ACTIVE", new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7995) },
-                    { "usr-drv-001", new DateTime(2026, 9, 2, 9, 0, 0, 0, DateTimeKind.Utc), "taixe@gmail.com", "Lê Văn Tài", "enc_aes_TX01", "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8", "enc_aes_0963456789", 3, "c3d4e5f6", "ACTIVE", new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7988) },
-                    { "usr-opr-001", new DateTime(2026, 9, 1, 8, 30, 0, 0, DateTimeKind.Utc), "manager@gmail.com", "Quản Lý", "enc_aes_QL01", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "enc_aes_0972345678", 2, "b2c3d4e5", "ACTIVE", new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7980) }
+                    { "usr-adm-001", new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Utc), "admin@gmail.com", "Admin", "enc_aes_ADM01", true, "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918", "enc_aes_0981234567", 1, "a1b2c3d4", "ACTIVE", new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3231) },
+                    { "usr-cus-001", new DateTime(2026, 9, 5, 10, 15, 0, 0, DateTimeKind.Utc), "user@gmail.com", "Hoàng Minh Đức", "enc_aes_NV01", true, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", "enc_aes_0915678901", 4, "e5f6g7h8", "ACTIVE", new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3258) },
+                    { "usr-drv-001", new DateTime(2026, 9, 2, 9, 0, 0, 0, DateTimeKind.Utc), "taixe@gmail.com", "Lê Văn Tài", "enc_aes_TX01", true, "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8", "enc_aes_0963456789", 3, "c3d4e5f6", "ACTIVE", new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3254) },
+                    { "usr-opr-001", new DateTime(2026, 9, 1, 8, 30, 0, 0, DateTimeKind.Utc), "manager@gmail.com", "Quản Lý", "enc_aes_QL01", true, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "enc_aes_0972345678", 2, "b2c3d4e5", "ACTIVE", new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3241) }
                 });
 
             migrationBuilder.InsertData(

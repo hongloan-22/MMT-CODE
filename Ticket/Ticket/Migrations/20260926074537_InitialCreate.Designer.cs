@@ -12,8 +12,8 @@ using Ticket.Data;
 namespace Ticket.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260923194917_AddUserTable")]
-    partial class AddUserTable
+    [Migration("20260926074537_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -170,6 +170,9 @@ namespace Ticket.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("identity_card_encrypted");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -218,12 +221,13 @@ namespace Ticket.Migrations
                             Email = "admin@gmail.com",
                             FullName = "Admin",
                             IdentityCardEncrypted = "enc_aes_ADM01",
+                            IsActive = true,
                             PasswordHash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
                             PhoneEncrypted = "enc_aes_0981234567",
                             RoleId = 1,
                             Salt = "a1b2c3d4",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7946)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3231)
                         },
                         new
                         {
@@ -232,12 +236,13 @@ namespace Ticket.Migrations
                             Email = "manager@gmail.com",
                             FullName = "Quản Lý",
                             IdentityCardEncrypted = "enc_aes_QL01",
+                            IsActive = true,
                             PasswordHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                             PhoneEncrypted = "enc_aes_0972345678",
                             RoleId = 2,
                             Salt = "b2c3d4e5",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7980)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3241)
                         },
                         new
                         {
@@ -246,12 +251,13 @@ namespace Ticket.Migrations
                             Email = "taixe@gmail.com",
                             FullName = "Lê Văn Tài",
                             IdentityCardEncrypted = "enc_aes_TX01",
+                            IsActive = true,
                             PasswordHash = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
                             PhoneEncrypted = "enc_aes_0963456789",
                             RoleId = 3,
                             Salt = "c3d4e5f6",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7988)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3254)
                         },
                         new
                         {
@@ -260,12 +266,13 @@ namespace Ticket.Migrations
                             Email = "user@gmail.com",
                             FullName = "Hoàng Minh Đức",
                             IdentityCardEncrypted = "enc_aes_NV01",
+                            IsActive = true,
                             PasswordHash = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
                             PhoneEncrypted = "enc_aes_0915678901",
                             RoleId = 4,
                             Salt = "e5f6g7h8",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7995)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3258)
                         });
                 });
 
