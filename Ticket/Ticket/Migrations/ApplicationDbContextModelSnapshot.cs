@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SmartBusTicketing.Data;
+using Ticket.Data;
 
 #nullable disable
 
@@ -22,7 +22,7 @@ namespace Ticket.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("SmartBusTicketing.Models.AuditLog", b =>
+            modelBuilder.Entity("Ticket.Models.AuditLog", b =>
                 {
                     b.Property<int>("LogId")
                         .ValueGeneratedOnAdd()
@@ -68,7 +68,7 @@ namespace Ticket.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.Role", b =>
+            modelBuilder.Entity("Ticket.Models.Role", b =>
                 {
                     b.Property<int>("RoleId")
                         .ValueGeneratedOnAdd()
@@ -140,7 +140,7 @@ namespace Ticket.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.User", b =>
+            modelBuilder.Entity("Ticket.Models.User", b =>
                 {
                     b.Property<string>("UserId")
                         .HasMaxLength(36)
@@ -266,9 +266,9 @@ namespace Ticket.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.AuditLog", b =>
+            modelBuilder.Entity("Ticket.Models.AuditLog", b =>
                 {
-                    b.HasOne("SmartBusTicketing.Models.User", "User")
+                    b.HasOne("Ticket.Models.User", "User")
                         .WithMany("AuditLogs")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -277,9 +277,9 @@ namespace Ticket.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.User", b =>
+            modelBuilder.Entity("Ticket.Models.User", b =>
                 {
-                    b.HasOne("SmartBusTicketing.Models.Role", "Role")
+                    b.HasOne("Ticket.Models.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -288,12 +288,12 @@ namespace Ticket.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.Role", b =>
+            modelBuilder.Entity("Ticket.Models.Role", b =>
                 {
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.User", b =>
+            modelBuilder.Entity("Ticket.Models.User", b =>
                 {
                     b.Navigation("AuditLogs");
                 });
