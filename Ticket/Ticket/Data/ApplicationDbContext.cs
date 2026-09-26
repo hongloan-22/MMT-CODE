@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using SmartBusTicketing.Models;
+using Ticket.Models;
 
-namespace SmartBusTicketing.Data
+namespace Ticket.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -10,7 +10,9 @@ namespace SmartBusTicketing.Data
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
-
+        public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
+        public DbSet<BusRoute> BusRoutes { get; set; } = null!;
+        public DbSet<BusStop> BusStops { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

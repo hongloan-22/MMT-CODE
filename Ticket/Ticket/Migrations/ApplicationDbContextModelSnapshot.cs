@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SmartBusTicketing.Data;
+using Ticket.Data;
 
 #nullable disable
 
@@ -22,7 +22,7 @@ namespace Ticket.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("SmartBusTicketing.Models.AuditLog", b =>
+            modelBuilder.Entity("Ticket.Models.AuditLog", b =>
                 {
                     b.Property<int>("LogId")
                         .ValueGeneratedOnAdd()
@@ -68,7 +68,7 @@ namespace Ticket.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.Role", b =>
+            modelBuilder.Entity("Ticket.Models.Role", b =>
                 {
                     b.Property<int>("RoleId")
                         .ValueGeneratedOnAdd()
@@ -140,7 +140,7 @@ namespace Ticket.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.User", b =>
+            modelBuilder.Entity("Ticket.Models.User", b =>
                 {
                     b.Property<string>("UserId")
                         .HasMaxLength(36)
@@ -166,6 +166,9 @@ namespace Ticket.Migrations
                     b.Property<string>("IdentityCardEncrypted")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("identity_card_encrypted");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -215,12 +218,13 @@ namespace Ticket.Migrations
                             Email = "admin@gmail.com",
                             FullName = "Admin",
                             IdentityCardEncrypted = "enc_aes_ADM01",
+                            IsActive = true,
                             PasswordHash = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
                             PhoneEncrypted = "enc_aes_0981234567",
                             RoleId = 1,
                             Salt = "a1b2c3d4",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7946)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3231)
                         },
                         new
                         {
@@ -229,12 +233,13 @@ namespace Ticket.Migrations
                             Email = "manager@gmail.com",
                             FullName = "Quản Lý",
                             IdentityCardEncrypted = "enc_aes_QL01",
+                            IsActive = true,
                             PasswordHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                             PhoneEncrypted = "enc_aes_0972345678",
                             RoleId = 2,
                             Salt = "b2c3d4e5",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7980)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3241)
                         },
                         new
                         {
@@ -243,12 +248,13 @@ namespace Ticket.Migrations
                             Email = "taixe@gmail.com",
                             FullName = "Lê Văn Tài",
                             IdentityCardEncrypted = "enc_aes_TX01",
+                            IsActive = true,
                             PasswordHash = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
                             PhoneEncrypted = "enc_aes_0963456789",
                             RoleId = 3,
                             Salt = "c3d4e5f6",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7988)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3254)
                         },
                         new
                         {
@@ -257,18 +263,19 @@ namespace Ticket.Migrations
                             Email = "user@gmail.com",
                             FullName = "Hoàng Minh Đức",
                             IdentityCardEncrypted = "enc_aes_NV01",
+                            IsActive = true,
                             PasswordHash = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
                             PhoneEncrypted = "enc_aes_0915678901",
                             RoleId = 4,
                             Salt = "e5f6g7h8",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 23, 19, 49, 16, 736, DateTimeKind.Utc).AddTicks(7995)
+                            UpdatedAt = new DateTime(2026, 9, 26, 7, 45, 35, 910, DateTimeKind.Utc).AddTicks(3258)
                         });
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.AuditLog", b =>
+            modelBuilder.Entity("Ticket.Models.AuditLog", b =>
                 {
-                    b.HasOne("SmartBusTicketing.Models.User", "User")
+                    b.HasOne("Ticket.Models.User", "User")
                         .WithMany("AuditLogs")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -277,9 +284,9 @@ namespace Ticket.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.User", b =>
+            modelBuilder.Entity("Ticket.Models.User", b =>
                 {
-                    b.HasOne("SmartBusTicketing.Models.Role", "Role")
+                    b.HasOne("Ticket.Models.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -288,12 +295,12 @@ namespace Ticket.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.Role", b =>
+            modelBuilder.Entity("Ticket.Models.Role", b =>
                 {
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("SmartBusTicketing.Models.User", b =>
+            modelBuilder.Entity("Ticket.Models.User", b =>
                 {
                     b.Navigation("AuditLogs");
                 });

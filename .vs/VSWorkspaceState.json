@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Ticket",
+    "\\Ticket\\Ticket",
+    "\\Ticket\\Ticket\\Controllers",
+    "\\Ticket\\Ticket\\Models"
+  ],
+  "SelectedNode": "\\Ticket\\Ticket\\Controllers\\HomeController.cs",
+  "PreviewInSolutionExplorer": false
+}

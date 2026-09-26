@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-
+using Ticket.Data;
 namespace SmartBusTicketing.Data // Thay bằng namespace dự án của bạn
 {
     // Thay 'ApplicationDbContext' bằng tên class DbContext thực tế của bạn
