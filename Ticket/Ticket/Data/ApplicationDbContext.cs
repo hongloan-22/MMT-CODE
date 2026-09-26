@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Smart_Bus_Ticketing_System.Models;
-using SmartBusTicketing.Models;
+using Ticket.Models;
 
-namespace SmartBusTicketing.Data
+namespace Ticket.Data
 {
     public class ApplicationDbContext : DbContext
     {

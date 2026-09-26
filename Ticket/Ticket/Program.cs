@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using SmartBusTicketing.Data;
+using Ticket.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,9 +10,21 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Đăng ký ApplicationDbContext
+// Đọc cấu hình UseInMemory từ appsettings (Mặc định là false nếu không khai báo)
+bool useInMemory = builder.Configuration.GetValue<bool>("UseInMemory");
+
+// Đăng ký ApplicationDbContext (Tự động chuyển đổi giữa InMemory và SQL Server)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (useInMemory)
+    {
+        options.UseInMemoryDatabase("TicketMockDb");
+    }
+    else
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
 
 var app = builder.Build();
 
@@ -20,7 +32,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBusTicketing API v1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ticket API v1");
     c.RoutePrefix = "swagger"; // Đường dẫn truy cập: /swagger
 });
 
@@ -43,10 +55,21 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Tự động cập nhật Database mỗi khi khởi chạy
-using (var scope = app.Services.CreateScope())
+if (!useInMemory)
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        try
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            dbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            // Nếu CSDL local bị trùng bảng hoặc lỗi migration, bỏ qua để app vẫn khởi chạy bình thường
+            Console.WriteLine($"[Warning] Bỏ qua lỗi Migrate CSDL Local: {ex.Message}");
+        }
+    }
 }
 
 app.Run();

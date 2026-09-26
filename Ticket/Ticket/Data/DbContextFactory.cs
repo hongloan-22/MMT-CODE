@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace SmartBusTicketing.Data // Thay bằng namespace dự án của bạn
+namespace Ticket.Data // Thay bằng namespace dự án của bạn
 {
     // Thay 'ApplicationDbContext' bằng tên class DbContext thực tế của bạn
     public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext> 

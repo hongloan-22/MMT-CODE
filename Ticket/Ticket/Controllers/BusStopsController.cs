@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Smart_Bus_Ticketing_System.Models;
-using SmartBusTicketing.Data;
-using SmartBusTicketing.Models;
+using Ticket.Data;
+using Ticket.Models;
 
 namespace Ticket.Controllers
 {
