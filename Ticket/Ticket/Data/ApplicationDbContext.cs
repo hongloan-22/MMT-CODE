@@ -38,7 +38,6 @@ namespace Ticket.Data
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
             // =========================
             // BUS ROUTE / STOP
             // =========================
@@ -84,8 +83,7 @@ namespace Ticket.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // 3. Khởi tạo Dữ liệu Mẫu (Seed Data)
-
+            // Seed Data
             SeedData(modelBuilder);
         }
 
@@ -101,28 +99,27 @@ namespace Ticket.Data
 
             // Seed Users (PasswordHash = SHA256(password + salt))
             modelBuilder.Entity<User>().HasData(
-              new User
-              {
-                  UserId = "usr-adm-001",
-                  FullName = "Admin",
-                  Email = "admin@gmail.com",
-                  Salt = "a1b2c3d4",
-                  // Cập nhật chuỗi hash chuẩn này:
-                  PasswordHash = "9058ca8b5620bb5eb2c88085b19830013ea2ab152245a58d9202f5c56582151f",
-                  RoleId = 1,
-                  Status = "ACTIVE",
-                  CreatedAt = DateTime.UtcNow
-              },
+                new User
+                {
+                    UserId = "usr-adm-001",
+                    FullName = "Admin",
+                    Email = "admin@gmail.com",
+                    Salt = "a1b2c3d4",
+                    PasswordHash = "9058ca8b5620bb5eb2c88085b19830013ea2ab152245a58d9202f5c56582151f",
+                    RoleId = 1,
+                    Status = "ACTIVE",
+                    CreatedAt = DateTime.UtcNow
+                },
                 new User
                 {
                     UserId = "usr-opr-001",
                     Email = "manager@gmail.com",
-                    PasswordHash = "e2a0f8b1c4112e4f0dc2fecba72da9bf747167a5bf7bf2eeac54508ecfef591d", // manager123 + b2c3d4e5
+                    PasswordHash = "e2a0f8b1c4112e4f0dc2fecba72da9bf747167a5bf7bf2eeac54508ecfef591d",
                     Salt = "b2c3d4e5",
                     FullName = "Quản Lý",
                     PhoneEncrypted = "enc_aes_0972345678",
                     IdentityCardEncrypted = "enc_aes_QL01",
-                    RoleId = 2, // MANAGER
+                    RoleId = 2,
                     Status = "ACTIVE",
                     CreatedAt = new DateTime(2026, 9, 1, 8, 30, 0, DateTimeKind.Utc)
                 },
@@ -130,12 +127,12 @@ namespace Ticket.Data
                 {
                     UserId = "usr-drv-001",
                     Email = "taixe@gmail.com",
-                    PasswordHash = "b347b5ae177db5523dc34cb740d216fce7c093a39e802a466a3d6cb46f90119e", // taixe123 + c3d4e5f6
+                    PasswordHash = "b347b5ae177db5523dc34cb740d216fce7c093a39e802a466a3d6cb46f90119e",
                     Salt = "c3d4e5f6",
                     FullName = "Lê Văn Tài",
                     PhoneEncrypted = "enc_aes_0963456789",
                     IdentityCardEncrypted = "enc_aes_TX01",
-                    RoleId = 3, // DRIVER
+                    RoleId = 3,
                     Status = "ACTIVE",
                     CreatedAt = new DateTime(2026, 9, 2, 9, 0, 0, DateTimeKind.Utc)
                 },
@@ -143,12 +140,12 @@ namespace Ticket.Data
                 {
                     UserId = "usr-cus-001",
                     Email = "user@gmail.com",
-                    PasswordHash = "ae473c4ee4003d7398e7a0e5b3ee581b7e42d76535542dfba0a109a138096f4b", // user123 + e5f6g7h8
+                    PasswordHash = "ae473c4ee4003d7398e7a0e5b3ee581b7e42d76535542dfba0a109a138096f4b",
                     Salt = "e5f6g7h8",
                     FullName = "Hoàng Minh Đức",
                     PhoneEncrypted = "enc_aes_0915678901",
                     IdentityCardEncrypted = "enc_aes_NV01",
-                    RoleId = 4, // USER
+                    RoleId = 4,
                     Status = "ACTIVE",
                     CreatedAt = new DateTime(2026, 9, 5, 10, 15, 0, DateTimeKind.Utc)
                 }

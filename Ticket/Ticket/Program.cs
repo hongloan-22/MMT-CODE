@@ -8,9 +8,20 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database In-Memory phục vụ test đồng bộ
+// Cấu hình Database InMemory phục vụ kiểm thử
+bool useInMemory = builder.Configuration.GetValue<bool>("UseInMemory", true);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseInMemoryDatabase("TicketDb"));
+{
+    if (useInMemory)
+    {
+        options.UseInMemoryDatabase("TicketDb");
+    }
+    else
+    {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    }
+});
 
 var app = builder.Build();
 
@@ -18,16 +29,33 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.EnsureCreated();
+    if (useInMemory)
+    {
+        db.Database.EnsureCreated();
+    }
+    else
+    {
+        try
+        {
+            db.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Warning] Bỏ qua lỗi Migrate CSDL Local: {ex.Message}");
+        }
+    }
 }
 
-// Cấu hình Pipeline & Swagger
-if (app.Environment.IsDevelopment())
+// Kích hoạt Swagger UI
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ticket API v1");
+    c.RoutePrefix = "swagger";
+});
+
+// Configure the HTTP request pipeline
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
