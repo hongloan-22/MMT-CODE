@@ -1,4 +1,4 @@
-using SmartBusTicketing.Models;
+using Ticket.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

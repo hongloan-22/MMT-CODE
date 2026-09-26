@@ -22,9 +22,9 @@ namespace Ticket.Controllers
         [HttpGet("by-time")]
         public async Task<IActionResult> SearchByTime([FromQuery] SearchByTimeDto request)
         {
-            var query = _context.Set<RouteStop>()
+            // 1. Chỉ query RouteStops và BusStop để tránh phụ thuộc vào bảng Route cũ
+            var query = _context.RouteStops
                 .Include(rs => rs.BusStop)
-                .Include(rs => rs.Route)
                 .AsQueryable();
 
             if (request.RouteId.HasValue)
@@ -51,11 +51,17 @@ namespace Ticket.Controllers
             bool hasValidStartTime = !string.IsNullOrEmpty(request.StartTime)
                                      && TimeSpan.TryParse(request.StartTime, out baseStartTime);
 
+            // 2. Map trực tiếp với danh sách BusRoutes chuẩn của hệ thống
+            var routeIds = routeStops.Select(rs => rs.RouteId).Distinct().ToList();
+            var busRoutes = await _context.BusRoutes
+                .Where(r => routeIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.RouteName);
+
             var response = routeStops.Select(rs => new
             {
                 rs.Id,
                 rs.RouteId,
-                RouteInfo = rs.Route,
+                RouteName = busRoutes.ContainsKey(rs.RouteId) ? busRoutes[rs.RouteId] : $"Tuyến {rs.RouteId}",
                 rs.StopId,
                 BusStopInfo = rs.BusStop,
                 rs.StopOrder,

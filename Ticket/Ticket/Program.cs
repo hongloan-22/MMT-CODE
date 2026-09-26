@@ -99,7 +99,46 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
 
-        // 3. Seed Trạm xe (Stations) và Chuyến xe (Trips - US31, US33)
+        // 3. Seed liên kết Tuyến xe - Trạm dừng (RouteStops - phục vụ US-33 Tìm kiếm theo thời gian)
+        if (!db.RouteStops.Any())
+        {
+            var route1 = db.BusRoutes.FirstOrDefault();
+            var stops = db.BusStops.ToList();
+
+            if (route1 != null && stops.Count >= 3)
+            {
+                db.RouteStops.AddRange(
+                    new RouteStop
+                    {
+                        RouteId = route1.Id,
+                        StopId = stops[0].Id,
+                        StopOrder = 1,
+                        DistanceFromStartKm = 0,
+                        TravelTimeFromStartMinutes = 0
+                    },
+                    new RouteStop
+                    {
+                        RouteId = route1.Id,
+                        StopId = stops[1].Id,
+                        StopOrder = 2,
+                        DistanceFromStartKm = 8.5,
+                        TravelTimeFromStartMinutes = 25
+                    },
+                    new RouteStop
+                    {
+                        RouteId = route1.Id,
+                        StopId = stops[2].Id,
+                        StopOrder = 3,
+                        DistanceFromStartKm = 28.5,
+                        TravelTimeFromStartMinutes = 60
+                    }
+                );
+                db.SaveChanges();
+                Console.WriteLine("--> [Seed Data] Da nap RouteStops mau cho US-33!");
+            }
+        }
+
+        // 4. Seed Trạm xe (Stations) và Chuyến xe (Trips - US31)
         if (!db.Stations.Any())
         {
             var st1 = new Station { StationId = 1, StationName = "Bến xe Gia Lâm" };
