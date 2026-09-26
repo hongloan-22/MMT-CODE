@@ -18,7 +18,7 @@ namespace Ticket.Data
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
         // =========================
-        // TUYẾN XE & TRẠM XE
+        // TUYẾN XE & TRẠM XE (Dùng chung cho cả US15, US24, US30, US31, US33)
         // =========================
         public DbSet<BusRoute> BusRoutes { get; set; } = null!;
         public DbSet<BusStop> BusStops { get; set; } = null!;

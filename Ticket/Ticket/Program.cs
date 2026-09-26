@@ -20,7 +20,7 @@ builder.Services.AddSwaggerGen();
 // Đăng ký Service tìm kiếm chuyến xe US-31
 builder.Services.AddScoped<ITripService, TripServices>();
 
-// Cấu hình Database InMemory
+// Cấu hình Database InMemory phục vụ kiểm thử
 bool useInMemory = builder.Configuration.GetValue<bool>("UseInMemory", true);
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -99,7 +99,7 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
         }
 
-        // 3. Seed Trạm xe (Stations) và Chuyến xe (Trips - US31)
+        // 3. Seed Trạm xe (Stations) và Chuyến xe (Trips - US31, US33)
         if (!db.Stations.Any())
         {
             var st1 = new Station { StationId = 1, StationName = "Bến xe Gia Lâm" };
