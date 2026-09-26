@@ -1,15 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Ticket.Models;
 
-namespace TuyenXeAPI.Data
+namespace Ticket.Data
 {
-    public class AppDbContext : DbContext
+    public class ApplicationDbContext : DbContext
     {
-        public AppDbContext(
-            DbContextOptions<AppDbContext> options)
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
+
+        // =========================
+        // CÁC BẢNG TUYẾN XE
+        // =========================
 
         public DbSet<BusRoute> BusRoutes { get; set; }
 
@@ -17,159 +21,116 @@ namespace TuyenXeAPI.Data
 
         public DbSet<RouteStop> RouteStops { get; set; }
 
+
+        // =========================
+        // CÁC BẢNG CHUYẾN XE
+        // =========================
+
         public DbSet<Trip> Trips { get; set; }
 
         public DbSet<TripSchedule> TripSchedules { get; set; }
 
-        protected override void OnModelCreating(
-            ModelBuilder modelBuilder)
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // =========================
-            // BUS ROUTE
-            // =========================
 
-            modelBuilder.Entity<BusRoute>(entity =>
-            {
-                entity.ToTable("BusRoutes");
+            // ==========================================
+            // BusRoute -> RouteStop
+            // Một tuyến có nhiều điểm dừng
+            // ==========================================
 
-                entity.HasKey(x => x.Id);
-
-                entity.Property(x => x.RouteName)
-                    .HasMaxLength(150)
-                    .IsRequired();
-
-                entity.Property(x => x.TotalDistanceKm)
-                    .HasPrecision(10, 2);
-
-                entity.HasMany(x => x.Trips)
-                    .WithOne(x => x.Route)
-                    .HasForeignKey(x => x.RouteId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
+            modelBuilder.Entity<RouteStop>()
+                .HasOne(x => x.Route)
+                .WithMany(x => x.RouteStops)
+                .HasForeignKey(x => x.RouteId)
+                .OnDelete(DeleteBehavior.Cascade);
 
 
-            // =========================
-            // BUS STOP
-            // =========================
+            // ==========================================
+            // BusStop -> RouteStop
+            // Một điểm dừng thuộc nhiều tuyến
+            // ==========================================
 
-            modelBuilder.Entity<BusStop>(entity =>
-            {
-                entity.ToTable("BusStops");
-
-                entity.HasKey(x => x.Id);
-
-                entity.Property(x => x.Name)
-                    .HasMaxLength(150)
-                    .IsRequired();
-
-                entity.Property(x => x.Address)
-                    .HasMaxLength(255);
-            });
+            modelBuilder.Entity<RouteStop>()
+                .HasOne(x => x.BusStop)
+                .WithMany(x => x.RouteStops)
+                .HasForeignKey(x => x.StopId)
+                .OnDelete(DeleteBehavior.Restrict);
 
 
-            // =========================
-            // ROUTE STOP
-            // =========================
+            // ==========================================
+            // BusRoute -> Trip
+            // Một tuyến có nhiều chuyến
+            // ==========================================
 
-            modelBuilder.Entity<RouteStop>(entity =>
-            {
-                entity.ToTable("RouteStops");
+            modelBuilder.Entity<Trip>()
+                .HasOne(x => x.Route)
+                .WithMany(x => x.Trips)
+                .HasForeignKey(x => x.RouteId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasKey(x => x.Id);
 
-                entity.HasOne(x => x.Route)
-                    .WithMany(x => x.RouteStops)
-                    .HasForeignKey(x => x.RouteId)
-                    .OnDelete(DeleteBehavior.Cascade);
+            // ==========================================
+            // Trip -> TripSchedule
+            // Một chuyến có nhiều lịch trình
+            // ==========================================
 
-                entity.HasOne(x => x.BusStop)
-                    .WithMany(x => x.RouteStops)
-                    .HasForeignKey(x => x.StopId)
-                    .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TripSchedule>()
+                .HasOne(x => x.Trip)
+                .WithMany(x => x.Schedules)
+                .HasForeignKey(x => x.TripId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasIndex(x => new
+
+            // ==========================================
+            // BusStop -> TripSchedule
+            // Một điểm dừng có thể xuất hiện
+            // trong nhiều lịch trình
+            // ==========================================
+
+            modelBuilder.Entity<TripSchedule>()
+                .HasOne(x => x.BusStop)
+                .WithMany()
+                .HasForeignKey(x => x.StopId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            // ==========================================
+            // Không cho trùng thứ tự trạm trong một chuyến
+            // ==========================================
+
+            modelBuilder.Entity<TripSchedule>()
+                .HasIndex(x => new
                 {
-                    x.RouteId,
+                    x.TripId,
                     x.StopOrder
                 })
                 .IsUnique();
-            });
 
 
-            // =========================
-            // TRIP
-            // =========================
+            // ==========================================
+            // Không cho cùng một trạm xuất hiện 2 lần
+            // trong cùng một chuyến
+            // ==========================================
 
-            modelBuilder.Entity<Trip>(entity =>
-            {
-                entity.ToTable("Trips");
-
-                entity.HasKey(x => x.Id);
-
-                entity.Property(x => x.TripCode)
-                    .HasMaxLength(50)
-                    .IsRequired();
-
-                entity.Property(x => x.Status)
-                    .HasMaxLength(30)
-                    .IsRequired();
-
-                entity.Property(x => x.Note)
-                    .HasMaxLength(500);
-
-                entity.HasOne(x => x.Route)
-                    .WithMany(x => x.Trips)
-                    .HasForeignKey(x => x.RouteId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasIndex(x => x.TripCode)
-                    .IsUnique();
-            });
-
-
-            // =========================
-            // TRIP SCHEDULE
-            // =========================
-
-            modelBuilder.Entity<TripSchedule>(entity =>
-            {
-                entity.ToTable("TripSchedules");
-
-                entity.HasKey(x => x.Id);
-
-                entity.HasOne(x => x.Trip)
-                    .WithMany(x => x.Schedules)
-                    .HasForeignKey(x => x.TripId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(x => x.BusStop)
-                    .WithMany()
-                    .HasForeignKey(x => x.StopId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.Property(x => x.Status)
-                    .HasMaxLength(30);
-
-                // Một trạm chỉ xuất hiện một lần
-                // trong cùng một chuyến
-                entity.HasIndex(x => new
+            modelBuilder.Entity<TripSchedule>()
+                .HasIndex(x => new
                 {
                     x.TripId,
                     x.StopId
                 })
                 .IsUnique();
 
-                // Thứ tự trạm không được trùng
-                // trong cùng một chuyến
-                entity.HasIndex(x => new
-                {
-                    x.TripId,
-                    x.StopOrder
-                })
+
+            // ==========================================
+            // Mã chuyến không được trùng
+            // ==========================================
+
+            modelBuilder.Entity<Trip>()
+                .HasIndex(x => x.TripCode)
                 .IsUnique();
-            });
         }
     }
 }

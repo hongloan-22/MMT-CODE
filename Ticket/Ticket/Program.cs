@@ -36,15 +36,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-namespace Ticket.Data
-{
-    public class ApplicationDbContext : DbContext
-    {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
-        {
-        }
 
-        // public DbSet<YourEntity> YourEntities { get; set; }
-    }
-}
