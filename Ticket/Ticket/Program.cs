@@ -1,11 +1,16 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using Ticket.Data;
 using Ticket.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers + Views
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -86,6 +91,22 @@ using (var scope = app.Services.CreateScope())
             };
             db.BusRoutes.AddRange(routes);
             db.SaveChanges();
+        }
+        // 3. Seed chuyến xe mẫu để test Lịch trình (US-24)
+        if (!db.Trips.Any())
+        {
+            var route = db.BusRoutes.FirstOrDefault();
+            if (route != null)
+            {
+                db.Trips.Add(new Trip
+                {
+                    TripCode = "TRIP01",
+                    RouteId = route.Id,
+                    Status = "Active"
+                });
+                db.SaveChanges();
+                Console.WriteLine("--> Seed Trip mẫu thành công với TripId = 1");
+            }
         }
     }
     catch (Exception ex)
