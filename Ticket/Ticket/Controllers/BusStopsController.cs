@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Ticket.Models;
 using Ticket.Data;
-using Ticket.Models;
+
 
 namespace Ticket.Controllers
 {

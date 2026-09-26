@@ -5,20 +5,37 @@ namespace Ticket.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
 
+        // =========================
+        // AUTH & NGƯỜI DÙNG
+        // =========================
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+
+        // =========================
+        // TUYẾN XE & TRẠM XE
+        // =========================
         public DbSet<BusRoute> BusRoutes { get; set; } = null!;
         public DbSet<BusStop> BusStops { get; set; } = null!;
         public DbSet<RouteStop> RouteStops { get; set; } = null!;
+
+        // =========================
+        // CHUYẾN XE & LỊCH TRÌNH
+        // =========================
+        public DbSet<Trip> Trips { get; set; } = null!;
+        public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // 1. Phân quyền & Tài khoản
             modelBuilder.Entity<Role>()
                 .HasIndex(r => r.RoleCode)
                 .IsUnique();
@@ -39,52 +56,52 @@ namespace Ticket.Data
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // =========================
-            // BUS ROUTE / STOP
-            // =========================
-            modelBuilder.Entity<BusRoute>(entity =>
-            {
-                entity.ToTable("BusRoutes");
-                entity.HasKey(x => x.Id);
+            // 2. Tuyến xe -> Điểm dừng
+            modelBuilder.Entity<RouteStop>()
+                .HasOne(x => x.Route)
+                .WithMany(x => x.RouteStops)
+                .HasForeignKey(x => x.RouteId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-                entity.Property(x => x.RouteName)
-                    .HasMaxLength(150)
-                    .IsRequired();
+            modelBuilder.Entity<RouteStop>()
+                .HasOne(x => x.BusStop)
+                .WithMany(x => x.RouteStops)
+                .HasForeignKey(x => x.StopId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(x => x.TotalDistanceKm)
-                    .HasColumnType("float");
+            // 3. Chuyến xe (Trip)
+            modelBuilder.Entity<Trip>()
+                .HasIndex(x => x.TripCode)
+                .IsUnique();
 
-                entity.HasMany(x => x.RouteStops)
-                    .WithOne(x => x.Route)
-                    .HasForeignKey(x => x.RouteId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
+            modelBuilder.Entity<Trip>()
+                .HasOne(x => x.Route)
+                .WithMany(x => x.Trips)
+                .HasForeignKey(x => x.RouteId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<BusStop>(entity =>
-            {
-                entity.ToTable("BusStops");
-                entity.HasKey(x => x.Id);
+            // 4. Lịch trình chuyến xe (TripSchedule)
+            modelBuilder.Entity<TripSchedule>()
+                .HasOne(x => x.Trip)
+                .WithMany(x => x.Schedules)
+                .HasForeignKey(x => x.TripId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-                entity.Property(x => x.Name)
-                    .HasMaxLength(150)
-                    .IsRequired();
+            modelBuilder.Entity<TripSchedule>()
+                .HasOne(x => x.BusStop)
+                .WithMany()
+                .HasForeignKey(x => x.StopId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                entity.Property(x => x.Address)
-                    .HasMaxLength(255);
-            });
+            modelBuilder.Entity<TripSchedule>()
+                .HasIndex(x => new { x.TripId, x.StopOrder })
+                .IsUnique();
 
-            modelBuilder.Entity<RouteStop>(entity =>
-            {
-                entity.ToTable("RouteStops");
-                entity.HasKey(x => x.Id);
+            modelBuilder.Entity<TripSchedule>()
+                .HasIndex(x => new { x.TripId, x.StopId })
+                .IsUnique();
 
-                entity.HasOne(x => x.BusStop)
-                    .WithMany(x => x.RouteStops)
-                    .HasForeignKey(x => x.StopId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // Seed Data
+            // Nạp dữ liệu mẫu SeedData
             SeedData(modelBuilder);
         }
 
@@ -109,7 +126,7 @@ namespace Ticket.Data
                     PasswordHash = "9058ca8b5620bb5eb2c88085b19830013ea2ab152245a58d9202f5c56582151f",
                     RoleId = 1,
                     Status = "ACTIVE",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc)
                 },
                 new User
                 {
