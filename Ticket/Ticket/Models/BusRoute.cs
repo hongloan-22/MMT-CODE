@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Smart_Bus_Ticketing_System.Models
+namespace Ticket.Models
 {
     public class BusRoute
     {
