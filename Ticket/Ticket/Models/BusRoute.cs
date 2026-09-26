@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Ticket.Models;
 
-namespace Smart_Bus_Ticketing_System.Models
+namespace Ticket.Models
 {
     public class BusRoute
     {
@@ -19,5 +20,6 @@ namespace Smart_Bus_Ticketing_System.Models
 
         // Quan hệ 1 - N: Một tuyến bao gồm danh sách nhiều trạm dừng theo thứ tự
         public ICollection<RouteStop> RouteStops { get; set; } = new List<RouteStop>();
+
     }
 }

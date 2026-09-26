@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using SmartBusTicketing.Models;
+using Ticket.Models;
 
-namespace SmartBusTicketing.Data
+namespace Ticket.Data
 {
     public class ApplicationDbContext : DbContext
     {
@@ -10,6 +10,9 @@ namespace SmartBusTicketing.Data
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+        public DbSet<BusRoute> BusRoutes { get; set; } = null!;
+        public DbSet<BusStop> BusStops { get; set; } = null!;
+        public DbSet<RouteStop> RouteStops { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +37,51 @@ namespace SmartBusTicketing.Data
                 .WithMany(u => u.AuditLogs)
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // =========================
+            // BUS ROUTE / STOP
+            // =========================
+            modelBuilder.Entity<BusRoute>(entity =>
+            {
+                entity.ToTable("BusRoutes");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.RouteName)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                entity.Property(x => x.TotalDistanceKm)
+                    .HasColumnType("float");
+
+                entity.HasMany(x => x.RouteStops)
+                    .WithOne(x => x.Route)
+                    .HasForeignKey(x => x.RouteId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BusStop>(entity =>
+            {
+                entity.ToTable("BusStops");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Name)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                entity.Property(x => x.Address)
+                    .HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<RouteStop>(entity =>
+            {
+                entity.ToTable("RouteStops");
+                entity.HasKey(x => x.Id);
+
+                entity.HasOne(x => x.BusStop)
+                    .WithMany(x => x.RouteStops)
+                    .HasForeignKey(x => x.StopId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             // 3. Khởi tạo Dữ liệu Mẫu (Seed Data)
             SeedData(modelBuilder);
@@ -116,5 +164,5 @@ namespace SmartBusTicketing.Data
                 }
             );
         }
-}
+    }
 }
