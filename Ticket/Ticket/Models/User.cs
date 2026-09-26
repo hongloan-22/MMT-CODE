@@ -1,7 +1,10 @@
+using SmartBusTicketing.Models;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SmartBusTicketing.Models
+namespace Ticket.Models
 {
     [Table("users")]
     public class User
