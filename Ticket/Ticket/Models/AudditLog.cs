@@ -1,7 +1,9 @@
+using Ticket.Models;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SmartBusTicketing.Models
+namespace Ticket.Models
 {
     [Table("audit_logs")]
     public class AuditLog

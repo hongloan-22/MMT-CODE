@@ -1,7 +1,10 @@
+using Ticket.Models;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SmartBusTicketing.Models
+namespace Ticket.Models
 {
     [Table("users")]
     public class User
@@ -9,7 +12,7 @@ namespace SmartBusTicketing.Models
         [Key]
         [MaxLength(36)]
         [Column("user_id")]
-        public string UserId { get; set; } = Guid.NewGuid().ToString();
+        public string UserId { get; set; } = Guid.NewGuid().ToString(); // UUIDs
 
         [Required]
         [MaxLength(100)]
@@ -55,6 +58,7 @@ namespace SmartBusTicketing.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        public bool IsActive { get; set; } = true;
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     }
 }

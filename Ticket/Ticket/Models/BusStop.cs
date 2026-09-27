@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Smart_Bus_Ticketing_System.Models
+namespace Ticket.Models
 {
     public class BusStop
     {
@@ -23,5 +23,6 @@ namespace Smart_Bus_Ticketing_System.Models
 
         // Quan hệ 1 - N: Một trạm có thể xuất hiện trong nhiều bản ghi Tuyến-Trạm
         public ICollection<RouteStop> RouteStops { get; set; } = new List<RouteStop>();
+    
     }
 }
