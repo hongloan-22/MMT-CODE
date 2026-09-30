@@ -143,13 +143,13 @@ continueBtn.addEventListener("click", () => {
         return;
     }
 
-    // Demo luồng giao diện: chuyển sang màn hình vé điện tử sau khi chọn ghế.
+    // Chuyển sang bước chọn phương thức thanh toán sau khi chọn ghế.
     const params = new URLSearchParams({
         seats: selected.join(","),
         total: String(selected.length * PRICE_PER_SEAT)
     });
 
-    window.location.href = `../ve/index.html?${params.toString()}`;
+    window.location.href = `../thanh-toan/index.html?${params.toString()}`;
 });
 
 renderSeats();

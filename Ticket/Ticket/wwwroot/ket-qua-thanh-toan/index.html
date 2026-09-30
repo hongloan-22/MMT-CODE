@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả thanh toán - Smartbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="result-header">
+        <div class="header-inner">
+            <a href="../index.html" class="brand"><span class="brand-icon">🚌</span><span class="brand-name">Smart<span>bus</span></span></a>
+            <a href="../index.html" class="home-link">Trang chủ</a>
+        </div>
+    </header>
+
+    <main class="result-page">
+        <section class="result-card" id="resultCard">
+            <div class="result-icon" id="resultIcon">✓</div>
+            <span class="eyebrow" id="resultEyebrow">THANH TOÁN HOÀN TẤT</span>
+            <h1 id="resultTitle">Thanh toán thành công!</h1>
+            <p class="result-message" id="resultMessage">Giao dịch của bạn đã được ghi nhận. Vé điện tử đã sẵn sàng.</p>
+
+            <div class="transaction-box">
+                <div><span>Mã giao dịch</span><strong id="transactionCode">SBGD-20260930-00126</strong></div>
+                <div><span>Phương thức</span><strong id="paymentMethod">VNPay</strong></div>
+                <div><span>Số ghế</span><strong id="seatNumber">A03</strong></div>
+                <div><span>Số tiền</span><strong id="paymentAmount">120.000đ</strong></div>
+            </div>
+
+            <div class="next-step">
+                <div class="next-icon">🎫</div>
+                <div><strong>Vé điện tử đã được tạo</strong><p>Bạn có thể xem mã vé và mã QR ngay sau đây.</p></div>
+            </div>
+
+            <div class="actions">
+                <a href="../ve/index.html" class="primary-btn" id="ticketBtn">Xem vé điện tử <span>→</span></a>
+                <a href="../index.html" class="secondary-btn">Về trang chủ</a>
+            </div>
+        </section>
+
+        <p class="support-note">Nếu giao dịch gặp vấn đề, vui lòng lưu lại mã giao dịch để được hỗ trợ.</p>
+    </main>
+    <footer><p>© 2026 Smartbus. Hệ thống đặt vé xe khách thông minh.</p></footer>
+    <script src="script.js"></script>
+</body>
+</html>
