@@ -25,12 +25,22 @@
             <div>
                 <span class="eyebrow">ĐẶT VÉ XE</span>
                 <h1>Chọn ghế của bạn</h1>
-                <p>Chọn ghế còn trống trên sơ đồ xe. Ghế đã đặt không thể chọn.</p>
+                <p>Chọn ghế còn trống trên sơ đồ xe. Khi tiếp tục thanh toán, ghế sẽ được giữ tạm thời.</p>
             </div>
             <div class="trip-price">
                 <span>Giá vé</span>
                 <strong>120.000đ</strong>
             </div>
+        </section>
+
+        <!-- Trạng thái giữ chỗ: demo frontend theo Product Backlog (10 phút) -->
+        <section class="hold-banner" id="holdBanner" aria-live="polite">
+            <div class="hold-icon">⏱</div>
+            <div class="hold-content">
+                <strong id="holdTitle">Chưa bắt đầu giữ chỗ</strong>
+                <span id="holdMessage">Ghế chỉ được giữ tạm thời khi bạn tiếp tục sang bước thanh toán.</span>
+            </div>
+            <div class="countdown" id="countdown" hidden>10:00</div>
         </section>
 
         <div class="seat-layout">
@@ -49,6 +59,7 @@
                 <div class="legend">
                     <div><span class="legend-seat available"></span> Còn trống</div>
                     <div><span class="legend-seat selected"></span> Đang chọn</div>
+                    <div><span class="legend-seat holding"></span> Đang giữ chỗ</div>
                     <div><span class="legend-seat booked"></span> Đã đặt</div>
                     <div><span class="legend-seat unavailable"></span> Không bán</div>
                 </div>
@@ -90,6 +101,15 @@
                     </div>
                 </div>
 
+                <!-- Trạng thái vé theo ERD: GiuCho / DaThanhToan / DaSoat / DaHuy -->
+                <div class="ticket-status-card" id="ticketStatusCard">
+                    <div class="status-row">
+                        <span>Trạng thái</span>
+                        <span class="status-badge status-pending" id="ticketStatus">Chưa giữ chỗ</span>
+                    </div>
+                    <p id="ticketStatusText">Chọn ghế rồi nhấn “Tiếp tục thanh toán” để bắt đầu giữ chỗ 10 phút.</p>
+                </div>
+
                 <div class="selected-box">
                     <div class="selected-title">
                         <span>Ghế đã chọn</span>
@@ -106,11 +126,15 @@
                 </div>
 
                 <button class="continue-btn" id="continueBtn" disabled>
-                    Tiếp tục
+                    Tiếp tục thanh toán
                     <span>→</span>
                 </button>
 
-                <p class="notice">Bạn có thể chọn tối đa 5 ghế cho mỗi lần đặt.</p>
+                <button class="cancel-hold-btn" id="cancelHoldBtn" hidden>
+                    Hủy giữ chỗ
+                </button>
+
+                <p class="notice">Thời gian giữ chỗ tạm thời: <strong>10 phút</strong>. Hết thời gian mà chưa thanh toán, ghế sẽ được trả lại.</p>
             </aside>
         </div>
     </main>

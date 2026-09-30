@@ -1,8 +1,10 @@
 const PRICE_PER_SEAT = 120000;
 const MAX_SEATS = 5;
+const HOLD_DURATION_SECONDS = 10 * 60;
 
-// Trạng thái mẫu để demo giao diện.
-// Sau này BE có thể trả danh sách ghế đã đặt từ database/API.
+// Demo frontend theo Product Backlog:
+// "Giữ chỗ tạm thời" trong 10 phút khi khách chuyển sang thanh toán.
+// ERD của SmartBus dùng trạng thái vé: GiuCho, DaThanhToan, DaSoat, DaHuy.
 const seats = [
     { id: "A01", status: "available" },
     { id: "A02", status: "booked" },
@@ -42,22 +44,38 @@ const seats = [
 ];
 
 const selectedSeats = new Set();
+let holdTimer = null;
+let remainingSeconds = HOLD_DURATION_SECONDS;
+let isHolding = false;
 
 const seatMap = document.getElementById("seatMap");
 const selectedList = document.getElementById("selectedList");
 const seatCount = document.getElementById("seatCount");
 const totalPrice = document.getElementById("totalPrice");
 const continueBtn = document.getElementById("continueBtn");
+const cancelHoldBtn = document.getElementById("cancelHoldBtn");
+const holdBanner = document.getElementById("holdBanner");
+const holdTitle = document.getElementById("holdTitle");
+const holdMessage = document.getElementById("holdMessage");
+const countdown = document.getElementById("countdown");
+const ticketStatus = document.getElementById("ticketStatus");
+const ticketStatusText = document.getElementById("ticketStatusText");
 
 function formatMoney(value) {
     return new Intl.NumberFormat("vi-VN").format(value) + "đ";
+}
+
+function formatTime(totalSeconds) {
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
 }
 
 function renderSeats() {
     seatMap.innerHTML = "";
 
     seats.forEach((seat, index) => {
-        // Tạo khoảng trống ở giữa để mô phỏng lối đi 2+1.
+        // Tạo khoảng trống giữa hai cụm ghế để mô phỏng lối đi 2+1.
         if (index % 5 === 2) {
             const aisle = document.createElement("div");
             aisle.className = "aisle";
@@ -74,11 +92,12 @@ function renderSeats() {
             `Ghế ${seat.id} - ${getStatusText(seat.status)}`
         );
 
+        // Đã đặt, đang giữ chỗ hoặc không bán đều không thể chọn lại.
         if (seat.status !== "available") {
             button.disabled = true;
         }
 
-        if (selectedSeats.has(seat.id)) {
+        if (selectedSeats.has(seat.id) && !isHolding) {
             button.classList.add("selected");
         }
 
@@ -91,6 +110,7 @@ function getStatusText(status) {
     const statusMap = {
         available: "còn trống",
         booked: "đã đặt",
+        holding: "đang giữ chỗ",
         unavailable: "không bán"
     };
 
@@ -98,6 +118,10 @@ function getStatusText(status) {
 }
 
 function toggleSeat(seatId) {
+    if (isHolding) {
+        return;
+    }
+
     if (selectedSeats.has(seatId)) {
         selectedSeats.delete(seatId);
     } else {
@@ -118,7 +142,14 @@ function renderSummary() {
 
     seatCount.textContent = `${count} ghế`;
     totalPrice.textContent = formatMoney(count * PRICE_PER_SEAT);
-    continueBtn.disabled = count === 0;
+    continueBtn.disabled = count === 0 || isHolding;
+
+    if (isHolding) {
+        continueBtn.disabled = true;
+        continueBtn.innerHTML = `Đang giữ chỗ <span>✓</span>`;
+    } else {
+        continueBtn.innerHTML = `Tiếp tục thanh toán <span>→</span>`;
+    }
 
     if (count === 0) {
         selectedList.innerHTML =
@@ -130,27 +161,131 @@ function renderSummary() {
 
     [...selectedSeats].sort().forEach((seatId) => {
         const chip = document.createElement("span");
-        chip.className = "selected-chip";
+        chip.className = `selected-chip${isHolding ? " holding-chip" : ""}`;
         chip.textContent = seatId;
         selectedList.appendChild(chip);
     });
 }
 
-continueBtn.addEventListener("click", () => {
-    const selected = [...selectedSeats].sort();
-
-    if (selected.length === 0) {
+function startHold() {
+    if (selectedSeats.size === 0 || isHolding) {
         return;
     }
 
-    alert(
-        `Bạn đã chọn: ${selected.join(", ")}\n` +
-        `Tổng tiền: ${formatMoney(selected.length * PRICE_PER_SEAT)}`
-    );
+    isHolding = true;
+    remainingSeconds = HOLD_DURATION_SECONDS;
 
-    // Sau này có thể thay alert bằng:
-    // window.location.href = "../thanh-toan/index.html";
-});
+    // Chuyển các ghế người dùng chọn sang trạng thái "holding".
+    seats.forEach((seat) => {
+        if (selectedSeats.has(seat.id)) {
+            seat.status = "holding";
+        }
+    });
+
+    updateHoldUI();
+    renderSeats();
+    renderSummary();
+
+    holdTimer = setInterval(() => {
+        remainingSeconds -= 1;
+        updateHoldUI();
+
+        if (remainingSeconds <= 0) {
+            expireHold();
+        }
+    }, 1000);
+}
+
+function updateHoldUI() {
+    countdown.hidden = !isHolding;
+
+    if (!isHolding) {
+        holdBanner.classList.remove("active", "expired");
+        holdTitle.textContent = "Chưa bắt đầu giữ chỗ";
+        holdMessage.textContent =
+            "Ghế chỉ được giữ tạm thời khi bạn tiếp tục sang bước thanh toán.";
+        ticketStatus.className = "status-badge status-pending";
+        ticketStatus.textContent = "Chưa giữ chỗ";
+        ticketStatusText.textContent =
+            "Chọn ghế rồi nhấn “Tiếp tục thanh toán” để bắt đầu giữ chỗ 10 phút.";
+        cancelHoldBtn.hidden = true;
+        return;
+    }
+
+    holdBanner.classList.add("active");
+    holdBanner.classList.remove("expired");
+    holdTitle.textContent = "Ghế đang được giữ tạm thời";
+    holdMessage.textContent =
+        "Hoàn tất thanh toán trước khi đồng hồ về 00:00 để giữ vé.";
+    countdown.textContent = formatTime(remainingSeconds);
+    countdown.classList.toggle("warning", remainingSeconds <= 60);
+
+    ticketStatus.className = "status-badge status-holding";
+    ticketStatus.textContent = "GiuCho";
+    ticketStatusText.textContent =
+        `Hệ thống đang giữ ${selectedSeats.size} ghế cho bạn trong thời gian còn lại.`;
+    cancelHoldBtn.hidden = false;
+}
+
+function expireHold() {
+    clearInterval(holdTimer);
+    holdTimer = null;
+    isHolding = false;
+
+    seats.forEach((seat) => {
+        if (selectedSeats.has(seat.id)) {
+            seat.status = "available";
+        }
+    });
+
+    selectedSeats.clear();
+
+    holdBanner.classList.remove("active");
+    holdBanner.classList.add("expired");
+    countdown.hidden = true;
+    holdTitle.textContent = "Hết thời gian giữ chỗ";
+    holdMessage.textContent =
+        "Các ghế chưa thanh toán đã được trả lại trạng thái còn trống.";
+    ticketStatus.className = "status-badge status-expired";
+    ticketStatus.textContent = "Hết hạn";
+    ticketStatusText.textContent =
+        "Vui lòng chọn lại ghế nếu bạn vẫn muốn tiếp tục đặt vé.";
+    cancelHoldBtn.hidden = true;
+
+    renderSeats();
+    renderSummary();
+}
+
+function cancelHold() {
+    if (!isHolding) {
+        return;
+    }
+
+    clearInterval(holdTimer);
+    holdTimer = null;
+    isHolding = false;
+
+    seats.forEach((seat) => {
+        if (selectedSeats.has(seat.id)) {
+            seat.status = "available";
+        }
+    });
+
+    selectedSeats.clear();
+    remainingSeconds = HOLD_DURATION_SECONDS;
+
+    holdBanner.classList.remove("active", "expired");
+    countdown.classList.remove("warning");
+    countdown.hidden = true;
+
+    updateHoldUI();
+    renderSeats();
+    renderSummary();
+}
+
+continueBtn.addEventListener("click", startHold);
+cancelHoldBtn.addEventListener("click", cancelHold);
 
 renderSeats();
 renderSummary();
+updateHoldUI();
