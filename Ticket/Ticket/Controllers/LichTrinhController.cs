@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ticket.Models;
 using Ticket.Data;
@@ -32,6 +32,25 @@ namespace Ticket.Controllers
                 .ToListAsync();
 
             return Ok(schedules);
+        }
+
+
+        // =====================================================
+        // GET: api/LichTrinh/trips
+        // Danh sách chuyến xe để lập lịch trình
+        // =====================================================
+        [HttpGet("trips")]
+        public async Task<ActionResult<IEnumerable<Trip>>> GetTrips()
+        {
+            var trips = await _context.Trips
+                .Include(x => x.Route)
+                    .ThenInclude(x => x.RouteStops)
+                        .ThenInclude(x => x.BusStop)
+                .OrderBy(x => x.TripDate)
+                .ThenBy(x => x.DepartureTime)
+                .ToListAsync();
+
+            return Ok(trips);
         }
 
 
