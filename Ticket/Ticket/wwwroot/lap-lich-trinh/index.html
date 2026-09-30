@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Lập lịch trình</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" href="../index.html">
+            <span class="brand-icon">🚌</span>
+            <span class="brand-name">Smart<span>bus</span></span>
+        </a>
+
+        <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+        <nav class="side-nav">
+            <a href="../index.html" class="side-link"><span>▦</span><span>Tổng quan</span></a>
+            <a href="../quan-ly-tuyen-tram/index.html" class="side-link"><span>⇄</span><span>Tuyến & trạm</span></a>
+            <a href="index.html" class="side-link active"><span>◷</span><span>Lịch trình</span></a>
+            <a href="#" class="side-link"><span>🚌</span><span>Đội xe</span></a>
+            <a href="#" class="side-link"><span>👤</span><span>Tài xế / phụ xe</span></a>
+        </nav>
+
+        <div class="sidebar-label">BÁO CÁO</div>
+        <nav class="side-nav">
+            <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
+            <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="account-mini">
+                <div class="avatar">QL</div>
+                <div><strong>Quản lý</strong><small>Quản lý vận hành</small></div>
+            </div>
+            <button class="logout-btn" type="button">↪ Đăng xuất</button>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <div class="breadcrumb">Quản lý vận hành <span>/</span> Lập lịch trình</div>
+                <h1>Lập lịch trình</h1>
+                <p>Thiết lập thời gian đến, rời trạm và thứ tự phục vụ cho từng chuyến xe.</p>
+            </div>
+            <div class="top-actions">
+                <button class="icon-btn" type="button" title="Trợ giúp">?</button>
+                <button class="user-btn" type="button"><span class="avatar small">QL</span> Quản lý ▾</button>
+            </div>
+        </header>
+
+        <section class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">◷</div>
+                    <div><span>Lịch trình hôm nay</span><strong id="todayCount">0</strong><small>Chuyến có lịch chạy</small></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon cyan">⇄</div>
+                    <div><span>Tuyến đang hoạt động</span><strong id="routeCount">0</strong><small>Theo dữ liệu tuyến</small></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">●</div>
+                    <div><span>Điểm dừng đã lập</span><strong id="scheduleCount">0</strong><small>Đang có thời gian biểu</small></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">✓</div>
+                    <div><span>Đã lên lịch</span><strong id="activeCount">0</strong><small>Trạng thái SCHEDULED</small></div>
+                </div>
+            </div>
+
+            <div class="page-card">
+                <div class="card-head">
+                    <div>
+                        <div class="eyebrow">THỜI GIAN BIỂU</div>
+                        <h2>Lịch chạy theo chuyến</h2>
+                        <p>Lọc lịch trình theo ngày, tuyến và trạng thái để theo dõi vận hành.</p>
+                    </div>
+                    <button class="primary-btn" id="addScheduleBtn" type="button">＋ Lập lịch trình</button>
+                </div>
+
+                <div class="toolbar">
+                    <label class="search-box">
+                        <span>⌕</span>
+                        <input id="searchInput" type="search" placeholder="Tìm mã chuyến, tên tuyến, trạm...">
+                    </label>
+                    <select id="dateFilter" aria-label="Lọc ngày">
+                        <option value="all">Tất cả ngày</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="upcoming">Sắp chạy</option>
+                    </select>
+                    <select id="routeFilter" aria-label="Lọc tuyến">
+                        <option value="all">Tất cả tuyến</option>
+                    </select>
+                    <select id="statusFilter" aria-label="Lọc trạng thái">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="SCHEDULED">Đã lên lịch</option>
+                        <option value="ACTIVE">Đang chạy</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                    </select>
+                </div>
+
+                <div id="loading" class="state-box">Đang tải dữ liệu lịch trình...</div>
+                <div id="errorState" class="state-box error hidden"></div>
+
+                <div class="table-wrap" id="tableWrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Mã chuyến</th>
+                            <th>Tuyến xe</th>
+                            <th>Ngày chạy</th>
+                            <th>Giờ xuất phát</th>
+                            <th>Điểm dừng</th>
+                            <th>Đến / Rời</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody id="scheduleTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="empty-state hidden">
+                    <div class="empty-icon">◷</div>
+                    <h3>Chưa có lịch trình phù hợp</h3>
+                    <p>Thử thay đổi bộ lọc hoặc tạo lịch trình mới.</p>
+                </div>
+            </div>
+
+            <div class="page-card detail-card">
+                <div class="card-head">
+                    <div>
+                        <div class="eyebrow">CHI TIẾT CHUYẾN</div>
+                        <h2 id="detailTitle">Chọn một lịch trình để xem chi tiết</h2>
+                        <p id="detailMeta">Thời gian biểu các trạm được sắp xếp theo thứ tự phục vụ.</p>
+                    </div>
+                    <span id="detailStatus" class="status muted">—</span>
+                </div>
+                <div id="timeline" class="timeline empty-timeline">
+                    <div>Chưa chọn chuyến xe.</div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="modal-backdrop hidden" id="scheduleModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+            <div>
+                <div class="eyebrow">THÔNG TIN LỊCH TRÌNH</div>
+                <h3 id="modalTitle">Lập lịch trình</h3>
+            </div>
+            <button class="close-btn" id="closeModal" type="button">×</button>
+        </div>
+
+        <form id="scheduleForm">
+            <input type="hidden" id="scheduleId">
+            <div class="form-grid">
+                <label>Chuyến xe
+                    <select id="tripId" required></select>
+                </label>
+                <label>Điểm dừng
+                    <select id="stopId" required></select>
+                </label>
+                <label>Thứ tự trạm
+                    <input id="stopOrder" type="number" min="1" required>
+                </label>
+                <label>Giờ đến
+                    <input id="arrivalTime" type="time" required>
+                </label>
+                <label>Giờ rời trạm
+                    <input id="departureTime" type="time" required>
+                </label>
+                <label>Trạng thái
+                    <select id="scheduleStatus">
+                        <option value="SCHEDULED">Đã lên lịch</option>
+                        <option value="ACTIVE">Đang chạy</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                    </select>
+                </label>
+            </div>
+            <div class="form-note">Một chuyến xe không được trùng thứ tự trạm hoặc cùng một điểm dừng.</div>
+            <div class="modal-actions">
+                <button class="secondary-btn" type="button" id="cancelModal">Hủy</button>
+                <button class="primary-btn" type="submit" id="saveBtn">Lưu lịch trình</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="script.js"></script>
+</body>
+</html>
