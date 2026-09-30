@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn ghế - Smartbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="seat-header">
+        <div class="header-inner">
+            <a href="../index.html" class="brand">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+            <div class="trip-mini">
+                <strong>Hà Nội → Thái Nguyên</strong>
+                <span>06:30 • 30/09/2026</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="seat-page">
+        <section class="page-heading">
+            <div>
+                <span class="eyebrow">ĐẶT VÉ XE</span>
+                <h1>Chọn ghế của bạn</h1>
+                <p>Chọn ghế còn trống trên sơ đồ xe. Ghế đã đặt không thể chọn.</p>
+            </div>
+            <div class="trip-price">
+                <span>Giá vé</span>
+                <strong>120.000đ</strong>
+            </div>
+        </section>
+
+        <div class="seat-layout">
+            <section class="seat-card">
+                <div class="bus-top">
+                    <div>
+                        <span class="bus-label">XE GIƯỜNG NGỒI</span>
+                        <h2>Sơ đồ ghế</h2>
+                    </div>
+                    <div class="driver">
+                        <span>🛞</span>
+                        <small>Tài xế</small>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div><span class="legend-seat available"></span> Còn trống</div>
+                    <div><span class="legend-seat selected"></span> Đang chọn</div>
+                    <div><span class="legend-seat booked"></span> Đã đặt</div>
+                    <div><span class="legend-seat unavailable"></span> Không bán</div>
+                </div>
+
+                <div class="bus-body">
+                    <div class="bus-front">
+                        <span>CỬA LÊN XUỐNG</span>
+                    </div>
+
+                    <div class="seat-map" id="seatMap" aria-label="Sơ đồ ghế">
+                        <!-- Ghế được tạo bằng JavaScript -->
+                    </div>
+
+                    <div class="bus-back">CUỐI XE</div>
+                </div>
+            </section>
+
+            <aside class="summary-card">
+                <div class="summary-heading">
+                    <span class="eyebrow">THÔNG TIN</span>
+                    <h2>Vé của bạn</h2>
+                </div>
+
+                <div class="route-box">
+                    <div class="route-point">
+                        <span class="dot from"></span>
+                        <div>
+                            <small>Điểm đi</small>
+                            <strong>Hà Nội</strong>
+                        </div>
+                    </div>
+                    <div class="route-line"></div>
+                    <div class="route-point">
+                        <span class="dot to"></span>
+                        <div>
+                            <small>Điểm đến</small>
+                            <strong>Thái Nguyên</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="selected-box">
+                    <div class="selected-title">
+                        <span>Ghế đã chọn</span>
+                        <strong id="seatCount">0 ghế</strong>
+                    </div>
+                    <div class="selected-list" id="selectedList">
+                        <span class="empty-selection">Bạn chưa chọn ghế nào</span>
+                    </div>
+                </div>
+
+                <div class="price-box">
+                    <span>Tạm tính</span>
+                    <strong id="totalPrice">0đ</strong>
+                </div>
+
+                <button class="continue-btn" id="continueBtn" disabled>
+                    Tiếp tục
+                    <span>→</span>
+                </button>
+
+                <p class="notice">Bạn có thể chọn tối đa 5 ghế cho mỗi lần đặt.</p>
+            </aside>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
