@@ -143,13 +143,13 @@ continueBtn.addEventListener("click", () => {
         return;
     }
 
-    alert(
-        `Bạn đã chọn: ${selected.join(", ")}\n` +
-        `Tổng tiền: ${formatMoney(selected.length * PRICE_PER_SEAT)}`
-    );
+    // Demo luồng giao diện: chuyển sang màn hình vé điện tử sau khi chọn ghế.
+    const params = new URLSearchParams({
+        seats: selected.join(","),
+        total: String(selected.length * PRICE_PER_SEAT)
+    });
 
-    // Sau này có thể thay alert bằng:
-    // window.location.href = "../thanh-toan/index.html";
+    window.location.href = `../ve/index.html?${params.toString()}`;
 });
 
 renderSeats();
