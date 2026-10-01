@@ -167,6 +167,48 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Trips mau thanh cong!");
         }
+        // 5. Seed Lịch trình chi tiết từng trạm cho Chuyến xe (TripSchedules - US-25)
+        if (!db.TripSchedules.Any())
+        {
+            var sampleTrip = db.Trips.FirstOrDefault();
+            var allStops = db.BusStops.ToDictionary(s => s.Name, s => s.Id);
+
+            if (sampleTrip != null && allStops.ContainsKey("Bến xe Gia Lâm") && allStops.ContainsKey("Trạm Long Biên") && allStops.ContainsKey("Bến xe Yên Nghĩa"))
+            {
+                db.TripSchedules.AddRange(
+                    new TripSchedule
+                    {
+                        TripId = sampleTrip.Id,
+                        StopId = allStops["Bến xe Gia Lâm"],
+                        StopOrder = 1,
+                        ArrivalTime = new TimeSpan(8, 0, 0),
+                        DepartureTime = new TimeSpan(8, 5, 0),
+                        Status = "SCHEDULED"
+                    },
+                    new TripSchedule
+                    {
+                        TripId = sampleTrip.Id,
+                        StopId = allStops["Trạm Long Biên"],
+                        StopOrder = 2,
+                        ArrivalTime = new TimeSpan(8, 30, 0),
+                        DepartureTime = new TimeSpan(8, 35, 0),
+                        Status = "SCHEDULED"
+                    },
+                    new TripSchedule
+                    {
+                        TripId = sampleTrip.Id,
+                        StopId = allStops["Bến xe Yên Nghĩa"],
+                        StopOrder = 3,
+                        ArrivalTime = new TimeSpan(9, 30, 0),
+                        DepartureTime = new TimeSpan(9, 35, 0),
+                        Status = "SCHEDULED"
+                    }
+                );
+
+                db.SaveChanges();
+                Console.WriteLine("--> [Seed Data] Da nap TripSchedules cho man hinh Lap lich trinh");
+            }
+        }
     }
     catch (Exception ex)
     {

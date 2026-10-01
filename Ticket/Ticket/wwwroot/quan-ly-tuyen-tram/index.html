@@ -4,26 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smartbus - Quản lý tuyến & trạm</title>
+
+    <!-- CHẶN TỨC THÌ TẠI HEAD: KHÔNG PHẢI ADMIN/MANAGER LÀ SÚT VỀ TRANG CHỦ NGAY -->
+    <script>
+                (function() {
+                    const raw = localStorage.getItem("userSession");
+                    if (!raw) {
+                        window.location.replace("../auth/dangnhap.html");
+                        return;
+                    }
+                    try {
+                        const u = JSON.parse(raw);
+                        const role = String(u.role || u.roleCode || "").toUpperCase();
+                        const roleId = Number(u.roleId);
+
+                        // Nếu là USER (RoleId=4) hoặc DRIVER (RoleId=3) -> Sút thẳng về trang chủ ngay lập tức
+                        if (roleId === 4 || role === "USER" || roleId === 3 || role === "DRIVER") {
+                            window.location.replace("../index.html");
+                        }
+                    } catch {
+                        window.location.replace("../auth/dangnhap.html");
+                    }
+                })();
+    </script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <a class="brand" href="#">
+            <a class="brand" href="../index.html">
                 <span class="brand-icon">🚌</span>
                 <span class="brand-name">Smart<span>bus</span></span>
             </a>
 
             <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
             <nav class="side-nav">
-                <a href="#" class="side-link">
+                <!-- Đã sửa href trỏ đúng về trang chủ/tổng quan -->
+                <a href="../index.html" class="side-link">
                     <span>▦</span><span>Tổng quan</span>
                 </a>
-                <a href="#" class="side-link active">
+                <a href="index.html" class="side-link active">
                     <span>⇄</span><span>Tuyến & trạm</span>
                 </a>
-                <a href="#" class="side-link">
+                <!-- Đã sửa href trỏ đúng sang trang Lập lịch trình -->
+                <a href="../lap-lich-trinh/index.html" class="side-link">
                     <span>◷</span><span>Lịch trình</span>
+                </a>
+                <a href="../phan-quyen/index.html" class="side-link" id="linkPhanQuyen" style="display: none;">
+                    <span>👤</span><span>Phân quyền</span>
                 </a>
                 <a href="#" class="side-link">
                     <span>🚌</span><span>Đội xe</span>
@@ -47,7 +76,8 @@
                         <small>Quản lý vận hành</small>
                     </div>
                 </div>
-                <button class="logout-btn">↪ Đăng xuất</button>
+                <!-- Nút đăng xuất mở popup -->
+                <button class="logout-btn" id="logoutBtn" type="button">↪ Đăng xuất</button>
             </div>
         </aside>
 
@@ -166,22 +196,32 @@
             <form id="routeForm">
                 <input type="hidden" id="routeId">
                 <div class="form-grid">
-                    <label>Mã tuyến
-                        <input id="routeCode" required placeholder="VD: T05">
+                    <label>
+                        Mã tuyến
+                        <input id="routeCode" readonly style="background:#f1f3f5; cursor:not-allowed; font-weight:bold;">
                     </label>
-                    <label>Tên tuyến
+                    <label>
+                        Tên tuyến *
                         <input id="routeName" required placeholder="VD: Tuyến 05">
                     </label>
-                    <label>Điểm đầu
+                    <label>
+                        Điểm đầu *
                         <input id="routeStart" required placeholder="VD: Bến xe Trung tâm">
                     </label>
-                    <label>Điểm cuối
+                    <label>
+                        Điểm cuối *
                         <input id="routeEnd" required placeholder="VD: Đại học ICTU">
                     </label>
-                    <label>Giá vé cơ bản
+                    <label>
+                        Giá vé cơ bản *
                         <input id="routeFare" type="number" min="0" required placeholder="12000">
                     </label>
-                    <label>Trạng thái
+                    <label>
+                        Tổng chiều dài (km) *
+                        <input id="routeTotalDistance" type="number" min="0" step="0.1" required placeholder="25">
+                    </label>
+                    <label style="grid-column: span 2;">
+                        Trạng thái
                         <select id="routeStatus">
                             <option>Hoạt động</option>
                             <option>Tạm dừng</option>
@@ -209,26 +249,27 @@
             <form id="stationForm">
                 <input type="hidden" id="stationId">
                 <div class="form-grid">
-                    <label>Mã trạm
-                        <input id="stationCode" required placeholder="VD: TR015">
-                    </label>
-                    <label>Tên trạm
+                    <label>
+                        Tên trạm dừng *
                         <input id="stationName" required placeholder="VD: Cổng trường ICTU">
                     </label>
-                    <label>Địa chỉ
-                        <input id="stationAddress" required placeholder="Địa chỉ trạm">
-                    </label>
-                    <label>Thứ tự trạm
+                    <label>
+                        Thứ tự trạm trên tuyến *
                         <input id="stationOrder" type="number" min="1" required>
                     </label>
-                    <label>Tọa độ Latitude
-                        <input id="stationLat" type="number" step="any" placeholder="21.5947">
+                    <label style="grid-column: span 2;">
+                        Địa chỉ
+                        <input id="stationAddress" required placeholder="Địa chỉ trạm dừng">
                     </label>
-                    <label>Tọa độ Longitude
-                        <input id="stationLng" type="number" step="any" placeholder="105.8442">
+                    <label style="grid-column: span 2;">
+                        Tính khoảng cách mốc từ bến/trạm nào? *
+                        <select id="stationRefStop">
+                            <!-- JS tự nạp danh sách trạm mốc -->
+                        </select>
                     </label>
-                    <label>Khoảng cách từ trạm trước (km)
-                        <input id="stationDistance" type="number" min="0" step="0.1" placeholder="1.2">
+                    <label style="grid-column: span 2;">
+                        Số km giữa 2 chỗ đó (từ trạm mốc đến trạm này) *
+                        <input id="stationDistance" type="number" min="0" step="0.1" required placeholder="VD: 2.5">
                     </label>
                 </div>
                 <div class="modal-actions">
@@ -236,6 +277,20 @@
                     <button type="submit" class="primary-btn">Lưu trạm</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Popup Xác nhận Đăng xuất (Dùng đúng CSS gốc) -->
+    <div class="modal-backdrop" id="logoutModal">
+        <div class="modal" style="max-width: 380px; text-align: center;">
+            <div class="modal-head" style="justify-content: center;">
+                <h3 style="margin: 0;">Xác nhận đăng xuất</h3>
+            </div>
+            <p style="color: #64748b; margin: 16px 0 24px; font-size: 14px;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+            <div class="modal-actions" style="justify-content: center; gap: 12px;">
+                <button type="button" class="secondary-btn" id="cancelLogoutBtn">Hủy</button>
+                <button type="button" class="primary-btn" id="confirmLogoutBtn" style="background:#dc3545; border-color:#dc3545;">Đăng xuất</button>
+            </div>
         </div>
     </div>
 

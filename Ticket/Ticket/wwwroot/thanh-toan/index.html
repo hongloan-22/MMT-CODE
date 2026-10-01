@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán - Smartbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="payment-header">
+        <div class="header-inner">
+            <a href="../index.html" class="brand" aria-label="Smartbus">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+            <div class="secure-note">🔒 Thanh toán an toàn</div>
+        </div>
+    </header>
+
+    <main class="payment-page">
+        <div class="progress">
+            <div class="progress-step done"><span>✓</span><small>Chọn ghế</small></div>
+            <div class="progress-line active"></div>
+            <div class="progress-step current"><span>2</span><small>Thanh toán</small></div>
+            <div class="progress-line"></div>
+            <div class="progress-step"><span>3</span><small>Hoàn tất</small></div>
+        </div>
+
+        <section class="page-heading">
+            <div>
+                <span class="eyebrow">THANH TOÁN</span>
+                <h1>Chọn phương thức thanh toán</h1>
+                <p>Chọn phương thức phù hợp để hoàn tất đặt vé Smartbus.</p>
+            </div>
+            <div class="hold-box">
+                <span>Thời gian giữ chỗ</span>
+                <strong id="countdown">09:59</strong>
+            </div>
+        </section>
+
+        <div class="payment-layout">
+            <section class="payment-card">
+                <div class="card-heading">
+                    <div>
+                        <span class="eyebrow">PHƯƠNG THỨC</span>
+                        <h2>Thanh toán trực tuyến</h2>
+                    </div>
+                    <span class="secure-badge">🔒 Bảo mật</span>
+                </div>
+
+                <div class="method-list" role="radiogroup" aria-label="Phương thức thanh toán">
+                    <label class="method active">
+                        <input type="radio" name="paymentMethod" value="VNPay" checked>
+                        <span class="method-icon vnpay">V</span>
+                        <span class="method-info"><strong>VNPay</strong><small>Thanh toán qua cổng VNPay</small></span>
+                        <span class="radio"></span>
+                    </label>
+
+                    <label class="method">
+                        <input type="radio" name="paymentMethod" value="MoMo">
+                        <span class="method-icon momo">M</span>
+                        <span class="method-info"><strong>MoMo</strong><small>Thanh toán nhanh bằng ví MoMo</small></span>
+                        <span class="radio"></span>
+                    </label>
+
+                    <label class="method">
+                        <input type="radio" name="paymentMethod" value="ZaloPay">
+                        <span class="method-icon zalopay">Z</span>
+                        <span class="method-info"><strong>ZaloPay</strong><small>Thanh toán bằng ví ZaloPay</small></span>
+                        <span class="radio"></span>
+                    </label>
+
+                    <label class="method">
+                        <input type="radio" name="paymentMethod" value="Bank">
+                        <span class="method-icon bank">▣</span>
+                        <span class="method-info"><strong>Thẻ ngân hàng</strong><small>ATM / Visa / Mastercard</small></span>
+                        <span class="radio"></span>
+                    </label>
+                </div>
+
+                <div class="method-note" id="methodNote">
+                    <span>ⓘ</span>
+                    <p>Bạn sẽ được chuyển tới giao diện thanh toán của VNPay để thực hiện giao dịch.</p>
+                </div>
+
+                <button class="pay-btn" id="payBtn" type="button">
+                    Thanh toán <strong id="payAmount">120.000đ</strong>
+                    <span>→</span>
+                </button>
+                <p class="payment-note">Bằng việc tiếp tục, bạn xác nhận thông tin đặt vé là chính xác.</p>
+            </section>
+
+            <aside class="order-card">
+                <div class="order-heading">
+                    <span class="eyebrow">ĐƠN ĐẶT VÉ</span>
+                    <h2>Thông tin chuyến đi</h2>
+                </div>
+
+                <div class="route-box">
+                    <div class="route-point">
+                        <span class="dot from"></span>
+                        <div><small>Điểm đi</small><strong>Hà Nội</strong><span>Bến xe Mỹ Đình</span></div>
+                    </div>
+                    <div class="route-line"></div>
+                    <div class="route-point">
+                        <span class="dot to"></span>
+                        <div><small>Điểm đến</small><strong>Thái Nguyên</strong><span>Cổng Trường ĐH ICTU</span></div>
+                    </div>
+                </div>
+
+                <div class="trip-info">
+                    <div><small>Ngày đi</small><strong>30/09/2026</strong></div>
+                    <div><small>Khởi hành</small><strong>06:30</strong></div>
+                    <div><small>Số ghế</small><strong id="seatText">A03</strong></div>
+                </div>
+
+                <div class="price-summary">
+                    <div><span>Giá vé</span><strong id="priceText">120.000đ</strong></div>
+                    <div><span>Phí thanh toán</span><strong>0đ</strong></div>
+                    <div class="total"><span>Tổng thanh toán</span><strong id="totalText">120.000đ</strong></div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer><p>© 2026 Smartbus. Hệ thống đặt vé xe khách thông minh.</p></footer>
+    <script src="script.js"></script>
+</body>
+</html>

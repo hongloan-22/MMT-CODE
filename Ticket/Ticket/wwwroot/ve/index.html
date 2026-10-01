@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vé điện tử - Smartbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="ticket-header">
+        <div class="header-inner">
+            <a href="../index.html" class="brand" aria-label="Smartbus">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+            <nav class="nav-menu">
+                <a href="../index.html">Trang chủ</a>
+                <a href="../chon-ghe/index.html">Đặt vé</a>
+                <a href="#" class="active">Chuyến đi của tôi</a>
+            </nav>
+            <button class="help-btn" type="button" title="Trợ giúp">?</button>
+        </div>
+    </header>
+
+    <main class="ticket-page">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">VÉ ĐIỆN TỬ</span>
+                <h1>Vé của bạn</h1>
+                <p>Hiển thị mã QR này khi lên xe để nhân viên kiểm tra vé.</p>
+            </div>
+            <span class="status-badge"><span></span> Đã thanh toán</span>
+        </div>
+
+        <section class="ticket-layout">
+            <article class="ticket-card" id="ticketCard">
+                <div class="ticket-top">
+                    <div class="ticket-brand">
+                        <span class="mini-bus">🚌</span>
+                        <div>
+                            <strong>Smart<span>bus</span></strong>
+                            <small>Vé điện tử</small>
+                        </div>
+                    </div>
+                    <div class="ticket-code">
+                        <small>MÃ VÉ</small>
+                        <strong id="ticketCode">SB-20260930-00126</strong>
+                    </div>
+                </div>
+
+                <div class="route-summary">
+                    <div class="route-station">
+                        <span class="time">06:30</span>
+                        <strong>Hà Nội</strong>
+                        <small>Bến xe Mỹ Đình</small>
+                    </div>
+                    <div class="route-arrow">
+                        <span class="route-line"></span>
+                        <span class="bus-dot">🚌</span>
+                        <span class="duration">~ 1 giờ 30 phút</span>
+                    </div>
+                    <div class="route-station destination">
+                        <span class="time">08:00</span>
+                        <strong>Thái Nguyên</strong>
+                        <small>Cổng Trường ĐH ICTU</small>
+                    </div>
+                </div>
+
+                <div class="ticket-divider"><span></span><span></span></div>
+
+                <div class="ticket-info-grid">
+                    <div class="info-item">
+                        <small>Ngày đi</small>
+                        <strong>30/09/2026</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Tuyến xe</small>
+                        <strong>Tuyến 02</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Số ghế</small>
+                        <strong id="seatNumber">A03</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Loại vé</small>
+                        <strong>Vé lượt</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Hành khách</small>
+                        <strong>Nguyễn Văn A</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Số điện thoại</small>
+                        <strong>09•••••678</strong>
+                    </div>
+                </div>
+
+                <div class="ticket-payment">
+                    <span>Thanh toán qua <strong>VNPAY</strong></span>
+                    <strong>120.000đ</strong>
+                </div>
+            </article>
+
+            <aside class="qr-card">
+                <div class="qr-heading">
+                    <span class="eyebrow">SOÁT VÉ</span>
+                    <h2>Mã QR của bạn</h2>
+                    <p>Đưa mã QR trước màn hình máy quét khi lên xe.</p>
+                </div>
+
+                <div class="qr-wrapper">
+                    <div id="qrcode" aria-label="Mã QR vé điện tử"></div>
+                    <div class="qr-center">🚌</div>
+                </div>
+
+                <strong class="qr-code-text" id="qrText">SB-20260930-00126</strong>
+                <span class="qr-note">Mã QR chứa thông tin xác thực của vé</span>
+
+                <div class="qr-actions">
+                    <button class="primary-btn" id="printBtn" type="button">🖨 In vé</button>
+                    <button class="secondary-btn" id="copyBtn" type="button">Sao chép mã vé</button>
+                </div>
+            </aside>
+        </section>
+
+        <section class="notice-card">
+            <div class="notice-icon">✓</div>
+            <div>
+                <strong>Lưu ý khi sử dụng vé</strong>
+                <p>Vui lòng có mặt trước giờ khởi hành ít nhất 10 phút. Mỗi mã QR chỉ được sử dụng cho một lần soát vé.</p>
+            </div>
+        </section>
+
+        <div class="bottom-actions">
+            <a class="back-link" href="../index.html">← Về trang chủ</a>
+            <button class="cancel-btn" id="cancelBtn" type="button">Yêu cầu hủy vé</button>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <div class="brand">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </div>
+            <p>© 2026 Smartbus. Hệ thống đặt vé xe khách thông minh.</p>
+        </div>
+    </footer>
+
+    <!-- QRCode.js dùng để tạo mã QR thật cho dữ liệu vé. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
