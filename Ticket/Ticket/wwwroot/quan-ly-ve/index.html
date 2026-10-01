@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý vé - Smartbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="ticket-header">
+    <div class="header-inner">
+        <a href="../index.html" class="brand" aria-label="Smartbus">
+            <span class="brand-icon">🚌</span>
+            <span class="brand-name">Smart<span>bus</span></span>
+        </a>
+
+        <nav class="nav-menu">
+            <a href="../index.html">Trang chủ</a>
+            <a href="../chon-ghe/index.html">Đặt vé</a>
+            <a href="#" class="active">Chuyến đi của tôi</a>
+        </nav>
+
+        <button class="help-btn" type="button" title="Trợ giúp">?</button>
+    </div>
+</header>
+
+<main class="manage-page">
+    <section class="page-heading">
+        <div>
+            <span class="eyebrow">CHUYẾN ĐI CỦA TÔI</span>
+            <h1>Quản lý vé</h1>
+            <p>Xem thông tin vé, đổi chuyến hoặc gửi yêu cầu hủy vé.</p>
+        </div>
+        <a class="back-link" href="../index.html">← Trang chủ</a>
+    </section>
+
+    <section class="summary-grid" aria-label="Tổng quan vé">
+        <div class="summary-card">
+            <span class="summary-icon blue">🎫</span>
+            <div><small>Tổng số vé</small><strong id="totalCount">3</strong></div>
+        </div>
+        <div class="summary-card">
+            <span class="summary-icon green">✓</span>
+            <div><small>Vé đã thanh toán</small><strong id="paidCount">2</strong></div>
+        </div>
+        <div class="summary-card">
+            <span class="summary-icon orange">↻</span>
+            <div><small>Đang xử lý</small><strong id="pendingCount">0</strong></div>
+        </div>
+    </section>
+
+    <section class="filter-card">
+        <div class="filter-row">
+            <label class="search-box">
+                <span>⌕</span>
+                <input id="searchInput" type="search" placeholder="Tìm theo mã vé, tuyến xe...">
+            </label>
+
+            <select id="statusFilter" aria-label="Lọc trạng thái">
+                <option value="all">Tất cả trạng thái</option>
+                <option value="paid">Đã thanh toán</option>
+                <option value="pending">Đang xử lý</option>
+                <option value="cancelled">Đã hủy</option>
+            </select>
+
+            <select id="dateFilter" aria-label="Lọc thời gian">
+                <option value="all">Tất cả thời gian</option>
+                <option value="upcoming">Sắp khởi hành</option>
+                <option value="past">Đã khởi hành</option>
+            </select>
+        </div>
+    </section>
+
+    <section id="ticketList" class="ticket-list">
+        <!-- Dữ liệu demo được render bằng JavaScript -->
+    </section>
+
+    <section id="emptyState" class="empty-state hidden">
+        <div class="empty-icon">🎫</div>
+        <h2>Không tìm thấy vé</h2>
+        <p>Hãy thử thay đổi từ khóa hoặc điều kiện lọc.</p>
+    </section>
+</main>
+
+<div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" id="modalClose" type="button" aria-label="Đóng">×</button>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="brand">
+            <span class="brand-icon">🚌</span>
+            <span class="brand-name">Smart<span>bus</span></span>
+        </div>
+        <p>© 2026 Smartbus. Hệ thống đặt vé xe khách thông minh.</p>
+    </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
