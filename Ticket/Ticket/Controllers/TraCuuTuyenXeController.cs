@@ -17,7 +17,6 @@ namespace TuyenXe.Controllers
 
         // =====================================================
         // GET: api/TraCuuTuyenXe
-        // Lấy tất cả tuyến xe
         // =====================================================
         [HttpGet]
         public async Task<IActionResult> GetAllRoutes()
@@ -33,7 +32,6 @@ namespace TuyenXe.Controllers
                     x.TotalDistanceKm,
                     x.EstimatedDuration,
                     x.IsActive,
-
                     DiemDung = x.RouteStops
                         .OrderBy(rs => rs.StopOrder)
                         .Select(rs => new
@@ -50,12 +48,8 @@ namespace TuyenXe.Controllers
             return Ok(routes);
         }
 
-
         // =====================================================
-        // GET:
-        // api/TraCuuTuyenXe/{id}
-        //
-        // Tra cứu một tuyến theo ID
+        // GET: api/TraCuuTuyenXe/{id}
         // =====================================================
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRouteById(int id)
@@ -71,7 +65,6 @@ namespace TuyenXe.Controllers
                     x.TotalDistanceKm,
                     x.EstimatedDuration,
                     x.IsActive,
-
                     DiemDung = x.RouteStops
                         .OrderBy(rs => rs.StopOrder)
                         .Select(rs => new
@@ -89,163 +82,65 @@ namespace TuyenXe.Controllers
 
             if (route == null)
             {
-                return NotFound(new
-                {
-                    message = "Không tìm thấy tuyến xe"
-                });
+                return NotFound(new { message = "Không tìm thấy tuyến xe" });
             }
 
             return Ok(route);
         }
 
-
         // =====================================================
-        // GET:
-        // api/TraCuuTuyenXe/tim-kiem?keyword=Tuyến 01
-        //
-        // Tìm kiếm theo tên tuyến
-        // =====================================================
-        [HttpGet("tim-kiem")]
-        public async Task<IActionResult> SearchRoute(
-            [FromQuery] string? keyword)
-        {
-            var query = _context.BusRoutes
-                .Include(x => x.RouteStops)
-                    .ThenInclude(x => x.BusStop)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                keyword = keyword.Trim();
-
-                query = query.Where(x =>
-                    x.RouteName.Contains(keyword));
-            }
-
-            var routes = await query
-                .OrderBy(x => x.RouteName)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.RouteName,
-                    x.TotalDistanceKm,
-                    x.EstimatedDuration,
-                    x.IsActive,
-
-                    DiemDung = x.RouteStops
-                        .OrderBy(rs => rs.StopOrder)
-                        .Select(rs => new
-                        {
-                            rs.StopOrder,
-                            rs.BusStop!.Id,
-                            rs.BusStop.Name,
-                            rs.BusStop.Address
-                        })
-                        .ToList()
-                })
-                .ToListAsync();
-
-            return Ok(routes);
-        }
-
-
-        // =====================================================
-        // GET:
-        // api/TraCuuTuyenXe/theo-diem
-        //
-        // Tìm tuyến theo điểm đi và điểm đến
-        //
-        // Ví dụ:
-        // ?diemDi=Ben xe My Dinh&diemDen=Yen Nghia
+        // GET: api/TraCuuTuyenXe/theo-diem
+        // US-09, US-31, US-32, US-33: Kiểm tra thứ tự trạm hợp lệ
         // =====================================================
         [HttpGet("theo-diem")]
         public async Task<IActionResult> SearchByStops(
             [FromQuery] string diemDi,
             [FromQuery] string diemDen)
         {
-            if (string.IsNullOrWhiteSpace(diemDi) ||
-                string.IsNullOrWhiteSpace(diemDen))
+            if (string.IsNullOrWhiteSpace(diemDi) || string.IsNullOrWhiteSpace(diemDen))
             {
-                return BadRequest(new
-                {
-                    message = "Vui lòng nhập điểm đi và điểm đến"
-                });
+                return BadRequest(new { message = "Vui lòng nhập điểm đi và điểm đến" });
             }
 
-            diemDi = diemDi.Trim();
-            diemDen = diemDen.Trim();
+            diemDi = diemDi.Trim().ToLower();
+            diemDen = diemDen.Trim().ToLower();
 
-            var routes = await _context.BusRoutes
+            var allActiveRoutes = await _context.BusRoutes
                 .Include(x => x.RouteStops)
                     .ThenInclude(x => x.BusStop)
-                .Where(route =>
-                    route.IsActive &&
-
-                    route.RouteStops.Any(rs =>
-                        rs.BusStop!.Name.Contains(diemDi)) &&
-
-                    route.RouteStops.Any(rs =>
-                        rs.BusStop!.Name.Contains(diemDen))
-                )
-                .Select(route => new
-                {
-                    route.Id,
-                    route.RouteName,
-                    route.TotalDistanceKm,
-                    route.EstimatedDuration,
-
-                    DiemDung = route.RouteStops
-                        .OrderBy(rs => rs.StopOrder)
-                        .Select(rs => new
-                        {
-                            rs.StopOrder,
-                            rs.BusStop!.Id,
-                            rs.BusStop.Name,
-                            rs.BusStop.Address
-                        })
-                        .ToList()
-                })
+                .Where(r => r.IsActive)
                 .ToListAsync();
 
-            return Ok(routes);
-        }
+            // Nghiệp vụ Sprint 1: Tuyến phải có cả 2 trạm và StopOrder(Điểm đi) < StopOrder(Điểm đến)
+            var matchedRoutes = allActiveRoutes.Where(r =>
+            {
+                var startStop = r.RouteStops
+                    .FirstOrDefault(rs => rs.BusStop != null && rs.BusStop.Name.ToLower().Contains(diemDi));
+                var endStop = r.RouteStops
+                    .FirstOrDefault(rs => rs.BusStop != null && rs.BusStop.Name.ToLower().Contains(diemDen));
 
+                return startStop != null && endStop != null && startStop.StopOrder < endStop.StopOrder;
+            })
+            .Select(route => new
+            {
+                route.Id,
+                route.RouteName,
+                route.TotalDistanceKm,
+                route.EstimatedDuration,
+                DiemDung = route.RouteStops
+                    .OrderBy(rs => rs.StopOrder)
+                    .Select(rs => new
+                    {
+                        rs.StopOrder,
+                        rs.BusStop!.Id,
+                        rs.BusStop.Name,
+                        rs.BusStop.Address
+                    })
+                    .ToList()
+            })
+            .ToList();
 
-        // =====================================================
-        // GET:
-        // api/TraCuuTuyenXe/dang-hoat-dong
-        //
-        // Lấy các tuyến đang hoạt động
-        // =====================================================
-        [HttpGet("dang-hoat-dong")]
-        public async Task<IActionResult> GetActiveRoutes()
-        {
-            var routes = await _context.BusRoutes
-                .Where(x => x.IsActive)
-                .Include(x => x.RouteStops)
-                    .ThenInclude(x => x.BusStop)
-                .OrderBy(x => x.RouteName)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.RouteName,
-                    x.TotalDistanceKm,
-                    x.EstimatedDuration,
-
-                    DiemDung = x.RouteStops
-                        .OrderBy(rs => rs.StopOrder)
-                        .Select(rs => new
-                        {
-                            rs.StopOrder,
-                            rs.BusStop!.Id,
-                            rs.BusStop.Name,
-                            rs.BusStop.Address
-                        })
-                        .ToList()
-                })
-                .ToListAsync();
-
-            return Ok(routes);
+            return Ok(matchedRoutes);
         }
     }
 }

@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using Ticket.Models;
 
 namespace Ticket.Data
@@ -18,7 +20,7 @@ namespace Ticket.Data
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
 
         // =========================
-        // TUYẾN XE & TRẠM XE (Dùng chung cho cả US15, US24, US30, US31, US33)
+        // TUYẾN XE & TRẠM XE
         // =========================
         public DbSet<BusRoute> BusRoutes { get; set; } = null!;
         public DbSet<BusStop> BusStops { get; set; } = null!;
@@ -103,8 +105,20 @@ namespace Ticket.Data
                 .HasIndex(x => new { x.TripId, x.StopId })
                 .IsUnique();
 
-            // Nạp dữ liệu mẫu SeedData
+            // Nạp dữ liệu mẫu
             SeedData(modelBuilder);
+        }
+
+        private static string ComputeHash(string input)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var builder = new StringBuilder();
+            foreach (var b in bytes)
+            {
+                builder.Append(b.ToString("x2"));
+            }
+            return builder.ToString();
         }
 
         private static void SeedData(ModelBuilder modelBuilder)
@@ -116,14 +130,22 @@ namespace Ticket.Data
                 new Role { RoleId = 4, RoleCode = "USER", RoleName = "Người dùng", Description = "Tra cứu tuyến, chọn ghế, thanh toán vé, đăng ký vé tháng và xem bản đồ GPS", CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc) }
             );
 
+            // Mật khẩu mặc định cho tất cả tài khoản là: 123456
+            const string defaultPassword = "123456";
+
+            const string saltAdmin = "a1b2c3d4";
+            const string saltManager = "b2c3d4e5";
+            const string saltDriver = "c3d4e5f6";
+            const string saltUser = "e5f6g7h8";
+
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
                     UserId = "usr-adm-001",
-                    FullName = "Admin",
+                    FullName = "Admin Quản Trị",
                     Email = "admin@gmail.com",
-                    Salt = "a1b2c3d4",
-                    PasswordHash = "9058ca8b5620bb5eb2c88085b19830013ea2ab152245a58d9202f5c56582151f",
+                    Salt = saltAdmin,
+                    PasswordHash = ComputeHash(defaultPassword + saltAdmin),
                     RoleId = 1,
                     Status = "ACTIVE",
                     CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc)
@@ -131,10 +153,10 @@ namespace Ticket.Data
                 new User
                 {
                     UserId = "usr-opr-001",
+                    FullName = "Quản Lý Vận Hành",
                     Email = "manager@gmail.com",
-                    PasswordHash = "e2a0f8b1c4112e4f0dc2fecba72da9bf747167a5bf7bf2eeac54508ecfef591d",
-                    Salt = "b2c3d4e5",
-                    FullName = "Quản Lý",
+                    Salt = saltManager,
+                    PasswordHash = ComputeHash(defaultPassword + saltManager),
                     PhoneEncrypted = "enc_aes_0972345678",
                     IdentityCardEncrypted = "enc_aes_QL01",
                     RoleId = 2,
@@ -144,10 +166,10 @@ namespace Ticket.Data
                 new User
                 {
                     UserId = "usr-drv-001",
-                    Email = "taixe@gmail.com",
-                    PasswordHash = "b347b5ae177db5523dc34cb740d216fce7c093a39e802a466a3d6cb46f90119e",
-                    Salt = "c3d4e5f6",
                     FullName = "Lê Văn Tài",
+                    Email = "taixe@gmail.com",
+                    Salt = saltDriver,
+                    PasswordHash = ComputeHash(defaultPassword + saltDriver),
                     PhoneEncrypted = "enc_aes_0963456789",
                     IdentityCardEncrypted = "enc_aes_TX01",
                     RoleId = 3,
@@ -157,10 +179,10 @@ namespace Ticket.Data
                 new User
                 {
                     UserId = "usr-cus-001",
-                    Email = "user@gmail.com",
-                    PasswordHash = "ae473c4ee4003d7398e7a0e5b3ee581b7e42d76535542dfba0a109a138096f4b",
-                    Salt = "e5f6g7h8",
                     FullName = "Hoàng Minh Đức",
+                    Email = "user@gmail.com",
+                    Salt = saltUser,
+                    PasswordHash = ComputeHash(defaultPassword + saltUser),
                     PhoneEncrypted = "enc_aes_0915678901",
                     IdentityCardEncrypted = "enc_aes_NV01",
                     RoleId = 4,
@@ -174,7 +196,7 @@ namespace Ticket.Data
                 {
                     LogId = 1,
                     UserId = "usr-adm-001",
-                    Action = "Khởi tạo hệ thống và gán quyền Quản lý (MANAGER) cho manager@gmail.com",
+                    Action = "Khởi tạo hệ thống",
                     IpAddress = "127.0.0.1",
                     CreatedAt = new DateTime(2026, 9, 1, 8, 30, 0, DateTimeKind.Utc)
                 }
