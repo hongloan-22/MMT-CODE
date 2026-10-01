@@ -5,8 +5,56 @@ let selectedRouteId = null;
 const $ = id => document.getElementById(id);
 const money = n => new Intl.NumberFormat("vi-VN").format(n || 0) + " đ";
 
+// 1. Kiểm tra quyền và cập nhật giao diện Sidebar theo Role
+// 1. Kiểm tra quyền: CHỈ ADMIN (RoleId=1) VÀ MANAGER (RoleId=2) MỚI ĐƯỢC VÀO TRANG NÀY
+function checkAuthAndRole() {
+    const raw = localStorage.getItem("userSession");
+    if (!raw) {
+        window.location.replace("../auth/dangnhap.html");
+        return;
+    }
+
+    try {
+        const u = JSON.parse(raw);
+        const role = String(u.role || u.roleCode || "").toUpperCase();
+        const roleId = Number(u.roleId);
+
+        // NẾU LÀ HÀNH KHÁCH (USER) HOẶC TÀI XẾ (DRIVER) -> CHẶN NGAY LẬP TỨC
+        if (roleId === 4 || role === "USER" || roleId === 3 || role === "DRIVER") {
+            window.location.replace("../index.html");
+            return;
+        }
+
+        // Map đúng tên vai trò chuẩn theo RoleId trong DB
+        let displayRoleName = "Quản lý vận hành";
+        if (roleId === 1 || role === "ADMIN") displayRoleName = "Quản trị hệ thống";
+        else if (roleId === 2 || role === "MANAGER") displayRoleName = "Quản lý vận hành";
+
+        const userNameEl = document.querySelector(".account-mini strong");
+        const userRoleEl = document.querySelector(".account-mini small");
+        const avatarEl = document.querySelector(".account-mini .avatar");
+        const topAvatarEl = document.querySelector(".user-btn .avatar");
+        const topNameEl = document.querySelector(".user-btn");
+
+        if (userNameEl) userNameEl.textContent = u.fullName || "Quản lý";
+        if (userRoleEl) userRoleEl.textContent = displayRoleName;
+        if (topNameEl) topNameEl.innerHTML = `<span class="avatar small">${(u.fullName || "QL").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}</span> ${displayRoleName} ▾`;
+
+        const initials = (u.fullName || "QL").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+        if (avatarEl) avatarEl.textContent = initials;
+        if (topAvatarEl) topAvatarEl.textContent = initials;
+
+        // CHỈ ADMIN MỚI NHÌN THẤY NÚT PHÂN QUYỀN
+        const linkPQ = $("linkPhanQuyen");
+        if (linkPQ) {
+            linkPQ.style.display = (role === "ADMIN" || roleId === 1) ? "flex" : "none";
+        }
+    } catch {
+        window.location.replace("../auth/dangnhap.html");
+    }
+}
+
 // Thuật toán đề xuất mã tuyến nhỏ nhất chưa dùng (T01, T02...)
-// Nếu bảng rỗng -> luôn luôn trả về T01
 function getNextRouteCode() {
     const used = new Set();
     routes.forEach(r => {
@@ -40,11 +88,9 @@ async function fetchAllData() {
                 last = parts[1]?.trim();
             }
 
-            // Luôn đánh số liên tục theo vị trí thực tế: Tuyến 1, 2, 3...
             const seqNum = index + 1;
             const routeCode = `T${String(seqNum).padStart(2, "0")}`;
 
-            // Chuẩn hóa tên hiển thị: Loại bỏ các số cũ bị nhảy cóc
             let cleanName = r.routeName || `Tuyến ${seqNum}`;
             if (cleanName.match(/Tuyến\s*\d+/i)) {
                 cleanName = cleanName.replace(/Tuyến\s*\d+/i, `Tuyến ${String(seqNum).padStart(2, "0")}`);
@@ -361,12 +407,16 @@ async function deleteRoute(id) {
     if (!confirm("Bạn có chắc chắn muốn xóa tuyến này?")) return;
     try {
         const res = await fetch(`/api/TuyenXe/${id}`, { method: "DELETE" });
+        const data = await res.json().catch(() => ({}));
+
         if (res.ok) {
             toast("✅ Đã xóa tuyến khỏi CSDL");
             selectedRouteId = null;
             await fetchAllData();
+        } else {
+            toast(`❌ ${data.message || "Lỗi xóa tuyến"}`);
         }
-    } catch (e) { toast("❌ Lỗi xóa tuyến"); }
+    } catch (e) { toast("❌ Lỗi kết nối khi xóa"); }
 }
 
 async function deleteStation(stopId) {
@@ -417,5 +467,6 @@ if ($("confirmLogoutBtn")) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    checkAuthAndRole();
     fetchAllData();
 });

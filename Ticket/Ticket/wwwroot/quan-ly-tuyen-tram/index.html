@@ -4,6 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smartbus - Quản lý tuyến & trạm</title>
+
+    <!-- CHẶN TỨC THÌ TẠI HEAD: KHÔNG PHẢI ADMIN/MANAGER LÀ SÚT VỀ TRANG CHỦ NGAY -->
+    <script>
+                (function() {
+                    const raw = localStorage.getItem("userSession");
+                    if (!raw) {
+                        window.location.replace("../auth/dangnhap.html");
+                        return;
+                    }
+                    try {
+                        const u = JSON.parse(raw);
+                        const role = String(u.role || u.roleCode || "").toUpperCase();
+                        const roleId = Number(u.roleId);
+
+                        // Nếu là USER (RoleId=4) hoặc DRIVER (RoleId=3) -> Sút thẳng về trang chủ ngay lập tức
+                        if (roleId === 4 || role === "USER" || roleId === 3 || role === "DRIVER") {
+                            window.location.replace("../index.html");
+                        }
+                    } catch {
+                        window.location.replace("../auth/dangnhap.html");
+                    }
+                })();
+    </script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,6 +50,9 @@
                 <!-- Đã sửa href trỏ đúng sang trang Lập lịch trình -->
                 <a href="../lap-lich-trinh/index.html" class="side-link">
                     <span>◷</span><span>Lịch trình</span>
+                </a>
+                <a href="../phan-quyen/index.html" class="side-link" id="linkPhanQuyen" style="display: none;">
+                    <span>👤</span><span>Phân quyền</span>
                 </a>
                 <a href="#" class="side-link">
                     <span>🚌</span><span>Đội xe</span>
