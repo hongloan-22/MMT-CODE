@@ -152,38 +152,35 @@
         <div class="modal-head">
             <div>
                 <div class="eyebrow">THÔNG TIN LỊCH TRÌNH</div>
-                <h3 id="modalTitle">Lập lịch trình</h3>
+                <h3 id="modalTitle">Lập lịch trình chuyến mới</h3>
             </div>
             <button class="close-btn" id="closeModal" type="button">×</button>
         </div>
 
         <form id="scheduleForm">
-            <input type="hidden" id="scheduleId">
             <div class="form-grid">
-                <label>Chuyến xe
-                    <select id="tripId" required></select>
+                <label style="grid-column: span 2;">
+                    Chọn tuyến đường áp dụng *
+                    <select id="routeSelectModal" required></select>
                 </label>
-                <label>Điểm dừng
-                    <select id="stopId" required></select>
+                <label>
+                    Mã chuyến xe *
+                    <input id="tripCodeModal" type="text" placeholder="VD: TRIP01, TRIP02..." required>
                 </label>
-                <label>Thứ tự trạm
-                    <input id="stopOrder" type="number" min="1" required>
+                <label>
+                    Ngày chạy *
+                    <input id="tripDateModal" type="date" required>
                 </label>
-                <label>Giờ đến
-                    <input id="arrivalTime" type="time" required>
+                <label>
+                    Giờ xuất phát (tại bến đầu) *
+                    <input id="departureTimeModal" type="time" value="08:00" required>
                 </label>
-                <label>Giờ rời trạm
-                    <input id="departureTime" type="time" required>
-                </label>
-                <label>Trạng thái
-                    <select id="scheduleStatus">
-                        <option value="SCHEDULED">Đã lên lịch</option>
-                        <option value="ACTIVE">Đang chạy</option>
-                        <option value="CANCELLED">Đã hủy</option>
-                    </select>
+                <label>
+                    Chiều dài hành trình (km) *
+                    <input id="tripDistanceModal" type="number" step="0.1" min="0" required placeholder="VD: 25.5">
                 </label>
             </div>
-            <div class="form-note">Một chuyến xe không được trùng thứ tự trạm hoặc cùng một điểm dừng.</div>
+            <div class="form-note">Hệ thống sẽ tự động gán toàn bộ danh sách điểm dừng của tuyến theo thứ tự và tính giờ chạy.</div>
             <div class="modal-actions">
                 <button class="secondary-btn" type="button" id="cancelModal">Hủy</button>
                 <button class="primary-btn" type="submit" id="saveBtn">Lưu lịch trình</button>
@@ -191,8 +188,6 @@
         </form>
     </div>
 </div>
-
-<div id="toast" class="toast"></div>
 <script src="script.js"></script>
 </body>
 </html>

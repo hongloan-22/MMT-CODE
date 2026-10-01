@@ -16,296 +16,191 @@ namespace Ticket.Controllers
             _context = context;
         }
 
-        // =====================================================
-        // GET: api/LichTrinh
-        // Lấy toàn bộ lịch trình
-        // =====================================================
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TripSchedule>>> GetLichTrinh()
+        public async Task<IActionResult> GetLichTrinh()
         {
-            var schedules = await _context.TripSchedules
-                .Include(x => x.Trip)
-                    .ThenInclude(x => x.Route)
-                .Include(x => x.BusStop)
-                .OrderBy(x => x.TripId)
-                .ThenBy(x => x.StopOrder)
-                .ToListAsync();
+            try
+            {
+                var list = await _context.TripSchedules
+                    .AsNoTracking()
+                    .Include(x => x.BusStop)
+                    .Include(x => x.Trip)
+                        .ThenInclude(t => t!.Route)
+                    .OrderBy(x => x.TripId)
+                    .ThenBy(x => x.StopOrder)
+                    .ToListAsync();
 
-            return Ok(schedules);
+                var result = list.Select(s => new
+                {
+                    id = s.Id,
+                    tripId = s.TripId,
+                    stopId = s.StopId,
+                    stopOrder = s.StopOrder,
+                    arrivalTime = s.ArrivalTime.ToString(@"hh\:mm"),
+                    departureTime = s.DepartureTime.ToString(@"hh\:mm"),
+                    status = string.IsNullOrEmpty(s.Status) ? "SCHEDULED" : s.Status,
+                    busStop = s.BusStop != null ? new
+                    {
+                        id = s.BusStop.Id,
+                        name = s.BusStop.Name
+                    } : null,
+                    trip = s.Trip != null ? new
+                    {
+                        id = s.Trip.Id,
+                        tripCode = s.Trip.TripCode ?? $"TRIP-{s.Trip.Id}",
+                        routeId = s.Trip.RouteId,
+                        tripDate = s.Trip.TripDate.ToString("yyyy-MM-dd"),
+                        departureTime = s.Trip.DepartureTime.ToString(@"hh\:mm"),
+                        route = s.Trip.Route != null ? new
+                        {
+                            id = s.Trip.RouteId,
+                            routeName = s.Trip.Route.RouteName
+                        } : null
+                    } : null
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
-
-        // =====================================================
-        // GET: api/LichTrinh/trips
-        // Danh sách chuyến xe để lập lịch trình
-        // =====================================================
         [HttpGet("trips")]
-        public async Task<ActionResult<IEnumerable<Trip>>> GetTrips()
+        public async Task<IActionResult> GetTrips()
         {
-            var trips = await _context.Trips
-                .Include(x => x.Route)
-                    .ThenInclude(x => x.RouteStops)
-                        .ThenInclude(x => x.BusStop)
-                .OrderBy(x => x.TripDate)
-                .ThenBy(x => x.DepartureTime)
+            try
+            {
+                var rawList = await _context.Trips
+                    .AsNoTracking()
+                    .Include(t => t.Route)
+                    .ToListAsync();
+
+                var list = rawList
+                    .OrderBy(t => t.TripDate)
+                    .ThenBy(t => t.DepartureTime)
+                    .ToList();
+
+                var result = list.Select(t => new
+                {
+                    id = t.Id,
+                    tripCode = t.TripCode ?? $"TRIP-{t.Id}",
+                    routeId = t.RouteId,
+                    tripDate = t.TripDate.ToString("yyyy-MM-dd"),
+                    departureTime = t.DepartureTime.ToString(@"hh\:mm"),
+                    route = t.Route != null ? new
+                    {
+                        id = t.RouteId,
+                        routeName = t.Route.RouteName
+                    } : null
+                });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("quick-create")]
+        public async Task<IActionResult> QuickCreateSchedule([FromBody] QuickScheduleRequest req)
+        {
+            if (req.RouteId <= 0)
+                return BadRequest(new { message = "Vui lòng chọn tuyến xe hợp lệ." });
+
+            var route = await _context.BusRoutes.FirstOrDefaultAsync(r => r.Id == req.RouteId);
+            if (route == null)
+                return NotFound(new { message = "Tuyến xe không tồn tại." });
+
+            if (!TimeSpan.TryParse(req.DepartureTime, out var startTime))
+            {
+                startTime = new TimeSpan(8, 0, 0);
+            }
+
+            // Cập nhật số km của tuyến nếu người dùng chỉ định
+            if (req.TotalDistanceKm > 0)
+            {
+                route.TotalDistanceKm = req.TotalDistanceKm;
+            }
+
+            var newTrip = new Trip
+            {
+                RouteId = req.RouteId,
+                TripCode = string.IsNullOrWhiteSpace(req.TripCode) ? $"TRIP-{DateTime.Now:HHmmss}" : req.TripCode.Trim(),
+                TripDate = req.TripDate == default ? DateTime.Today : req.TripDate,
+                DepartureTime = startTime
+            };
+
+            _context.Trips.Add(newTrip);
+            await _context.SaveChangesAsync();
+
+            var stops = await _context.RouteStops
+                .Where(rs => rs.RouteId == req.RouteId)
+                .OrderBy(rs => rs.StopOrder)
                 .ToListAsync();
 
-            return Ok(trips);
+            if (stops.Any())
+            {
+                var curTime = startTime;
+                var list = new List<TripSchedule>();
+
+                for (int i = 0; i < stops.Count; i++)
+                {
+                    var stop = stops[i];
+                    var arrTime = curTime;
+                    var depTime = (i == stops.Count - 1) ? arrTime : arrTime.Add(TimeSpan.FromMinutes(5));
+
+                    list.Add(new TripSchedule
+                    {
+                        TripId = newTrip.Id,
+                        StopId = stop.StopId,
+                        StopOrder = stop.StopOrder > 0 ? stop.StopOrder : (i + 1),
+                        ArrivalTime = arrTime,
+                        DepartureTime = depTime,
+                        Status = "SCHEDULED"
+                    });
+
+                    // Tính thời gian dựa trên km thực tế của trạm tiếp theo nếu có
+                    int travelMinutes = 20;
+                    if (i + 1 < stops.Count)
+                    {
+                        double segmentKm = stops[i + 1].DistanceFromStartKm - stop.DistanceFromStartKm;
+                        if (segmentKm > 0) travelMinutes = (int)Math.Max(5, segmentKm * 2);
+                    }
+
+                    curTime = depTime.Add(TimeSpan.FromMinutes(travelMinutes));
+                }
+
+                _context.TripSchedules.AddRange(list);
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new { message = "Đã lập lịch trình thành công!", tripId = newTrip.Id });
         }
 
-
-        // =====================================================
-        // GET: api/LichTrinh/5
-        // Lấy một lịch trình theo ID
-        // =====================================================
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TripSchedule>> GetLichTrinh(int id)
+        [HttpDelete("trip/{tripId}")]
+        public async Task<IActionResult> DeleteTrip(int tripId)
         {
-            var schedule = await _context.TripSchedules
-                .Include(x => x.Trip)
-                    .ThenInclude(x => x.Route)
-                .Include(x => x.BusStop)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            var trip = await _context.Trips.FirstOrDefaultAsync(t => t.Id == tripId);
+            if (trip == null) return NotFound(new { message = "Không tìm thấy chuyến xe" });
 
-            if (schedule == null)
-            {
-                return NotFound(new
-                {
-                    message = "Không tìm thấy lịch trình"
-                });
-            }
-
-            return Ok(schedule);
-        }
-
-
-        // =====================================================
-        // POST: api/LichTrinh
-        // Tạo lịch trình
-        // =====================================================
-        [HttpPost]
-        public async Task<ActionResult<TripSchedule>> CreateLichTrinh(
-            TripSchedule schedule)
-        {
-            if (schedule == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Dữ liệu lịch trình không hợp lệ"
-                });
-            }
-
-            // Kiểm tra chuyến xe
-            var trip = await _context.Trips
-                .FirstOrDefaultAsync(x => x.Id == schedule.TripId);
-
-            if (trip == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Chuyến xe không tồn tại"
-                });
-            }
-
-            // Kiểm tra trạm xe
-            var busStop = await _context.BusStops
-                .FirstOrDefaultAsync(x => x.Id == schedule.StopId);
-
-            if (busStop == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Điểm dừng không tồn tại"
-                });
-            }
-
-            // Kiểm tra thứ tự trạm
-            if (schedule.StopOrder <= 0)
-            {
-                return BadRequest(new
-                {
-                    message = "Thứ tự trạm phải lớn hơn 0"
-                });
-            }
-
-            // Kiểm tra trùng thứ tự trạm
-            var duplicateOrder = await _context.TripSchedules
-                .AnyAsync(x =>
-                    x.TripId == schedule.TripId &&
-                    x.StopOrder == schedule.StopOrder);
-
-            if (duplicateOrder)
-            {
-                return BadRequest(new
-                {
-                    message = "Thứ tự trạm đã tồn tại trong chuyến xe"
-                });
-            }
-
-            // Kiểm tra trùng trạm
-            var duplicateStop = await _context.TripSchedules
-                .AnyAsync(x =>
-                    x.TripId == schedule.TripId &&
-                    x.StopId == schedule.StopId);
-
-            if (duplicateStop)
-            {
-                return BadRequest(new
-                {
-                    message = "Điểm dừng đã tồn tại trong chuyến xe"
-                });
-            }
-
-            schedule.Id = 0;
-
-            _context.TripSchedules.Add(schedule);
+            var schedules = await _context.TripSchedules.Where(s => s.TripId == tripId).ToListAsync();
+            _context.TripSchedules.RemoveRange(schedules);
+            _context.Trips.Remove(trip);
 
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(
-                nameof(GetLichTrinh),
-                new { id = schedule.Id },
-                schedule
-            );
+            return Ok(new { message = "Đã xóa chuyến xe và lịch trình thành công" });
         }
+    }
 
-
-        // =====================================================
-        // PUT: api/LichTrinh/5
-        // Sửa lịch trình
-        // =====================================================
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateLichTrinh(
-            int id,
-            TripSchedule schedule)
-        {
-            if (id != schedule.Id)
-            {
-                return BadRequest(new
-                {
-                    message = "ID không khớp"
-                });
-            }
-
-            // Tìm lịch trình hiện tại
-            var existingSchedule = await _context.TripSchedules
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (existingSchedule == null)
-            {
-                return NotFound(new
-                {
-                    message = "Không tìm thấy lịch trình"
-                });
-            }
-
-            // Kiểm tra chuyến xe
-            var trip = await _context.Trips
-                .FirstOrDefaultAsync(x => x.Id == schedule.TripId);
-
-            if (trip == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Chuyến xe không tồn tại"
-                });
-            }
-
-            // Kiểm tra điểm dừng
-            var busStop = await _context.BusStops
-                .FirstOrDefaultAsync(x => x.Id == schedule.StopId);
-
-            if (busStop == null)
-            {
-                return BadRequest(new
-                {
-                    message = "Điểm dừng không tồn tại"
-                });
-            }
-
-            // Kiểm tra thứ tự
-            if (schedule.StopOrder <= 0)
-            {
-                return BadRequest(new
-                {
-                    message = "Thứ tự trạm phải lớn hơn 0"
-                });
-            }
-
-            // Kiểm tra trùng thứ tự
-            var duplicateOrder = await _context.TripSchedules
-                .AnyAsync(x =>
-                    x.Id != id &&
-                    x.TripId == schedule.TripId &&
-                    x.StopOrder == schedule.StopOrder);
-
-            if (duplicateOrder)
-            {
-                return BadRequest(new
-                {
-                    message = "Thứ tự trạm đã tồn tại"
-                });
-            }
-
-            // Kiểm tra trùng điểm dừng
-            var duplicateStop = await _context.TripSchedules
-                .AnyAsync(x =>
-                    x.Id != id &&
-                    x.TripId == schedule.TripId &&
-                    x.StopId == schedule.StopId);
-
-            if (duplicateStop)
-            {
-                return BadRequest(new
-                {
-                    message = "Điểm dừng đã tồn tại trong chuyến xe"
-                });
-            }
-
-            // Cập nhật
-            existingSchedule.TripId = schedule.TripId;
-            existingSchedule.StopId = schedule.StopId;
-            existingSchedule.StopOrder = schedule.StopOrder;
-            existingSchedule.ArrivalTime = schedule.ArrivalTime;
-            existingSchedule.DepartureTime = schedule.DepartureTime;
-            existingSchedule.Status = schedule.Status;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Cập nhật lịch trình thành công",
-                data = existingSchedule
-            });
-        }
-
-
-        // =====================================================
-        // DELETE: api/LichTrinh/5
-        // Xóa lịch trình
-        // =====================================================
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteLichTrinh(int id)
-        {
-            var schedule = await _context.TripSchedules
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (schedule == null)
-            {
-                return NotFound(new
-                {
-                    message = "Không tìm thấy lịch trình"
-                });
-            }
-
-            _context.TripSchedules.Remove(schedule);
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = "Xóa lịch trình thành công"
-            });
-        }
+    public class QuickScheduleRequest
+    {
+        public int RouteId { get; set; }
+        public string TripCode { get; set; } = string.Empty;
+        public DateTime TripDate { get; set; }
+        public string DepartureTime { get; set; } = "08:00";
+        public double TotalDistanceKm { get; set; }
     }
 }
