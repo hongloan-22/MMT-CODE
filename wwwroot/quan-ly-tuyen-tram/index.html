@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Quản lý tuyến & trạm</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="#">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+            <nav class="side-nav">
+                <a href="#" class="side-link">
+                    <span>▦</span><span>Tổng quan</span>
+                </a>
+                <a href="#" class="side-link active">
+                    <span>⇄</span><span>Tuyến & trạm</span>
+                </a>
+                <a href="#" class="side-link">
+                    <span>◷</span><span>Lịch trình</span>
+                </a>
+                <a href="#" class="side-link">
+                    <span>🚌</span><span>Đội xe</span>
+                </a>
+                <a href="#" class="side-link">
+                    <span>👤</span><span>Tài xế / phụ xe</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO</div>
+            <nav class="side-nav">
+                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
+                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar">QL</div>
+                    <div>
+                        <strong>Quản lý</strong>
+                        <small>Quản lý vận hành</small>
+                    </div>
+                </div>
+                <button class="logout-btn">↪ Đăng xuất</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Quản lý vận hành <span>/</span> Tuyến & trạm</div>
+                    <h1>Quản lý tuyến & trạm</h1>
+                    <p>Thiết lập tuyến đường, danh sách trạm dừng và giá vé cho hệ thống Smartbus.</p>
+                </div>
+                <div class="top-actions">
+                    <button class="icon-btn" title="Trợ giúp">?</button>
+                    <button class="user-btn"><span class="avatar small">QL</span> Quản lý ▾</button>
+                </div>
+            </header>
+
+            <section class="content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">⇄</div>
+                        <div><span>Tổng số tuyến</span><strong id="routeCount">0</strong><small>Đang quản lý</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">●</div>
+                        <div><span>Trạm đang hoạt động</span><strong id="stationCount">0</strong><small>Trạm trong hệ thống</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">₫</div>
+                        <div><span>Giá vé trung bình</span><strong id="avgFare">0 đ</strong><small>Theo các tuyến</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">✓</div>
+                        <div><span>Tuyến hoạt động</span><strong id="activeRouteCount">0</strong><small>Đang phục vụ</small></div>
+                    </div>
+                </div>
+
+                <div class="page-card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Danh sách tuyến</h2>
+                            <p>Quản lý thông tin tuyến theo dữ liệu <b>Tuyen</b> trong ERD.</p>
+                        </div>
+                        <button class="primary-btn" id="addRouteBtn">＋ Thêm tuyến</button>
+                    </div>
+
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span>⌕</span>
+                            <input id="routeSearch" type="search" placeholder="Tìm theo mã tuyến, tên tuyến, điểm đầu/cuối...">
+                        </div>
+                        <select id="routeStatusFilter">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="Hoạt động">Hoạt động</option>
+                            <option value="Tạm dừng">Tạm dừng</option>
+                        </select>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã tuyến</th>
+                                    <th>Tên tuyến</th>
+                                    <th>Điểm đầu</th>
+                                    <th>Điểm cuối</th>
+                                    <th>Giá vé cơ bản</th>
+                                    <th>Trạng thái</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="routeTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="page-card station-card">
+                    <div class="card-head">
+                        <div>
+                            <div class="eyebrow">CHI TIẾT TUYẾN</div>
+                            <h2 id="selectedRouteTitle">Tuyến 01 — Bến xe Trung tâm → Đại học ICTU</h2>
+                            <p id="selectedRouteMeta">Danh sách trạm theo thứ tự phục vụ của tuyến.</p>
+                        </div>
+                        <button class="secondary-btn" id="addStationBtn">＋ Thêm trạm vào tuyến</button>
+                    </div>
+
+                    <div class="route-summary">
+                        <div><span>Mã tuyến</span><strong id="detailCode">T01</strong></div>
+                        <div><span>Giá vé</span><strong id="detailFare">12.000 đ</strong></div>
+                        <div><span>Số trạm</span><strong id="detailStationCount">0</strong></div>
+                        <div><span>Trạng thái</span><strong id="detailStatus" class="status active">Hoạt động</strong></div>
+                    </div>
+
+                    <div class="station-layout">
+                        <div class="route-line">
+                            <div class="line-dot start"></div>
+                            <div class="line-stem"></div>
+                            <div class="line-dot end"></div>
+                        </div>
+                        <div class="station-list" id="stationList"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Route modal -->
+    <div class="modal-backdrop" id="routeModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div>
+                    <div class="eyebrow">THÔNG TIN TUYẾN</div>
+                    <h3 id="routeModalTitle">Thêm tuyến</h3>
+                </div>
+                <button class="close-btn" data-close="routeModal">×</button>
+            </div>
+            <form id="routeForm">
+                <input type="hidden" id="routeId">
+                <div class="form-grid">
+                    <label>Mã tuyến
+                        <input id="routeCode" required placeholder="VD: T05">
+                    </label>
+                    <label>Tên tuyến
+                        <input id="routeName" required placeholder="VD: Tuyến 05">
+                    </label>
+                    <label>Điểm đầu
+                        <input id="routeStart" required placeholder="VD: Bến xe Trung tâm">
+                    </label>
+                    <label>Điểm cuối
+                        <input id="routeEnd" required placeholder="VD: Đại học ICTU">
+                    </label>
+                    <label>Giá vé cơ bản
+                        <input id="routeFare" type="number" min="0" required placeholder="12000">
+                    </label>
+                    <label>Trạng thái
+                        <select id="routeStatus">
+                            <option>Hoạt động</option>
+                            <option>Tạm dừng</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" data-close="routeModal">Hủy</button>
+                    <button type="submit" class="primary-btn">Lưu tuyến</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Station modal -->
+    <div class="modal-backdrop" id="stationModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div>
+                    <div class="eyebrow">TRẠM DỪNG</div>
+                    <h3 id="stationModalTitle">Thêm trạm vào tuyến</h3>
+                </div>
+                <button class="close-btn" data-close="stationModal">×</button>
+            </div>
+            <form id="stationForm">
+                <input type="hidden" id="stationId">
+                <div class="form-grid">
+                    <label>Mã trạm
+                        <input id="stationCode" required placeholder="VD: TR015">
+                    </label>
+                    <label>Tên trạm
+                        <input id="stationName" required placeholder="VD: Cổng trường ICTU">
+                    </label>
+                    <label>Địa chỉ
+                        <input id="stationAddress" required placeholder="Địa chỉ trạm">
+                    </label>
+                    <label>Thứ tự trạm
+                        <input id="stationOrder" type="number" min="1" required>
+                    </label>
+                    <label>Tọa độ Latitude
+                        <input id="stationLat" type="number" step="any" placeholder="21.5947">
+                    </label>
+                    <label>Tọa độ Longitude
+                        <input id="stationLng" type="number" step="any" placeholder="105.8442">
+                    </label>
+                    <label>Khoảng cách từ trạm trước (km)
+                        <input id="stationDistance" type="number" min="0" step="0.1" placeholder="1.2">
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" data-close="stationModal">Hủy</button>
+                    <button type="submit" class="primary-btn">Lưu trạm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="script.js"></script>
+</body>
+</html>
