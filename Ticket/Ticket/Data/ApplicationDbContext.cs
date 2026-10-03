@@ -27,6 +27,7 @@ namespace Ticket.Data
         public DbSet<RouteStop> RouteStops { get; set; } = null!;
         public DbSet<Station> Stations { get; set; } = null!;
         public DbSet<Ticket.Models.Route> Routes { get; set; } = null!;
+        public DbSet<ElectronicTicket> ElectronicTickets { get; set; } = null!;
 
         // =========================
         // CHUYẾN XE & LỊCH TRÌNH
