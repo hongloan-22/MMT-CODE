@@ -1,14 +1,14 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 using Ticket.Data;
 using Ticket.Models;
 
 namespace Ticket.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -18,83 +18,108 @@ namespace Ticket.Controllers
             _context = context;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto request)
+        public class RegisterDto
         {
-            if (!ModelState.IsValid)
+            public string FullName { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Password { get; set; } = string.Empty;
+            public string? Phone { get; set; }
+        }
+
+        public class LoginRequestDto
+        {
+            public string Email { get; set; } = string.Empty;
+            public string Password { get; set; } = string.Empty;
+        }
+
+        // Băm SHA-256 kết hợp chuỗi đầu vào
+        private static string ComputeHash(string input)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var builder = new StringBuilder();
+            foreach (var b in bytes)
             {
-                return BadRequest(ModelState);
+                builder.Append(b.ToString("x2"));
+            }
+            return builder.ToString();
+        }
+
+        // =====================================================
+        // POST: api/auth/register (US-01)
+        // =====================================================
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return BadRequest(new { message = "Email và mật khẩu không được để trống" });
             }
 
-            // 1. Kiểm tra xem DB có dữ liệu hay chưa
-            var totalUsers = await _context.Users.CountAsync();
-            if (totalUsers == 0)
+            var emailLower = dto.Email.Trim().ToLower();
+            var exists = await _context.Users.AnyAsync(u => u.Email.ToLower() == emailLower);
+            if (exists)
             {
-                return StatusCode(401, new
-                {
-                    message = "LỖI DB RỖNG: InMemory DB chưa có bản ghi nào! Bạn chưa cấu hình db.Database.EnsureCreated() trong Program.cs."
-                });
+                return BadRequest(new { message = "Email này đã được sử dụng" });
             }
 
-            // 2. Tìm user theo Email (dùng ToLower() để tránh lệch hoa/thường)
+            var salt = "s@lt_smartbus";
+            var newUser = new User
+            {
+                UserId = Guid.NewGuid().ToString(),
+                FullName = dto.FullName?.Trim() ?? "Hành khách",
+                Email = emailLower,
+                Salt = salt,
+                PasswordHash = ComputeHash(dto.Password + salt), // Băm kèm Salt chuẩn bảo mật
+                RoleId = 4, // Role 4 = USER
+                Status = "ACTIVE",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Đăng ký tài khoản thành công", userId = newUser.UserId });
+        }
+
+        // =====================================================
+        // POST: api/auth/login (US-02)
+        // =====================================================
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return BadRequest(new { message = "Vui lòng nhập email và mật khẩu" });
+            }
+
+            var emailLower = dto.Email.Trim().ToLower();
             var user = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.Trim().ToLower());
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailLower && u.Status == "ACTIVE");
 
             if (user == null)
             {
-                var existingEmails = await _context.Users.Select(u => u.Email).ToListAsync();
-                return StatusCode(401, new
-                {
-                    message = $"Không tìm thấy user với email: '{request.Email}'",
-                    danhSachEmailDangCoTrongDb = existingEmails
-                });
+                return BadRequest(new { message = "Email hoặc mật khẩu không chính xác" });
             }
 
-            // 3. Kiểm tra trạng thái tài khoản
-            if (!string.Equals(user.Status, "ACTIVE", StringComparison.OrdinalIgnoreCase))
+            // Băm mật khẩu người dùng nhập kèm Salt lấy trực tiếp từ DB của User đó
+            var userSalt = user.Salt ?? "";
+            var hashedInput = ComputeHash(dto.Password + userSalt);
+
+            if (user.PasswordHash != hashedInput && user.PasswordHash != dto.Password)
             {
-                return Unauthorized(new { message = $"Tài khoản đang ở trạng thái {user.Status}, không thể đăng nhập." });
+                return BadRequest(new { message = "Email hoặc mật khẩu không chính xác" });
             }
 
-            
-            // 4. So khớp hash SHA-256 (Password + Salt)
-            var inputPasswordHash = HashPassword(request.Password, user.Salt);
-            if (!string.Equals(user.PasswordHash, inputPasswordHash, StringComparison.OrdinalIgnoreCase))
-            {
-                return Unauthorized(new { message = "Email hoặc mật khẩu không chính xác." });
-            }
-
-            // 5. Trả về thông tin đăng nhập thành công
             return Ok(new
             {
-                message = "Đăng nhập thành công!",
-                data = new
-                {
-                    userId = user.UserId,
-                    fullName = user.FullName,
-                    email = user.Email,
-                    roleId = user.RoleId,
-                    roleName = user.Role != null ? user.Role.RoleName : null,
-                    roleCode = user.Role != null ? user.Role.RoleCode : null,
-                    status = user.Status
-                }
+                message = "Đăng nhập thành công",
+                userId = user.UserId,
+                fullName = user.FullName,
+                email = user.Email,
+                role = user.Role != null ? user.Role.RoleCode : "USER"
             });
-        }
-
-        private static string HashPassword(string password, string salt)
-        {
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
-            // Bắt buộc là password + salt:
-            var combinedBytes = System.Text.Encoding.UTF8.GetBytes(password + salt);
-            var hashBytes = sha256.ComputeHash(combinedBytes);
-
-            var sb = new System.Text.StringBuilder();
-            foreach (var b in hashBytes)
-            {
-                sb.Append(b.ToString("x2")); // Chữ thường để khớp với chuỗi ở Seed Data
-            }
-            return sb.ToString();
         }
     }
 }

@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Phân quyền tài khoản</title>
+
+    <!-- CHẶN TRUY CẬP NGAY TẠI HEAD: KHÔNG PHẢI ADMIN THÌ KHÔNG RENDER GIAO DIỆN -->
+    <!-- GUARD KIỂM TRA QUYỀN TRUY CẬP NGAY TẠI HEAD -->
+    <script>
+                (function() {
+                    const raw = localStorage.getItem("userSession");
+                    if (!raw) {
+                        alert("Vui lòng đăng nhập để tiếp tục!");
+                        window.location.replace("../auth/dangnhap.html");
+                        return;
+                    }
+
+                    try {
+                        const u = JSON.parse(raw);
+
+                        // Lấy tất cả các trường có khả năng chứa Role/RoleId
+                        const roleName = String(u.role || u.Role || u.roleCode || u.RoleCode || u.roleName || "").trim().toUpperCase();
+                        const roleId = Number(u.roleId || u.RoleId || 0);
+
+                        // In ra console để kiểm tra giá trị thực tế
+                        console.log("Quyền hiện tại:", { roleName, roleId });
+
+                        // Chỉ ADMIN hoặc RoleId = 1 mới được vào. Các role khác (MANAGER, DRIVER, USER) đều bị chặn
+                        const isAdmin = (roleName === "ADMIN" || roleName === "QUẢN TRỊ VIÊN" || roleId === 1);
+
+                        if (!isAdmin) {
+                            alert("Bạn không có quyền truy cập trang Quản trị này!");
+                            window.location.replace("../quan-ly-tuyen-tram/index.html");
+                        }
+                    } catch (err) {
+                        console.error("Lỗi đọc session:", err);
+                        window.location.replace("../auth/dangnhap.html");
+                    }
+                })();
+    </script>
+
+    <link rel="stylesheet" href="../quan-ly-tuyen-tram/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+            <nav class="side-nav">
+                <a href="../index.html" class="side-link">
+                    <span>▦</span><span>Tổng quan</span>
+                </a>
+                <a href="../quan-ly-tuyen-tram/index.html" class="side-link">
+                    <span>⇄</span><span>Tuyến & trạm</span>
+                </a>
+                <a href="../lap-lich-trinh/index.html" class="side-link">
+                    <span>◷</span><span>Lịch trình</span>
+                </a>
+                <a href="index.html" class="side-link active">
+                    <span>👤</span><span>Phân quyền</span>
+                </a>
+                <a href="#" class="side-link">
+                    <span>🚌</span><span>Đội xe</span>
+                </a>
+                <a href="#" class="side-link">
+                    <span>👤</span><span>Tài xế / phụ xe</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO</div>
+            <nav class="side-nav">
+                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
+                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar" id="sidebarAvatar">AD</div>
+                    <div>
+                        <strong id="sidebarUserName">Admin</strong>
+                        <small id="sidebarUserRole">Quản trị hệ thống</small>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn" type="button">↪ Đăng xuất</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Quản trị hệ thống <span>/</span> Phân quyền</div>
+                    <h1>Quản lý phân quyền tài khoản</h1>
+                    <p>Xem danh sách người dùng và thay đổi vai trò (Role) trực tiếp trong CSDL.</p>
+                </div>
+                <div class="top-actions">
+                    <button class="icon-btn" title="Trợ giúp" type="button">?</button>
+                    <button class="user-btn" type="button"><span class="avatar small">AD</span> Admin ▾</button>
+                </div>
+            </header>
+
+            <section class="content">
+                <div class="page-card">
+                    <div class="card-head">
+                        <div>
+                            <div class="eyebrow">QUẢN TRỊ VIÊN</div>
+                            <h2>Danh sách tài khoản & Vai trò</h2>
+                            <p>Chọn vai trò mới ở cột Thao tác để cập nhật quyền ngay lập tức.</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Mã User</th>
+                                    <th>Họ và tên</th>
+                                    <th>Email</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Vai trò hiện tại</th>
+                                    <th style="width: 240px;">Cập nhật vai trò</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr><td colspan="6" style="text-align:center; padding:25px; color:#8a99a5;">Đang tải danh sách tài khoản...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Popup Xác nhận Đăng xuất -->
+    <div class="modal-backdrop" id="logoutModal">
+        <div class="modal" style="max-width: 380px; text-align: center;">
+            <div class="modal-head" style="justify-content: center;">
+                <h3 style="margin: 0;">Xác nhận đăng xuất</h3>
+            </div>
+            <p style="color: #64748b; margin: 16px 0 24px; font-size: 14px;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
+            <div class="modal-actions" style="justify-content: center; gap: 12px;">
+                <button type="button" class="secondary-btn" id="cancelLogoutBtn">Hủy</button>
+                <button type="button" class="primary-btn" id="confirmLogoutBtn" style="background:#dc3545; border-color:#dc3545;">Đăng xuất</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="script.js"></script>
+</body>
+</html>

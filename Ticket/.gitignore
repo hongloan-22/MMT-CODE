@@ -11,3 +11,11 @@
 ## File cơ sở dữ liệu tạm thời
 *.mdf
 *.ldf
+
+# ==========================================
+# SQLite Database Files (Tránh xung đột Git)
+# ==========================================
+*.db
+*.db-shm
+*.db-wal
+ticket.db

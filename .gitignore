@@ -1,2 +1,23 @@
+## Thư mục build của .NET
+[Bb]in/
+[Oo]bj/
 
+## Cấu hình cá nhân của Visual Studio & VS Code
 .vs/
+.vscode/
+*.user
+*.suo
+
+## File cơ sở dữ liệu tạm thời
+*.mdf
+*.ldf
+
+## File nén và file rác
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+## Database SQLite tạm (nếu có sinh ra)
+*.db-shm
+*.db-wal
