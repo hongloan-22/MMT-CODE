@@ -38,6 +38,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
 
+// US-64 + US-65: Đăng ký service thanh toán (VNPay, MoMo, ZaloPay sandbox)
+builder.Services.AddSingleton<IPaymentService, PaymentService>();
+
 var app = builder.Build();
 
 // =========================================================================

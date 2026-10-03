@@ -144,9 +144,12 @@ continueBtn.addEventListener("click", () => {
     }
 
     // Chuyển sang bước chọn phương thức thanh toán sau khi chọn ghế.
+    const holdId = "HOLD-" + Date.now().toString(36) + "-" + Math.random().toString(36).substring(2, 6);
     const params = new URLSearchParams({
         seats: selected.join(","),
-        total: String(selected.length * PRICE_PER_SEAT)
+        total: String(selected.length * PRICE_PER_SEAT),
+        holdId: holdId,
+        tripCode: "TRIP01"
     });
 
     window.location.href = `../thanh-toan/index.html?${params.toString()}`;

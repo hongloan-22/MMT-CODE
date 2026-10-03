@@ -35,6 +35,11 @@ namespace Ticket.Data
         public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
 
+        // =========================
+        // US-64: GIAO DỊCH THANH TOÁN
+        // =========================
+        public DbSet<Payment> Payments { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -83,6 +88,21 @@ namespace Ticket.Data
                 .WithMany(x => x.Trips)
                 .HasForeignKey(x => x.RouteId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // 5. Giao dịch thanh toán (US-64)
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.TransactionRef)
+                .IsUnique();
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.HoldId);
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.GatewayOrderId);
+
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasColumnType("decimal(18,0)");
 
             // 4. Lịch trình chuyến xe (TripSchedule)
             modelBuilder.Entity<TripSchedule>()
