@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using SmartBusTicketing.DTOs;
+using SmartBusTicketing.Services;
 using System.Text.Json.Serialization;
 using Ticket.Data;
 using Ticket.Models;
-using SmartBusTicketing.DTOs;
-using SmartBusTicketing.Services;
+using Ticket.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,8 @@ builder.Services.AddScoped<ITripService, TripServices>();
 // 4. Cấu hình Database SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
 
 var app = builder.Build();
 
@@ -231,10 +234,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowAll");
 
 // Cho phép phục vụ file tĩnh trong wwwroot
 app.UseDefaultFiles();
+
+app.UseDefaultFiles(); // Cho phép truy cập trực tiếp vào index.html trong wwwroot
+
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -245,6 +252,6 @@ app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=./wwwroot/Index}/{id?}");
 
 app.Run();
