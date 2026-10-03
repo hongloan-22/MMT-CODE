@@ -34,6 +34,9 @@ namespace Ticket.Data
         public DbSet<Trip> Trips { get; set; } = null!;
         public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
+        public DbSet<Models.Ticket> Tickets { get; set; } = null!;
+        public DbSet<RefundTransaction> RefundTransactions { get; set; } = null!;
+        public object Ticket { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

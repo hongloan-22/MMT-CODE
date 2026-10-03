@@ -40,6 +40,7 @@ builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
 
 var app = builder.Build();
 
+
 // =========================================================================
 // KHỞI TẠO CSDL VÀ SEED DATA TUYẾN - TRẠM
 // =========================================================================
