@@ -450,13 +450,14 @@ document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("c
 document.querySelectorAll(".modal-backdrop").forEach(b => b.addEventListener("click", e => { if (e.target === b) closeModal(b.id); }));
 
 // Xử lý nút Đăng xuất popup modal
-const logoutBtn = $("logoutBtn");
-if (logoutBtn) {
-    logoutBtn.addEventListener("click", e => {
+// Bắt sự kiện cho tất cả các nút đăng xuất (cả id="logoutBtn" lẫn class chứa logout)
+document.querySelectorAll("#logoutBtn, .btn-logout, .logout-btn, a[href*='dangnhap']").forEach(btn => {
+    btn.addEventListener("click", e => {
         e.preventDefault();
+        e.stopPropagation();
         openModal("logoutModal");
     });
-}
+});
 if ($("cancelLogoutBtn")) $("cancelLogoutBtn").addEventListener("click", () => closeModal("logoutModal"));
 if ($("confirmLogoutBtn")) {
     $("confirmLogoutBtn").addEventListener("click", () => {
