@@ -36,7 +36,7 @@ namespace Ticket.Controllers
         {
             var tuyen = await _context.BusRoutes
                 .AsNoTracking()
-                .Include(x => x.RouteStops)
+                .Include(x => x.RouteStops.OrderBy(rs => rs.StopOrder))
                     .ThenInclude(x => x.BusStop)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -158,19 +158,6 @@ namespace Ticket.Controllers
                 targetOrder = currentStops.Count + 1;
             }
 
-            // Khoảng cách trạm chèn ở giữa phải bé hơn cự ly trạm cuối hiện tại
-            if (currentStops.Any() && targetOrder <= currentStops.Count)
-            {
-                double maxCurrentDistance = currentStops.Max(s => s.DistanceFromStartKm);
-                if (dto.DistanceKm >= maxCurrentDistance)
-                {
-                    return BadRequest(new
-                    {
-                        message = $"Khoảng cách trạm chèn ({dto.DistanceKm} km) phải nhỏ hơn cự ly trạm cuối hiện tại ({maxCurrentDistance} km)."
-                    });
-                }
-            }
-
             var stop = await _context.BusStops.FirstOrDefaultAsync(s => s.Name.ToLower() == dto.StopName.Trim().ToLower());
             if (stop == null)
             {
@@ -187,6 +174,7 @@ namespace Ticket.Controllers
             foreach (var s in currentStops.Where(x => x.StopOrder >= targetOrder))
             {
                 s.StopOrder += 1;
+                _context.Update(s);
             }
 
             var rs = new RouteStop
@@ -201,12 +189,7 @@ namespace Ticket.Controllers
             _context.RouteStops.Add(rs);
             await _context.SaveChangesAsync();
 
-            if (dto.DistanceKm > route.TotalDistanceKm)
-            {
-                route.TotalDistanceKm = dto.DistanceKm;
-            }
-
-            // Chuẩn hóa thứ tự liên tục 1, 2, 3...
+            // Lấy lại danh sách đầy đủ sau khi thêm để tính đúng cự ly lớn nhất
             var finalStops = await _context.RouteStops
                 .Where(x => x.RouteId == dto.RouteId)
                 .OrderBy(x => x.StopOrder)
@@ -215,7 +198,11 @@ namespace Ticket.Controllers
             for (int i = 0; i < finalStops.Count; i++)
             {
                 finalStops[i].StopOrder = i + 1;
+                _context.Update(finalStops[i]);
             }
+
+            route.TotalDistanceKm = finalStops.Any() ? finalStops.Max(s => s.DistanceFromStartKm) : 0;
+            _context.Update(route);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Thêm trạm thành công!", stopId = stop.Id, assignedOrder = targetOrder });
@@ -229,19 +216,72 @@ namespace Ticket.Controllers
             if (rs == null) return NotFound(new { message = "Không tìm thấy trạm trong tuyến" });
 
             int deletedOrder = rs.StopOrder;
-            _context.RouteStops.Remove(rs);
 
-            var trailingStops = await _context.RouteStops
-                .Where(x => x.RouteId == routeId && x.StopOrder > deletedOrder)
+            // 1. Xóa bản ghi trạm khỏi RouteStops
+            _context.RouteStops.Remove(rs);
+            await _context.SaveChangesAsync();
+
+            // 2. Lấy danh sách các trạm còn lại theo thứ tự
+            var remainingStops = await _context.RouteStops
+                .Where(x => x.RouteId == routeId)
+                .OrderBy(x => x.StopOrder)
                 .ToListAsync();
 
-            foreach (var s in trailingStops)
+            var route = await _context.BusRoutes.FirstOrDefaultAsync(r => r.Id == routeId);
+
+            if (remainingStops.Any())
             {
-                s.StopOrder -= 1;
+                // Đánh lại StopOrder liên tục: 1, 2, 3...
+                for (int i = 0; i < remainingStops.Count; i++)
+                {
+                    remainingStops[i].StopOrder = i + 1;
+                }
+
+                // NẾU XÓA TRẠM ĐẦU TIÊN (deletedOrder == 1):
+                // Trạm kế tiếp (giờ là remainingStops[0]) trở thành mốc 0 km.
+                // Trừ lùi toàn bộ cự ly của các trạm sau theo khoảng cách của trạm này.
+                if (deletedOrder == 1)
+                {
+                    double offset = remainingStops[0].DistanceFromStartKm;
+                    for (int i = 0; i < remainingStops.Count; i++)
+                    {
+                        remainingStops[i].DistanceFromStartKm = Math.Round(Math.Max(0, remainingStops[i].DistanceFromStartKm - offset), 2);
+                        _context.Update(remainingStops[i]); // Ép EF theo dõi cập nhật
+                    }
+                }
+                else
+                {
+                    // Nếu xóa trạm giữa hoặc cuối, vẫn đánh dấu update thứ tự
+                    for (int i = 0; i < remainingStops.Count; i++)
+                    {
+                        _context.Update(remainingStops[i]);
+                    }
+                }
+
+                if (route != null)
+                {
+                    // Lấy cự ly trạm cuối cùng làm TotalDistanceKm mới
+                    route.TotalDistanceKm = remainingStops.Max(s => s.DistanceFromStartKm);
+                    _context.Update(route); // Ép EF cập nhật BusRoute
+                }
+            }
+            else
+            {
+                // Nếu xóa hết sạch trạm trong tuyến
+                if (route != null)
+                {
+                    route.TotalDistanceKm = 0;
+                    _context.Update(route);
+                }
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Đã xóa trạm khỏi tuyến" });
+
+            return Ok(new
+            {
+                message = "Đã xóa trạm khỏi tuyến và tự động cập nhật lại toàn bộ cự ly!",
+                newTotalDistanceKm = route?.TotalDistanceKm
+            });
         }
 
         // PUT: api/TuyenXe/1
@@ -265,7 +305,7 @@ namespace Ticket.Controllers
             return Ok(new { message = "Cập nhật tuyến xe thành công", data = tuyen });
         }
 
-        // DELETE: api/TuyenXe/1 (Khớp chuẩn 100% với ApplicationDbContext)
+        // DELETE: api/TuyenXe/1
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -278,7 +318,20 @@ namespace Ticket.Controllers
 
             try
             {
-                // 1. Tìm toàn bộ chuyến xe thuộc tuyến này
+                // 1. Dọn dẹp trong BusSchedules nếu có liên kết RouteId
+                try
+                {
+                    var busSchedules = await _context.BusSchedules
+                        .Where(bs => EF.Property<int>(bs, "RouteId") == id)
+                        .ToListAsync();
+                    if (busSchedules.Any())
+                    {
+                        _context.BusSchedules.RemoveRange(busSchedules);
+                    }
+                }
+                catch { }
+
+                // 2. Tìm và xóa toàn bộ Trips cùng TripSchedules của tuyến
                 var tripIds = await _context.Trips
                     .Where(t => t.RouteId == id)
                     .Select(t => t.Id)
@@ -286,7 +339,6 @@ namespace Ticket.Controllers
 
                 if (tripIds.Any())
                 {
-                    // 2. Xóa chi tiết lịch trình trong TripSchedules (chuẩn theo DbContext)
                     var schedules = await _context.TripSchedules
                         .Where(s => tripIds.Contains(s.TripId))
                         .ToListAsync();
@@ -295,7 +347,6 @@ namespace Ticket.Controllers
                         _context.TripSchedules.RemoveRange(schedules);
                     }
 
-                    // 3. Xóa các chuyến xe trong Trips
                     var trips = await _context.Trips
                         .Where(t => tripIds.Contains(t.Id))
                         .ToListAsync();
@@ -305,39 +356,21 @@ namespace Ticket.Controllers
                     }
                 }
 
-                // 4. Xóa toàn bộ trạm dừng thuộc tuyến trong RouteStops
+                // 3. Xóa các trạm dừng trong tuyến
                 if (tuyen.RouteStops != null && tuyen.RouteStops.Any())
                 {
                     _context.RouteStops.RemoveRange(tuyen.RouteStops);
                 }
 
-                // 5. Xóa tuyến xe
+                // 4. Xóa tuyến xe
                 _context.BusRoutes.Remove(tuyen);
                 await _context.SaveChangesAsync();
-
-                // 6. Reset lại bộ đếm AUTOINCREMENT về 0 nếu bảng không còn tuyến nào
-                bool hasAnyRoute = await _context.BusRoutes.AnyAsync();
-                if (!hasAnyRoute)
-                {
-                    try
-                    {
-                        await _context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence WHERE name = 'BusRoutes';");
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            await _context.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('BusRoutes', RESEED, 0);");
-                        }
-                        catch { }
-                    }
-                }
 
                 return Ok(new { message = "Xóa tuyến xe thành công!" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi xóa tuyến: " + ex.Message });
+                return StatusCode(500, new { message = "Lỗi khi xóa tuyến: " + (ex.InnerException?.Message ?? ex.Message) });
             }
         }
     }
