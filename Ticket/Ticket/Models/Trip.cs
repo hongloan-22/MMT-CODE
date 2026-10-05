@@ -20,6 +20,14 @@ namespace Ticket.Models
         [ForeignKey(nameof(RouteId))]
         public BusRoute? Route { get; set; }
 
+        // ==========================================
+        // LIÊN KẾT XE (BUS) - US-52
+        // ==========================================
+        public int? BusId { get; set; }
+
+        [ForeignKey(nameof(BusId))]
+        public Bus? Bus { get; set; }
+
         [Required]
         [StringLength(50)]
         public string TripCode { get; set; } = string.Empty;
@@ -52,6 +60,12 @@ namespace Ticket.Models
 
         public ICollection<TripSchedule> Schedules { get; set; }
             = new List<TripSchedule>();
+
+        // ==========================================
+        // DANH SÁCH GIỮ CHỖ CỦA CHUYẾN - US-58
+        // ==========================================
+        public ICollection<SeatHold> SeatHolds { get; set; }
+            = new List<SeatHold>();
     }
 
     public class Station

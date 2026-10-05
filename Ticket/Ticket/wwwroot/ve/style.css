@@ -328,3 +328,34 @@ footer { background: #fff; border-top: 1px solid var(--border); }
     .ticket-layout { grid-template-columns: 1fr 280px; }
     .ticket-card, .qr-card { box-shadow: none; }
 }
+/* Khung chứa mã QR */
+.qr-wrapper {
+    width: 200px !important;
+    height: 200px !important;
+    margin: 16px auto !important;
+    padding: 10px !important;
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+/* Ép mã QR nằm ngay ngắn chính giữa khung */
+#qrcode {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+    #qrcode canvas,
+    #qrcode img {
+        display: block !important;
+        margin: 0 auto !important;
+        max-width: 180px !important;
+        max-height: 180px !important;
+    }

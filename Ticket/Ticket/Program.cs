@@ -170,6 +170,49 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Trips mau thanh cong!");
         }
+        // 4.1 Seed Xe và Ghế mẫu (US-52)
+        if (!db.Buses.Any())
+        {
+            var bus = new Bus
+            {
+                LicensePlate = "29B-888.88",
+                BusType = "Ghế ngồi 24 chỗ",
+                TotalSeats = 24,
+                IsActive = true
+            };
+            db.Buses.Add(bus);
+            db.SaveChanges();
+
+            // Sinh 24 ghế chuẩn sơ đồ 4 hàng x 6 cột
+            var sampleSeats = new List<Seat>();
+            char[] rowLetters = { 'A', 'B', 'C', 'D' };
+            foreach (var r in rowLetters)
+            {
+                for (int c = 1; c <= 6; c++)
+                {
+                    sampleSeats.Add(new Seat
+                    {
+                        BusId = bus.Id,
+                        SeatNumber = $"{r}{c}",
+                        Row = r - 'A' + 1,
+                        Column = c,
+                        Price = 50000,
+                        Status = SeatStatus.Available
+                    });
+                }
+            }
+            db.Seats.AddRange(sampleSeats);
+
+            // Gán xe này vào chuyến TRIP01
+            var trip = db.Trips.FirstOrDefault(t => t.TripCode == "TRIP01");
+            if (trip != null)
+            {
+                trip.BusId = bus.Id;
+            }
+
+            db.SaveChanges();
+            Console.WriteLine("--> [Seed Data] Da nap Bus va 24 Seats cho TRIP01!");
+        }
         // 5. Seed Lịch trình chi tiết từng trạm cho Chuyến xe (TripSchedules - US-25)
         if (!db.TripSchedules.Any())
         {

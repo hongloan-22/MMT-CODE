@@ -537,4 +537,35 @@ h1, h2, p {
         height: 47px;
         font-size: 11px;
     }
+        /* ===================================================
+   CẤU HÌNH MÀU GHẾ SPRINT 2 (ĐANG GIỮ & ĐÃ ĐẶT)
+   =================================================== */
+
+        /* Ghế đang giữ chỗ (Held) -> Màu cam nổi bật */
+        .seat.held {
+            background-color: #f59e0b !important;
+            border: 1px solid #d97706 !important;
+            color: #ffffff !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.9 !important;
+        }
+
+        /* Ghế đã đặt/đã bán (Booked/Occupied) -> Màu xám đậm */
+        .seat.booked, .seat.unavailable {
+            background-color: #94a3b8 !important;
+            border: 1px solid #64748b !important;
+            color: #ffffff !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.7 !important;
+            text-decoration: line-through !important;
+        }
+
+        /* Ghế đang chọn -> Màu xanh dương */
+        .seat.selected {
+            background-color: #2563eb !important;
+            border: 1px solid #1d4ed8 !important;
+            color: #ffffff !important;
+        }
 }
