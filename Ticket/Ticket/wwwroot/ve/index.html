@@ -101,22 +101,24 @@
                 </div>
             </article>
 
-            <aside class="qr-card">
-                <div class="qr-heading">
+            <!-- Căn giữa khối QR tuyệt đối bằng flexbox trực tiếp -->
+            <aside class="qr-card" style="display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;">
+                <div class="qr-heading" style="text-align: center; width: 100%;">
                     <span class="eyebrow">SOÁT VÉ</span>
                     <h2>Mã QR của bạn</h2>
                     <p>Đưa mã QR trước màn hình máy quét khi lên xe.</p>
                 </div>
 
-                <div class="qr-wrapper">
-                    <div id="qrcode" aria-label="Mã QR vé điện tử"></div>
-                    <div class="qr-center">🚌</div>
+                <div style="width: 100%; display: flex; justify-content: center; align-items: center; margin: 15px 0;">
+                    <div style="background: #ffffff; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; display: inline-flex; justify-content: center; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <img id="qrDirectImg" src="" alt="Mã QR Vé" style="width: 180px; height: 180px; display: block; margin: 0 auto;" />
+                    </div>
                 </div>
 
-                <strong class="qr-code-text" id="qrText">SB-20260930-00126</strong>
-                <span class="qr-note">Mã QR chứa thông tin xác thực của vé</span>
+                <strong class="qr-code-text" id="qrText" style="text-align: center; display: block; width: 100%;">SB-20260930-00126</strong>
+                <span class="qr-note" style="text-align: center; display: block; width: 100%;">Mã QR chứa thông tin xác thực của vé</span>
 
-                <div class="qr-actions">
+                <div class="qr-actions" style="display: flex; justify-content: center; width: 100%; gap: 10px; margin-top: 15px;">
                     <button class="primary-btn" id="printBtn" type="button">🖨 In vé</button>
                     <button class="secondary-btn" id="copyBtn" type="button">Sao chép mã vé</button>
                 </div>
@@ -147,8 +149,6 @@
         </div>
     </footer>
 
-    <!-- QRCode.js dùng để tạo mã QR thật cho dữ liệu vé. -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

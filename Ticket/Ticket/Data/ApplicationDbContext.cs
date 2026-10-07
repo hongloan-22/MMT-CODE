@@ -35,6 +35,13 @@ namespace Ticket.Data
         public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
 
+        // =========================
+        // XE, GHẾ & GIỮ CHỖ (SPRINT 2 - US-52, US-58)
+        // =========================
+        public DbSet<Bus> Buses { get; set; } = null!;
+        public DbSet<Seat> Seats { get; set; } = null!;
+        public DbSet<SeatHold> SeatHolds { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -84,6 +91,13 @@ namespace Ticket.Data
                 .HasForeignKey(x => x.RouteId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Liên kết Chuyến xe với Xe (Trip -> Bus) [US-52]
+            modelBuilder.Entity<Trip>()
+                .HasOne(x => x.Bus)
+                .WithMany(b => b.Trips)
+                .HasForeignKey(x => x.BusId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // 4. Lịch trình chuyến xe (TripSchedule)
             modelBuilder.Entity<TripSchedule>()
                 .HasOne(x => x.Trip)
@@ -104,6 +118,24 @@ namespace Ticket.Data
             modelBuilder.Entity<TripSchedule>()
                 .HasIndex(x => new { x.TripId, x.StopId })
                 .IsUnique();
+
+            // 5. Cấu hình Xe & Ghế (US-52)
+            modelBuilder.Entity<Seat>()
+                .HasOne(s => s.Bus)
+                .WithMany(b => b.Seats)
+                .HasForeignKey(s => s.BusId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Seat>()
+                .HasIndex(s => new { s.BusId, s.SeatNumber })
+                .IsUnique();
+
+            // 6. Cấu hình Phiên giữ chỗ (US-58)
+            modelBuilder.Entity<SeatHold>()
+                .HasIndex(sh => new { sh.TripId, sh.ExpiresAt });
+
+            modelBuilder.Entity<SeatHold>()
+                .HasIndex(sh => new { sh.TripId, sh.ExpiresAt });
 
             // Nạp dữ liệu mẫu
             SeedData(modelBuilder);
