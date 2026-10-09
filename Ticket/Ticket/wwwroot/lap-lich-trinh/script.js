@@ -454,4 +454,19 @@
 
         loadData();
     });
+    document.querySelectorAll("#logoutBtn, .btn-logout, .logout-btn, a[href*='dangnhap']").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.preventDefault();
+            e.stopPropagation();
+            openModal("logoutModal");
+        });
+    });
+    if ($("cancelLogoutBtn")) $("cancelLogoutBtn").addEventListener("click", () => closeModal("logoutModal"));
+    if ($("confirmLogoutBtn")) {
+        $("confirmLogoutBtn").addEventListener("click", () => {
+            localStorage.removeItem("userSession");
+            sessionStorage.clear();
+            window.location.href = "../auth/dangnhap.html";
+        });
+    }
 })();
