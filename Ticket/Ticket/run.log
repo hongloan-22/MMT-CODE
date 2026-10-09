@@ -1,0 +1,53 @@
+Using launch settings from C:\Users\admin\source\repos\hongloan-22\MMT-CODE\Ticket\Ticket\Properties\launchSettings.json...
+warn: Microsoft.EntityFrameworkCore.Model.Validation[10625]
+      The foreign key property 'SeatHold.TripId1' was created in shadow state because a conflicting property with the simple name 'TripId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (26ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "type" = 'table' AND "rootpage" IS NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "BusStops" AS "b")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "BusRoutes" AS "b")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "RouteStops" AS "r")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Stations" AS "s")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Buses" AS "b")
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "TripSchedules" AS "t")
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5199
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\admin\source\repos\hongloan-22\MMT-CODE\Ticket\Ticket
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__transactionCode_0='?' (Size = 19)], CommandType='Text', CommandTimeout='30']
+      SELECT "p"."Id", "p"."amount", "p"."callback_count", "p"."completed_at", "p"."created_at", "p"."expires_at", "p"."gateway_response_code", "p"."gateway_response_message", "p"."gateway_signature", "p"."hold_id", "p"."ipn_url", "p"."method", "p"."note", "p"."order_code", "p"."paid_at", "p"."provider", "p"."provider_transaction_id", "p"."return_url", "p"."seat_ids", "p"."status", "p"."transaction_code", "p"."trip_code", "p"."user_id", "p"."user_ip_address"
+      FROM "payment_transactions" AS "p"
+      WHERE "p"."transaction_code" = @__transactionCode_0
+      LIMIT 1
+^C

@@ -216,6 +216,50 @@ namespace Ticket.Service
             }
         }
 
+        // 5. US06: Chốt giữ chỗ sau khi thanh toán thành công (ghế -> Booked)
+        public bool ConfirmHold(string holdId, out string message)
+        {
+            lock (_lockObject)
+            {
+                if (!_holds.TryGetValue(holdId, out var hold))
+                {
+                    message = "Không tìm thấy mã giữ chỗ!";
+                    return false;
+                }
+
+                if (hold.IsConfirmed)
+                {
+                    message = "Giữ chỗ đã được chốt trước đó!";
+                    return false;
+                }
+
+                if (hold.IsReleased)
+                {
+                    message = "Giữ chỗ đã bị giải phóng, không thể chốt!";
+                    return false;
+                }
+
+                if (hold.IsExpired)
+                {
+                    message = "Giữ chỗ đã hết hạn, không thể chốt!";
+                    return false;
+                }
+
+                // Chuyển trạng thái các ghế từ Held sang Booked
+                if (_tripSeatMaps.TryGetValue(hold.TripId, out var seats))
+                {
+                    foreach (var seat in seats.Where(s => hold.SeatIds.Contains(s.SeatId, StringComparer.OrdinalIgnoreCase)))
+                    {
+                        seat.Status = SeatStatus.Booked;
+                    }
+                }
+
+                hold.IsConfirmed = true;
+                message = "Chốt giữ chỗ thành công!";
+                return true;
+            }
+        }
+
         // Hàm phụ trợ tự động nhả ghế nếu quá hạn thời gian
         private void CleanExpiredHolds(string tripId)
         {

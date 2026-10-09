@@ -42,6 +42,11 @@ namespace Ticket.Data
         public DbSet<Seat> Seats { get; set; } = null!;
         public DbSet<SeatHold> SeatHolds { get; set; } = null!;
 
+        // =========================
+        // THANH TOAN (SPRINT 3 - US06)
+        // =========================
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -137,6 +142,17 @@ namespace Ticket.Data
             modelBuilder.Entity<SeatHold>()
                 .HasIndex(sh => new { sh.TripId, sh.ExpiresAt });
 
+            // 7. Cấu hình giao dịch thanh toán (Sprint 3 - US06)
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(p => p.TransactionCode)
+                .IsUnique();
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(p => p.OrderCode);
+
+            modelBuilder.Entity<PaymentTransaction>()
+                .HasIndex(p => p.HoldId);
+
             // Nạp dữ liệu mẫu
             SeedData(modelBuilder);
         }
@@ -231,6 +247,114 @@ namespace Ticket.Data
                     Action = "Khởi tạo hệ thống",
                     IpAddress = "127.0.0.1",
                     CreatedAt = new DateTime(2026, 9, 1, 8, 30, 0, DateTimeKind.Utc)
+                }
+            );
+
+            // ============================================================
+            // DU LIEU MAU GIAO DICH THANH TOAN (Sprint 3 - US06)
+            // Bao gom day du cac trang thai: PENDING/SUCCESS/FAILED/CANCELLED + Cash
+            // ============================================================
+            modelBuilder.Entity<PaymentTransaction>().HasData(
+                // 1. VNPay - thanh cong
+                new PaymentTransaction
+                {
+                    Id = 1,
+                    TransactionCode = "SBGD-20261005-00001",
+                    OrderCode = "SBGD2026100500001",
+                    Provider = "VNPay",
+                    HoldId = "seed-hold-success-vnpay",
+                    TripCode = "TRIP01",
+                    SeatIds = "A1,A2",
+                    UserId = "usr-cus-001",
+                    Method = PaymentMethod.VNPay,
+                    Amount = 150000m,
+                    Status = PaymentStatus.Success,
+                    CreatedAt = new DateTime(2026, 10, 5, 8, 0, 0, DateTimeKind.Utc),
+                    ExpiresAt = new DateTime(2026, 10, 5, 8, 15, 0, DateTimeKind.Utc),
+                    PaidAt = new DateTime(2026, 10, 5, 8, 5, 0, DateTimeKind.Utc),
+                    CompletedAt = new DateTime(2026, 10, 5, 8, 5, 0, DateTimeKind.Utc),
+                    ProviderTransactionId = "VNP14000001",
+                    GatewayResponseCode = "00",
+                    GatewayResponseMessage = "Giao dịch thành công",
+                    Note = "Mẫu: thanh toán VNPay thành công"
+                },
+                // 2. MoMo - dang cho
+                new PaymentTransaction
+                {
+                    Id = 2,
+                    TransactionCode = "SBGD-20261005-00002",
+                    OrderCode = "SBGD2026100500002",
+                    Provider = "MoMo",
+                    HoldId = "seed-hold-pending-momo",
+                    TripCode = "TRIP01",
+                    SeatIds = "B1",
+                    UserId = "usr-cus-001",
+                    Method = PaymentMethod.MoMo,
+                    Amount = 50000m,
+                    Status = PaymentStatus.Pending,
+                    CreatedAt = new DateTime(2026, 10, 5, 9, 0, 0, DateTimeKind.Utc),
+                    ExpiresAt = new DateTime(2026, 12, 31, 23, 59, 0, DateTimeKind.Utc),
+                    Note = "Mẫu: giao dịch MoMo đang chờ thanh toán"
+                },
+                // 3. ZaloPay - that bai
+                new PaymentTransaction
+                {
+                    Id = 3,
+                    TransactionCode = "SBGD-20261006-00001",
+                    OrderCode = "SBGD2026100600001",
+                    Provider = "ZaloPay",
+                    HoldId = "seed-hold-failed-zalo",
+                    TripCode = "TRIP01",
+                    SeatIds = "C1,C2",
+                    UserId = "usr-cus-001",
+                    Method = PaymentMethod.ZaloPay,
+                    Amount = 100000m,
+                    Status = PaymentStatus.Failed,
+                    CreatedAt = new DateTime(2026, 10, 6, 10, 0, 0, DateTimeKind.Utc),
+                    ExpiresAt = new DateTime(2026, 10, 6, 10, 15, 0, DateTimeKind.Utc),
+                    CompletedAt = new DateTime(2026, 10, 6, 10, 3, 0, DateTimeKind.Utc),
+                    GatewayResponseCode = "-49",
+                    GatewayResponseMessage = "Thanh toán thất bại",
+                    Note = "Mẫu: thanh toán ZaloPay thất bại"
+                },
+                // 4. BankTransfer - da huy / het han
+                new PaymentTransaction
+                {
+                    Id = 4,
+                    TransactionCode = "SBGD-20261007-00001",
+                    OrderCode = "SBGD2026100700001",
+                    Provider = "BankTransfer",
+                    HoldId = "seed-hold-cancelled-bank",
+                    TripCode = "TRIP01",
+                    SeatIds = "D1,D2",
+                    UserId = "usr-cus-001",
+                    Method = PaymentMethod.BankTransfer,
+                    Amount = 200000m,
+                    Status = PaymentStatus.Cancelled,
+                    CreatedAt = new DateTime(2026, 10, 7, 11, 0, 0, DateTimeKind.Utc),
+                    ExpiresAt = new DateTime(2026, 10, 7, 11, 15, 0, DateTimeKind.Utc),
+                    CompletedAt = new DateTime(2026, 10, 7, 11, 20, 0, DateTimeKind.Utc),
+                    Note = "Mẫu: hết thời gian thanh toán"
+                },
+                // 5. Cash - thanh cong ngay
+                new PaymentTransaction
+                {
+                    Id = 5,
+                    TransactionCode = "SBGD-20261008-00001",
+                    OrderCode = "SBGD2026100800001",
+                    Provider = "Cash",
+                    HoldId = "seed-hold-cash-trip01",
+                    TripCode = "TRIP01",
+                    SeatIds = "A3",
+                    UserId = "usr-cus-001",
+                    Method = PaymentMethod.Cash,
+                    Amount = 50000m,
+                    Status = PaymentStatus.Success,
+                    CreatedAt = new DateTime(2026, 10, 8, 7, 30, 0, DateTimeKind.Utc),
+                    ExpiresAt = new DateTime(2026, 10, 8, 7, 45, 0, DateTimeKind.Utc),
+                    PaidAt = new DateTime(2026, 10, 8, 7, 30, 0, DateTimeKind.Utc),
+                    CompletedAt = new DateTime(2026, 10, 8, 7, 30, 0, DateTimeKind.Utc),
+                    Note = "Mẫu: thanh toán tiền mặt thành công ngay"
                 }
             );
         }

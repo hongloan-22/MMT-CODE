@@ -38,6 +38,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
 
+// 5. Dang ky Service thanh toan Sprint 3 (US06) - Scoped vi dung DbContext
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
 var app = builder.Build();
 
 // =========================================================================
