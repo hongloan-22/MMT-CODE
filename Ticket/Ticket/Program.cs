@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using SmartBusTicketing.DTOs;
+using SmartBusTicketing.Services;
 using System.Text.Json.Serialization;
 using Ticket.Data;
 using Ticket.Models;
-using SmartBusTicketing.DTOs;
-using SmartBusTicketing.Services;
+using Ticket.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,11 @@ builder.Services.AddScoped<ITripService, TripServices>();
 // 4. Cấu hình Database SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
+
+// US-64 + US-65: Đăng ký service thanh toán (VNPay, MoMo, ZaloPay sandbox)
+builder.Services.AddSingleton<IPaymentService, PaymentService>();
 
 var app = builder.Build();
 
@@ -167,6 +173,49 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Trips mau thanh cong!");
         }
+        // 4.1 Seed Xe và Ghế mẫu (US-52)
+        if (!db.Buses.Any())
+        {
+            var bus = new Bus
+            {
+                LicensePlate = "29B-888.88",
+                BusType = "Ghế ngồi 24 chỗ",
+                TotalSeats = 24,
+                IsActive = true
+            };
+            db.Buses.Add(bus);
+            db.SaveChanges();
+
+            // Sinh 24 ghế chuẩn sơ đồ 4 hàng x 6 cột
+            var sampleSeats = new List<Seat>();
+            char[] rowLetters = { 'A', 'B', 'C', 'D' };
+            foreach (var r in rowLetters)
+            {
+                for (int c = 1; c <= 6; c++)
+                {
+                    sampleSeats.Add(new Seat
+                    {
+                        BusId = bus.Id,
+                        SeatNumber = $"{r}{c}",
+                        Row = r - 'A' + 1,
+                        Column = c,
+                        Price = 50000,
+                        Status = SeatStatus.Available
+                    });
+                }
+            }
+            db.Seats.AddRange(sampleSeats);
+
+            // Gán xe này vào chuyến TRIP01
+            var trip = db.Trips.FirstOrDefault(t => t.TripCode == "TRIP01");
+            if (trip != null)
+            {
+                trip.BusId = bus.Id;
+            }
+
+            db.SaveChanges();
+            Console.WriteLine("--> [Seed Data] Da nap Bus va 24 Seats cho TRIP01!");
+        }
         // 5. Seed Lịch trình chi tiết từng trạm cho Chuyến xe (TripSchedules - US-25)
         if (!db.TripSchedules.Any())
         {
@@ -231,10 +280,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowAll");
 
 // Cho phép phục vụ file tĩnh trong wwwroot
 app.UseDefaultFiles();
+
+app.UseDefaultFiles(); // Cho phép truy cập trực tiếp vào index.html trong wwwroot
+
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -245,6 +298,6 @@ app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=./wwwroot/Index}/{id?}");
 
 app.Run();

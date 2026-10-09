@@ -61,11 +61,40 @@ namespace Ticket.Migrations
                         new
                         {
                             LogId = 1,
-                            Action = "Khởi tạo hệ thống và gán quyền Quản lý (MANAGER) cho manager@gmail.com",
+                            Action = "Khởi tạo hệ thống",
                             CreatedAt = new DateTime(2026, 9, 1, 8, 30, 0, 0, DateTimeKind.Utc),
                             IpAddress = "127.0.0.1",
                             UserId = "usr-adm-001"
                         });
+                });
+
+            modelBuilder.Entity("Ticket.Models.Bus", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BusType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LicensePlate")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("TotalSeats")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Buses");
                 });
 
             modelBuilder.Entity("Ticket.Models.BusRoute", b =>
@@ -270,6 +299,83 @@ namespace Ticket.Migrations
                     b.ToTable("RouteStops");
                 });
 
+            modelBuilder.Entity("Ticket.Models.Seat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BusId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Column")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Row")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SeatNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BusId", "SeatNumber")
+                        .IsUnique();
+
+                    b.ToTable("Seats");
+                });
+
+            modelBuilder.Entity("Ticket.Models.SeatHold", b =>
+                {
+                    b.Property<string>("HoldId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsReleased")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SeatCodesRaw")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TripId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("TripId1")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("HoldId");
+
+                    b.HasIndex("TripId1");
+
+                    b.HasIndex("TripId", "ExpiresAt");
+
+                    b.ToTable("SeatHolds");
+                });
+
             modelBuilder.Entity("Ticket.Models.Station", b =>
                 {
                     b.Property<int>("StationId")
@@ -302,6 +408,9 @@ namespace Ticket.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("BookedSeats")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BusId")
                         .HasColumnType("int");
 
                     b.Property<TimeSpan>("DepartureTime")
@@ -341,6 +450,8 @@ namespace Ticket.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BusId");
 
                     b.HasIndex("DestinationStationId");
 
@@ -470,29 +581,29 @@ namespace Ticket.Migrations
                             UserId = "usr-adm-001",
                             CreatedAt = new DateTime(2026, 9, 1, 8, 0, 0, 0, DateTimeKind.Utc),
                             Email = "admin@gmail.com",
-                            FullName = "Admin",
+                            FullName = "Admin Quản Trị",
                             IsActive = true,
-                            PasswordHash = "9058ca8b5620bb5eb2c88085b19830013ea2ab152245a58d9202f5c56582151f",
+                            PasswordHash = "880f3e82359804f51d9f769ed4791544c301619fd3550e0326e77961cb917056",
                             PhoneEncrypted = "",
                             RoleId = 1,
                             Salt = "a1b2c3d4",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 30, 13, 9, 5, 400, DateTimeKind.Utc).AddTicks(5789)
+                            UpdatedAt = new DateTime(2026, 10, 4, 18, 17, 17, 145, DateTimeKind.Utc).AddTicks(9643)
                         },
                         new
                         {
                             UserId = "usr-opr-001",
                             CreatedAt = new DateTime(2026, 9, 1, 8, 30, 0, 0, DateTimeKind.Utc),
                             Email = "manager@gmail.com",
-                            FullName = "Quản Lý",
+                            FullName = "Quản Lý Vận Hành",
                             IdentityCardEncrypted = "enc_aes_QL01",
                             IsActive = true,
-                            PasswordHash = "e2a0f8b1c4112e4f0dc2fecba72da9bf747167a5bf7bf2eeac54508ecfef591d",
+                            PasswordHash = "031251fac0abe0548e8ab26f5a7b39207090d374fee1b6b8c9a90639a65d627e",
                             PhoneEncrypted = "enc_aes_0972345678",
                             RoleId = 2,
                             Salt = "b2c3d4e5",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 30, 13, 9, 5, 400, DateTimeKind.Utc).AddTicks(5806)
+                            UpdatedAt = new DateTime(2026, 10, 4, 18, 17, 17, 146, DateTimeKind.Utc).AddTicks(97)
                         },
                         new
                         {
@@ -502,12 +613,12 @@ namespace Ticket.Migrations
                             FullName = "Lê Văn Tài",
                             IdentityCardEncrypted = "enc_aes_TX01",
                             IsActive = true,
-                            PasswordHash = "b347b5ae177db5523dc34cb740d216fce7c093a39e802a466a3d6cb46f90119e",
+                            PasswordHash = "fd192b3cb989f026765b805a1f296adb05d7f7999f93a0f60986190e0cbac47e",
                             PhoneEncrypted = "enc_aes_0963456789",
                             RoleId = 3,
                             Salt = "c3d4e5f6",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 30, 13, 9, 5, 400, DateTimeKind.Utc).AddTicks(5818)
+                            UpdatedAt = new DateTime(2026, 10, 4, 18, 17, 17, 146, DateTimeKind.Utc).AddTicks(267)
                         },
                         new
                         {
@@ -517,12 +628,12 @@ namespace Ticket.Migrations
                             FullName = "Hoàng Minh Đức",
                             IdentityCardEncrypted = "enc_aes_NV01",
                             IsActive = true,
-                            PasswordHash = "ae473c4ee4003d7398e7a0e5b3ee581b7e42d76535542dfba0a109a138096f4b",
+                            PasswordHash = "a15275a0686c6eec8957ed62a1536ddd45db5f1e23e8323b389dfd141db9a4c5",
                             PhoneEncrypted = "enc_aes_0915678901",
                             RoleId = 4,
                             Salt = "e5f6g7h8",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 9, 30, 13, 9, 5, 400, DateTimeKind.Utc).AddTicks(5828)
+                            UpdatedAt = new DateTime(2026, 10, 4, 18, 17, 17, 146, DateTimeKind.Utc).AddTicks(368)
                         });
                 });
 
@@ -567,8 +678,31 @@ namespace Ticket.Migrations
                     b.Navigation("Route");
                 });
 
+            modelBuilder.Entity("Ticket.Models.Seat", b =>
+                {
+                    b.HasOne("Ticket.Models.Bus", "Bus")
+                        .WithMany("Seats")
+                        .HasForeignKey("BusId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bus");
+                });
+
+            modelBuilder.Entity("Ticket.Models.SeatHold", b =>
+                {
+                    b.HasOne("Ticket.Models.Trip", null)
+                        .WithMany("SeatHolds")
+                        .HasForeignKey("TripId1");
+                });
+
             modelBuilder.Entity("Ticket.Models.Trip", b =>
                 {
+                    b.HasOne("Ticket.Models.Bus", "Bus")
+                        .WithMany("Trips")
+                        .HasForeignKey("BusId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Ticket.Models.Station", "DestinationStation")
                         .WithMany()
                         .HasForeignKey("DestinationStationId");
@@ -582,6 +716,8 @@ namespace Ticket.Migrations
                         .HasForeignKey("RouteId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Bus");
 
                     b.Navigation("DestinationStation");
 
@@ -620,6 +756,13 @@ namespace Ticket.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("Ticket.Models.Bus", b =>
+                {
+                    b.Navigation("Seats");
+
+                    b.Navigation("Trips");
+                });
+
             modelBuilder.Entity("Ticket.Models.BusRoute", b =>
                 {
                     b.Navigation("RouteStops");
@@ -640,6 +783,8 @@ namespace Ticket.Migrations
             modelBuilder.Entity("Ticket.Models.Trip", b =>
                 {
                     b.Navigation("Schedules");
+
+                    b.Navigation("SeatHolds");
                 });
 
             modelBuilder.Entity("Ticket.Models.User", b =>
