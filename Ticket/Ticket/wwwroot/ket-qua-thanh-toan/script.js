@@ -10,7 +10,11 @@ document.getElementById("paymentAmount").textContent = money(total);
 document.getElementById("paymentMethod").textContent = method === "Bank" ? "Thẻ ngân hàng" : method;
 document.getElementById("ticketBtn").href = `../ve/index.html?${new URLSearchParams({seats:seats.join(","),total:String(total)}).toString()}`;
 
-document.getElementById("transactionCode").textContent = `SBGD-${new Date().toISOString().slice(0,10).replaceAll("-","")}-00126`;
+// US-64: Hiển thị mã tham chiếu nội bộ thực (từ backend) hoặc mã fake nếu không có
+const transRef = params.get("transRef") || sessionStorage.getItem("lastTransRef") || null;
+document.getElementById("transactionCode").textContent = transRef
+    ? transRef
+    : `SBGD-${new Date().toISOString().slice(0,10).replaceAll("-","")}-${String(Math.floor(Math.random()*99999)+1).padStart(5,"0")}`;
 
 if (status === "failed") {
     const card = document.getElementById("resultCard");
