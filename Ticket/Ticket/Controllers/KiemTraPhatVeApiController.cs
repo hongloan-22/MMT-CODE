@@ -16,7 +16,7 @@ namespace Ticket.Controllers.Api
         }
 
         // =========================================================================
-        // HOA KỲ-122: KIỂM TRA VIỆC KHÔNG PHÁT VÉ KHIN THANH TOÁN CHƯA THÀNH CÔNG
+        // us-122: KIỂM TRA VIỆC KHÔNG PHÁT VÉ KHIN THANH TOÁN CHƯA THÀNH CÔNG
         // Endpoint: POST /api/KiemTraPhatVeApi/KiemTraThanhToanPhatVe
         // =========================================================================
         [HttpPost("KiemTraThanhToanPhatVe")]
