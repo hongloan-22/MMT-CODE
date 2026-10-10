@@ -1,41 +1,42 @@
+using Ticket.Models;
+
 namespace Ticket.Models
 {
     // ============================================================
-    // SPRINT 3 - US06: DTOs cho API Thanh Toán
-    // Ho tro: VNPay, MoMo, ZaloPay, BankTransfer, Cash
+    // US-65: DTOs cho API Thanh Toán (MoMo, VNPay, ZaloPay)
     // ============================================================
 
     // ---- REQUEST DTOs ----
 
     /// <summary>
-    /// Request khoi tao giao dich thanh toan.
+    /// Request khởi tạo giao dịch thanh toán
     /// </summary>
     public class CreatePaymentRequestDto
     {
-        /// <summary>Ma giu cho (tu API SeatBooking/hold)</summary>
+        /// <summary>Mã giữ chỗ (từ API SeatBooking/hold)</summary>
         public string HoldId { get; set; } = string.Empty;
 
-        /// <summary>Ma chuyen (VD: TRIP01)</summary>
+        /// <summary>Mã chuyến (VD: TRIP01)</summary>
         public string TripCode { get; set; } = string.Empty;
 
-        /// <summary>Danh sach ghe (VD: ["A1","A2"])</summary>
+        /// <summary>Danh sách ghế (VD: ["A1","A2"])</summary>
         public List<string> SeatIds { get; set; } = new();
 
-        /// <summary>Ma nguoi dung</summary>
+        /// <summary>Mã người dùng</summary>
         public string? UserId { get; set; }
 
-        /// <summary>Phuong thuc: VNPay | MoMo | ZaloPay | BankTransfer | Cash</summary>
+        /// <summary>Phương thức: VNPay | MoMo | ZaloPay | Bank</summary>
         public string Method { get; set; } = "VNPay";
 
-        /// <summary>So tien thanh toan (VND)</summary>
+        /// <summary>Số tiền thanh toán (VND)</summary>
         public decimal Amount { get; set; }
 
-        /// <summary>IP client (can cho VNPay)</summary>
+        /// <summary>IP client (cần cho VNPay)</summary>
         public string? ClientIp { get; set; }
     }
 
     /// <summary>
-    /// Response khi khoi tao giao dich thanh toan.
+    /// Response khi khởi tạo giao dịch thanh toán
     /// </summary>
     public class CreatePaymentResponseDto
     {
@@ -52,14 +53,14 @@ namespace Ticket.Models
         /// <summary>URL chuyen huong den cong thanh toan sandbox (null voi Cash)</summary>
         public string? PaymentUrl { get; set; }
 
-        /// <summary>Thoi gian het han giao dich</summary>
+        /// <summary>Thời gian hết hạn giao dịch</summary>
         public DateTime ExpiresAt { get; set; }
 
         public string Message { get; set; } = string.Empty;
     }
 
     /// <summary>
-    /// Response trang thai giao dich.
+    /// Response trạng thái giao dịch
     /// </summary>
     public class PaymentStatusResponseDto
     {
@@ -76,6 +77,10 @@ namespace Ticket.Models
 
     // ---- VNPay IPN / Return DTOs ----
 
+    /// <summary>
+    /// Dữ liệu VNPay trả về qua ReturnUrl và IPN (sandbox)
+    /// Tham số chính theo tài liệu VNPay
+    /// </summary>
     public class VNPayCallbackDto
     {
         public string? vnp_TxnRef { get; set; }
@@ -91,6 +96,10 @@ namespace Ticket.Models
 
     // ---- MoMo IPN / Return DTOs ----
 
+    /// <summary>
+    /// Dữ liệu MoMo trả về (sandbox)
+    /// Theo tài liệu MoMo API v2
+    /// </summary>
     public class MoMoCallbackDto
     {
         public string? partnerCode { get; set; }
@@ -110,6 +119,10 @@ namespace Ticket.Models
 
     // ---- ZaloPay IPN / Return DTOs ----
 
+    /// <summary>
+    /// Dữ liệu ZaloPay trả về (sandbox)
+    /// Theo tài liệu ZaloPay API
+    /// </summary>
     public class ZaloPayCallbackDto
     {
         public string? data { get; set; }
@@ -117,6 +130,9 @@ namespace Ticket.Models
         public int type { get; set; }
     }
 
+    /// <summary>
+    /// Dữ liệu bên trong trường "data" của ZaloPay callback
+    /// </summary>
     public class ZaloPayCallbackData
     {
         public string? app_id { get; set; }

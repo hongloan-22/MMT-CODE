@@ -5,7 +5,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const TRIP_ID = (urlParams.get("tripId") || "TRIP01").trim().toUpperCase();
 const USER_ID = urlParams.get("userId") || "usr-cus-001";
 const MAX_SEATS = 5;
-
 const API_BASE_URL = "/api/SeatBooking";
 
 let seats = [];
@@ -99,7 +98,7 @@ function renderSeats() {
         button.className = `seat ${seat.status}`;
         button.textContent = seat.id;
         button.dataset.seatId = seat.id;
-        button.setAttribute("aria-label", `Ghế ${seat.id} - ${getStatusText(seat.status)}`);
+        button.setAttribute("aria-label", `Ghế ${seat.id} ${getStatusText(seat.status)}`);
 
         // Khóa nếu không phải Available
         if (seat.status !== "available") {

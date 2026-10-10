@@ -43,6 +43,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var app = builder.Build();
 
+
 // =========================================================================
 // KHỞI TẠO CSDL VÀ SEED DATA TUYẾN - TRẠM
 // =========================================================================

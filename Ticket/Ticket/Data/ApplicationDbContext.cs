@@ -27,6 +27,7 @@ namespace Ticket.Data
         public DbSet<RouteStop> RouteStops { get; set; } = null!;
         public DbSet<Station> Stations { get; set; } = null!;
         public DbSet<Ticket.Models.Route> Routes { get; set; } = null!;
+        public DbSet<ElectronicTicket> ElectronicTickets { get; set; } = null!;
 
         // =========================
         // CHUYẾN XE & LỊCH TRÌNH
@@ -34,8 +35,13 @@ namespace Ticket.Data
         public DbSet<Trip> Trips { get; set; } = null!;
         public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
+        public DbSet<Models.Ticket> Tickets { get; set; } = null!;
+        public DbSet<RefundTransaction> RefundTransactions { get; set; } = null!;
+        public object Ticket { get; internal set; }
 
-        // =========================
+
+        public DbSet<Payment> Payments { get; set; } = null!;
+
         // XE, GHẾ & GIỮ CHỖ (SPRINT 2 - US-52, US-58)
         // =========================
         public DbSet<Bus> Buses { get; set; } = null!;
@@ -96,12 +102,29 @@ namespace Ticket.Data
                 .HasForeignKey(x => x.RouteId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+
+            // 5. Giao dịch thanh toán (US-64)
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.TransactionRef)
+                .IsUnique();
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.HoldId);
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.GatewayOrderId);
+
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Amount)
+                .HasColumnType("decimal(18,0)");
+
             // Liên kết Chuyến xe với Xe (Trip -> Bus) [US-52]
             modelBuilder.Entity<Trip>()
                 .HasOne(x => x.Bus)
                 .WithMany(b => b.Trips)
                 .HasForeignKey(x => x.BusId)
                 .OnDelete(DeleteBehavior.SetNull);
+
 
             // 4. Lịch trình chuyến xe (TripSchedule)
             modelBuilder.Entity<TripSchedule>()

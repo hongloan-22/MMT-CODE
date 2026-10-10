@@ -5,18 +5,17 @@ using Ticket.Service;
 namespace Ticket.Controllers.Api
 {
     // ============================================================
-    // SPRINT 3 - US06: API Controller Thanh Toan
+    // US-64 + US-65: API Controller Thanh Toán
     //
     // Endpoints:
-    //   POST /api/payment/create          - Tao giao dich
-    //   GET  /api/payment/{transactionCode} - Truy van trang thai
-    //   GET  /api/payment/vnpay/return    - Callback VNPay (redirect)
-    //   POST /api/payment/vnpay/ipn       - IPN VNPay
-    //   POST /api/payment/momo/return     - Callback MoMo (redirect)
-    //   POST /api/payment/momo/ipn        - IPN MoMo
-    //   POST /api/payment/zalopay/callback- Callback ZaloPay
-    //   GET  /api/payment/zalopay/return  - Redirect ZaloPay
-    //   POST /api/payment/cancel          - Huy giao dich
+    //   POST /api/payment/create          - Tạo giao dịch (US-64 + US-65)
+    //   GET  /api/payment/{transRef}      - Truy vấn trạng thái (US-64)
+    //   GET  /api/payment/vnpay/return    - Nhận callback VNPay (US-65)
+    //   POST /api/payment/vnpay/ipn       - Nhận IPN VNPay (US-65)
+    //   POST /api/payment/momo/return     - Nhận callback MoMo (US-65)
+    //   POST /api/payment/momo/ipn        - Nhận IPN MoMo (US-65)
+    //   POST /api/payment/zalopay/callback- Nhận callback ZaloPay (US-65)
+    //   POST /api/payment/cancel          - Huỷ giao dịch
     // ============================================================
 
     [ApiController]
@@ -33,7 +32,8 @@ namespace Ticket.Controllers.Api
         }
 
         /// <summary>
-        /// Tao giao dich thanh toan va lay URL chuyen huong cong thanh toan.
+        /// US-64 + US-65: Tạo giao dịch thanh toán và lấy URL chuyển hướng cổng thanh toán
+        /// POST /api/payment/create
         /// </summary>
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequestDto request)
@@ -47,7 +47,7 @@ namespace Ticket.Controllers.Api
             if (request.Amount <= 0)
                 return BadRequest(new { Success = false, Message = "Số tiền thanh toán phải lớn hơn 0." });
 
-            // Gan IP client de VNPay xac thuc
+            // Gắn IP client để VNPay xác thực
             request.ClientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
 
             var result = await _paymentService.CreatePaymentAsync(request);
@@ -55,14 +55,15 @@ namespace Ticket.Controllers.Api
             if (!result.Success)
                 return BadRequest(result);
 
-            _logger.LogInformation("[API Payment] Tao giao dich {Code} thanh cong | Method={Method}",
-                result.TransactionCode, result.Method);
+            _logger.LogInformation("[API US-64] Tạo giao dịch {TransRef} thành công | Method={Method}",
+                result.TransactionRef, result.Method);
 
             return Ok(result);
         }
 
         /// <summary>
-        /// Tra cuu trang thai giao dich theo ma tham chieu noi bo.
+        /// US-64: Tra cứu trạng thái giao dịch theo mã tham chiếu nội bộ
+        /// GET /api/payment/{transactionRef}
         /// </summary>
         [HttpGet("{transactionCode}")]
         public async Task<IActionResult> GetPaymentStatus(string transactionCode)
@@ -76,9 +77,13 @@ namespace Ticket.Controllers.Api
         }
 
         // ============================================================
-        // VNPay Callback & IPN
+        // US-65: VNPay Callback & IPN
         // ============================================================
 
+        /// <summary>
+        /// US-65: Nhận kết quả từ VNPay qua ReturnUrl (GET - trình duyệt redirect về)
+        /// GET /api/payment/vnpay/return
+        /// </summary>
         [HttpGet("vnpay/return")]
         public async Task<IActionResult> VNPayReturn([FromQuery] VNPayCallbackDto callback)
         {
@@ -87,11 +92,16 @@ namespace Ticket.Controllers.Api
 
             bool success = await _paymentService.ProcessVNPayCallbackAsync(callback);
 
+            // Redirect người dùng về trang kết quả thanh toán
             string status = (success && callback.vnp_ResponseCode == "00") ? "success" : "failed";
             string redirectUrl = $"/ket-qua-thanh-toan/index.html?status={status}&method=VNPay&gateway_ref={callback.vnp_TransactionNo}";
             return Redirect(redirectUrl);
         }
 
+        /// <summary>
+        /// US-65: Nhận IPN từ VNPay (POST - server-to-server)
+        /// POST /api/payment/vnpay/ipn
+        /// </summary>
         [HttpPost("vnpay/ipn")]
         public async Task<IActionResult> VNPayIPN([FromQuery] VNPayCallbackDto callback)
         {
@@ -100,6 +110,7 @@ namespace Ticket.Controllers.Api
 
             bool success = await _paymentService.ProcessVNPayCallbackAsync(callback);
 
+            // VNPay yêu cầu trả về JSON xác nhận đã nhận IPN
             if (success)
                 return Ok(new { RspCode = "00", Message = "Confirm Success" });
 
@@ -107,9 +118,13 @@ namespace Ticket.Controllers.Api
         }
 
         // ============================================================
-        // MoMo Callback & IPN
+        // US-65: MoMo Callback & IPN
         // ============================================================
 
+        /// <summary>
+        /// US-65: Nhận kết quả từ MoMo (POST - redirect + IPN)
+        /// POST /api/payment/momo/return
+        /// </summary>
         [HttpPost("momo/return")]
         public async Task<IActionResult> MoMoReturn([FromBody] MoMoCallbackDto callback)
         {
@@ -122,6 +137,10 @@ namespace Ticket.Controllers.Api
             return Redirect(redirectUrl);
         }
 
+        /// <summary>
+        /// US-65: Nhận IPN từ MoMo (server-to-server)
+        /// POST /api/payment/momo/ipn
+        /// </summary>
         [HttpPost("momo/ipn")]
         public async Task<IActionResult> MoMoIPN([FromBody] MoMoCallbackDto callback)
         {
@@ -133,9 +152,13 @@ namespace Ticket.Controllers.Api
         }
 
         // ============================================================
-        // ZaloPay Callback
+        // US-65: ZaloPay Callback
         // ============================================================
 
+        /// <summary>
+        /// US-65: Nhận callback từ ZaloPay (POST - server-to-server)
+        /// POST /api/payment/zalopay/callback
+        /// </summary>
         [HttpPost("zalopay/callback")]
         public async Task<IActionResult> ZaloPayCallback([FromBody] ZaloPayCallbackDto callback)
         {
@@ -143,12 +166,17 @@ namespace Ticket.Controllers.Api
 
             bool success = await _paymentService.ProcessZaloPayCallbackAsync(callback);
 
+            // ZaloPay yêu cầu trả về JSON
             if (success)
                 return Ok(new { return_code = 1, return_message = "success" });
 
             return Ok(new { return_code = 0, return_message = "failed" });
         }
 
+        /// <summary>
+        /// ZaloPay redirect URL (GET - trình duyệt redirect về sau thanh toán)
+        /// GET /api/payment/zalopay/return
+        /// </summary>
         [HttpGet("zalopay/return")]
         public IActionResult ZaloPayReturn([FromQuery] string? apptransid, [FromQuery] int status = 1)
         {
@@ -160,9 +188,14 @@ namespace Ticket.Controllers.Api
         }
 
         // ============================================================
-        // Huy giao dich
+        // Huỷ giao dịch
         // ============================================================
 
+        /// <summary>
+        /// Huỷ giao dịch thanh toán (khi người dùng chủ động huỷ)
+        /// POST /api/payment/cancel
+        /// Body: { "transactionRef": "SBGD-...", "reason": "..." }
+        /// </summary>
         [HttpPost("cancel")]
         public async Task<IActionResult> CancelPayment([FromBody] CancelPaymentDto request)
         {
@@ -175,6 +208,14 @@ namespace Ticket.Controllers.Api
                 return BadRequest(new { Success = false, Message = "Không thể huỷ giao dịch. Giao dịch không tồn tại hoặc đã hoàn tất." });
 
             return Ok(new { Success = true, Message = $"Đã huỷ giao dịch {request.TransactionCode}." });
-        }
+    }
+
+    /// <summary>
+    /// DTO cho request huỷ giao dịch
+    /// </summary>
+    public class CancelPaymentDto
+    {
+        public string TransactionRef { get; set; } = string.Empty;
+        public string? Reason { get; set; }
     }
 }

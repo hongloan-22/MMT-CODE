@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -80,14 +81,14 @@ namespace Ticket.Service
                 if (int.TryParse(tail, out var n))
                 {
                     seq = n + 1;
-                }
+        }
             }
 
             return $"{prefix}{seq:D5}";
         }
 
         // ============================================================
-        // Tao giao dich va luu CSDL
+        // US-64: Tạo giao dịch và lưu CSDL
         // ============================================================
         public async Task<CreatePaymentResponseDto> CreatePaymentAsync(CreatePaymentRequestDto request)
         {
@@ -166,6 +167,8 @@ namespace Ticket.Service
                 _ => string.Empty
             };
 
+            // Cập nhật trạng thái sang Processing
+            payment.Status = PaymentStatus.Processing;
             payment.ReturnUrl = paymentUrl;
 
             _context.PaymentTransactions.Add(payment);
@@ -187,7 +190,7 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Truy van trang thai giao dich
+        // US-64: Truy vấn trạng thái giao dịch
         // ============================================================
         public async Task<PaymentStatusResponseDto?> GetPaymentStatusAsync(string transactionCode)
         {
@@ -222,7 +225,8 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Callback VNPay Sandbox
+        // US-65: Xử lý callback từ VNPay Sandbox
+        // Tài liệu: https://sandbox.vnpayment.vn/apis/docs/
         // ============================================================
         public async Task<bool> ProcessVNPayCallbackAsync(VNPayCallbackDto callback)
         {
@@ -270,7 +274,8 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Callback MoMo Sandbox
+        // US-65: Xử lý callback từ MoMo Sandbox
+        // Tài liệu: https://developers.momo.vn/v3/docs/payment/api/result-handling/
         // ============================================================
         public async Task<bool> ProcessMoMoCallbackAsync(MoMoCallbackDto callback)
         {
@@ -315,13 +320,14 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Callback ZaloPay Sandbox
+        // US-65: Xử lý callback từ ZaloPay Sandbox
+        // Tài liệu: https://docs.zalopay.vn/v2/
         // ============================================================
         public async Task<bool> ProcessZaloPayCallbackAsync(ZaloPayCallbackDto callback)
         {
             if (callback.data == null || callback.mac == null) return false;
 
-            // Xac thuc MAC (HMAC-SHA256 voi Key2)
+            // Xác thực MAC (HMAC-SHA256 với Key2)
             string computedMac = ComputeHmacSha256(callback.data, ZaloPayKey2);
             if (!computedMac.Equals(callback.mac, StringComparison.OrdinalIgnoreCase))
             {
@@ -329,6 +335,7 @@ namespace Ticket.Service
                 return false;
             }
 
+            // Parse data JSON
             ZaloPayCallbackData? data;
             try
             {
@@ -342,7 +349,8 @@ namespace Ticket.Service
 
             if (data?.app_trans_id == null) return false;
 
-            // ZaloPay dung app_trans_id dang YYMMDD_OrderId
+            // ZaloPay dùng app_trans_id dạng YYMMDD_OrderId
+            // Ta tìm theo phần sau dấu "_"
             string orderIdPart = data.app_trans_id.Contains('_')
                 ? data.app_trans_id.Split('_')[1]
                 : data.app_trans_id;
@@ -381,7 +389,7 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Huy giao dich
+        // Hủy giao dịch
         // ============================================================
         public async Task<bool> CancelPaymentAsync(string transactionCode, string reason = "")
         {
@@ -432,7 +440,8 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Xay dung URL thanh toan VNPay Sandbox (HMAC-SHA512)
+        // US-65: Xây dựng URL thanh toán VNPay Sandbox
+        // Theo chuẩn VNPay HMAC-SHA512
         // ============================================================
         private string BuildVNPayUrl(PaymentTransaction payment)
         {
@@ -458,15 +467,19 @@ namespace Ticket.Service
                 { "vnp_ExpireDate", expireDate }
             };
 
+            // Xây dựng chuỗi query để ký
             string queryString = string.Join("&", vnpParams.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
             string rawSignature = string.Join("&", vnpParams.Select(kv => $"{kv.Key}={kv.Value}"));
+
+            // Ký HMAC-SHA512
             string secureHash = ComputeHmacSha512(rawSignature, VNPayHashSecret);
 
             return $"{VNPayPaymentUrl}?{queryString}&vnp_SecureHash={secureHash}";
         }
 
         // ============================================================
-        // Xay dung URL thanh toan MoMo Sandbox (HMAC-SHA256)
+        // US-65: Xây dựng URL thanh toán MoMo Sandbox
+        // Theo chuẩn MoMo API v2 (HMAC-SHA256)
         // ============================================================
         private async Task<string> BuildMoMoUrlAsync(PaymentTransaction payment)
         {
@@ -474,6 +487,7 @@ namespace Ticket.Service
             string orderInfo = $"Thanh toan ve xe SmartBus - {payment.TransactionCode}";
             long amount = (long)payment.Amount;
 
+            // Chuỗi raw để ký theo đúng thứ tự MoMo yêu cầu
             string rawSignature = $"accessKey={MoMoAccessKey}" +
                                   $"&amount={amount}" +
                                   $"&extraData=" +
@@ -530,7 +544,8 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Xay dung URL thanh toan ZaloPay Sandbox (HMAC-SHA256)
+        // US-65: Xây dựng URL thanh toán ZaloPay Sandbox
+        // Theo chuẩn ZaloPay API v2 (HMAC-SHA256)
         // ============================================================
         private async Task<string> BuildZaloPayUrlAsync(PaymentTransaction payment)
         {
@@ -543,6 +558,7 @@ namespace Ticket.Service
             });
             long amount = (long)payment.Amount;
 
+            // Chuỗi raw để ký: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
             string rawSignature = $"{ZaloPayAppId}|{appTransId}|{payment.UserId ?? "guest"}|{amount}|{appTime}|{embedData}|{item}";
             string mac = ComputeHmacSha256(rawSignature, ZaloPayKey1);
 
@@ -582,11 +598,12 @@ namespace Ticket.Service
                 _logger.LogError(ex, "[ZaloPay] Loi khi goi API sandbox");
             }
 
+            // Fallback: Trả về URL sandbox demo nếu không gọi được API
             return $"https://sb-openapi.zalopay.vn/pay?app_trans_id={appTransId}";
         }
 
         // ============================================================
-        // Thong tin chuyen khoan ngan hang
+        // Thông tin chuyển khoản ngân hàng (Bank Transfer)
         // ============================================================
         private static string BuildBankTransferInfo(PaymentTransaction payment)
         {
@@ -597,7 +614,7 @@ namespace Ticket.Service
         }
 
         // ============================================================
-        // Tien ich
+        // Tiện ích: Xác thực chữ ký VNPay (HMAC-SHA512)
         // ============================================================
         private static bool TryParseMethod(string raw, out PaymentMethod method)
         {
@@ -617,6 +634,7 @@ namespace Ticket.Service
 
         private static bool VerifyVNPaySignature(VNPayCallbackDto callback, string hashSecret)
         {
+            // Thu thập tất cả tham số trừ vnp_SecureHash
             var sortedParams = new SortedDictionary<string, string>();
             var props = typeof(VNPayCallbackDto).GetProperties();
             foreach (var prop in props)
@@ -632,6 +650,9 @@ namespace Ticket.Service
             return computedHash.Equals(callback.vnp_SecureHash, StringComparison.OrdinalIgnoreCase);
         }
 
+        // ============================================================
+        // Tiện ích: Xác thực chữ ký MoMo (HMAC-SHA256)
+        // ============================================================
         private static bool VerifyMoMoSignature(MoMoCallbackDto callback, string secretKey)
         {
             string rawSignature = $"accessKey={callback.partnerCode}" +
@@ -669,6 +690,7 @@ namespace Ticket.Service
         private static string GetStatusMessage(PaymentStatus status) => status switch
         {
             PaymentStatus.Pending => "Đang chờ thanh toán",
+            PaymentStatus.Processing => "Đang xử lý tại cổng thanh toán",
             PaymentStatus.Success => "Thanh toán thành công",
             PaymentStatus.Failed => "Thanh toán thất bại",
             PaymentStatus.Cancelled => "Giao dịch đã bị huỷ",

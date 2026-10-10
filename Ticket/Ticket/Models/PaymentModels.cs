@@ -4,16 +4,16 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Ticket.Models
 {
     // ============================================================
-    // SPRINT 3 - US06: CSDL Giao Dich Thanh Toan
-    // Thuc the PaymentTransaction luu:
-    //   - Trang thai thanh toan (PaymentStatus)
-    //   - Ma tham chieu noi bo (TransactionCode)
-    //   - Ma tham chieu tu cong thanh toan (ProviderTransactionId / OrderCode)
-    //   - Lien ket voi phien giu cho (SeatHold) va nguoi dung
+    // US-64: CSDL Giao Dịch Thanh Toán
+    // Thiết kế bảng Payment lưu trữ:
+    //   - Trạng thái thanh toán (PaymentStatus)
+    //   - Mã tham chiếu nội bộ (TransactionRef)
+    //   - Mã tham chiếu từ cổng thanh toán bên ngoài (GatewayRef)
+    //   - Thông tin liên kết với SeatHold và User
     // ============================================================
 
     /// <summary>
-    /// Trang thai giao dich thanh toan (theo tai lieu nghiep vu Sprint 3).
+    /// Enum trạng thái giao dịch thanh toán
     /// </summary>
     public enum PaymentStatus
     {
@@ -25,7 +25,7 @@ namespace Ticket.Models
     }
 
     /// <summary>
-    /// Phuong thuc thanh toan.
+    /// Enum phương thức thanh toán
     /// </summary>
     public enum PaymentMethod
     {
@@ -37,7 +37,7 @@ namespace Ticket.Models
     }
 
     /// <summary>
-    /// Bang PaymentTransaction - luu thong tin giao dich thanh toan.
+    /// Bảng Payment - Lưu thông tin giao dịch thanh toán
     /// </summary>
     [Table("payment_transactions")]
     public class PaymentTransaction
@@ -45,30 +45,33 @@ namespace Ticket.Models
         [Key]
         public int Id { get; set; }
 
-        // ------ MA THAM CHIEU NOI BO ------
+        // ------ MÃ THAM CHIẾU NỘI BỘ ------
         /// <summary>
-        /// Ma giao dich noi bo duy nhat. Dinh dang: SBGD-YYYYMMDD-NNNNN
+        /// Mã giao dịch nội bộ duy nhất của hệ thống SmartBus
+        /// Định dạng: SBGD-YYYYMMDD-XXXXX (VD: SBGD-20261003-00001)
         /// </summary>
         [Required]
         [StringLength(50)]
         [Column("transaction_code")]
         public string TransactionCode { get; set; } = string.Empty;
 
-        // ------ MA THAM CHIEU TU CONG THANH TOAN ------
+        // ------ MÃ THAM CHIẾU TỪ CỔNG THANH TOÁN ------
         /// <summary>
-        /// Ma don hang gui den cong thanh toan (khong dau gach ngang).
+        /// Mã giao dịch do cổng thanh toán bên ngoài cấp (VNPay/MoMo/ZaloPay trả về)
+        /// Dùng để đối soát và tra cứu tại cổng thanh toán
         /// </summary>
         [StringLength(100)]
         [Column("order_code")]
         public string? OrderCode { get; set; }
 
         /// <summary>
-        /// Ma giao dich do cong thanh toan ben ngoai cap.
+        /// Mã đơn hàng gửi đến cổng thanh toán (app_trans_id cho ZaloPay, orderId cho MoMo, vnp_TxnRef cho VNPay)
         /// </summary>
         [StringLength(100)]
         [Column("provider_transaction_id")]
         public string? ProviderTransactionId { get; set; }
 
+        // ------ THÔNG TIN LIÊN KẾT ------
         /// <summary>
         /// Cong thanh toan su dung (VNPay/MoMo/ZaloPay/BankTransfer/Cash).
         /// </summary>
@@ -87,7 +90,7 @@ namespace Ticket.Models
         public string HoldId { get; set; } = string.Empty;
 
         /// <summary>
-        /// Ma chuyen xe (VD: TRIP01).
+        /// Mã chuyến xe (TripCode, VD: TRIP01)
         /// </summary>
         [Required]
         [StringLength(50)]
@@ -95,7 +98,7 @@ namespace Ticket.Models
         public string TripCode { get; set; } = string.Empty;
 
         /// <summary>
-        /// Danh sach ma ghe da dat (VD: "A1,A2,B3").
+        /// Danh sách mã ghế đã đặt (lưu dưới dạng JSON, VD: "A1,A2,B3")
         /// </summary>
         [Required]
         [StringLength(500)]
@@ -103,13 +106,16 @@ namespace Ticket.Models
         public string SeatIds { get; set; } = string.Empty;
 
         /// <summary>
-        /// Ma nguoi dung thuc hien giao dich.
+        /// Mã người dùng thực hiện giao dịch
         /// </summary>
         [StringLength(50)]
         [Column("user_id")]
         public string? UserId { get; set; }
 
-        // ------ THONG TIN THANH TOAN ------
+        // ------ THÔNG TIN THANH TOÁN ------
+        /// <summary>
+        /// Phương thức thanh toán
+        /// </summary>
         [Required]
         [Column("method")]
         public PaymentMethod Method { get; set; }
@@ -140,27 +146,45 @@ namespace Ticket.Models
         [Column("gateway_response_code")]
         public string? GatewayResponseCode { get; set; }
 
+        /// <summary>
+        /// Mô tả phản hồi từ cổng thanh toán
+        /// </summary>
         [StringLength(500)]
         [Column("gateway_response_message")]
         public string? GatewayResponseMessage { get; set; }
 
+        /// <summary>
+        /// Chữ ký xác thực (checksum) nhận từ cổng thanh toán để xác minh tính toàn vẹn
+        /// </summary>
         [StringLength(256)]
         [Column("gateway_signature")]
         public string? GatewaySignature { get; set; }
 
+        /// <summary>
+        /// URL redirect sau khi thanh toán (cổng trả về người dùng)
+        /// </summary>
         [StringLength(500)]
         [Column("return_url")]
         public string? ReturnUrl { get; set; }
 
+        /// <summary>
+        /// URL IPN/webhook nhận kết quả từ cổng thanh toán (server-to-server)
+        /// </summary>
         [StringLength(500)]
         [Column("ipn_url")]
         public string? IpnUrl { get; set; }
 
-        // ------ THONG TIN BO SUNG ------
+        // ------ THÔNG TIN BỔ SUNG ------
+        /// <summary>
+        /// IP của người dùng khi thực hiện giao dịch (dùng để xác thực VNPay)
+        /// </summary>
         [StringLength(45)]
         [Column("user_ip_address")]
         public string? UserIpAddress { get; set; }
 
+        /// <summary>
+        /// Ghi chú nội bộ (nếu có)
+        /// </summary>
         [StringLength(500)]
         [Column("note")]
         public string? Note { get; set; }
@@ -169,9 +193,15 @@ namespace Ticket.Models
         public int CallbackCount { get; set; } = 0;
 
         // ------ COMPUTED PROPERTIES ------
+        /// <summary>
+        /// Kiểm tra giao dịch đã hết hạn chưa
+        /// </summary>
         [NotMapped]
         public bool IsExpired => DateTime.UtcNow > ExpiresAt && Status == PaymentStatus.Pending;
 
+        /// <summary>
+        /// Kiểm tra giao dịch đã hoàn tất (thành công hoặc thất bại)
+        /// </summary>
         [NotMapped]
         public bool IsFinished => Status == PaymentStatus.Success
                                || Status == PaymentStatus.Failed
