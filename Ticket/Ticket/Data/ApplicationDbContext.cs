@@ -36,15 +36,29 @@ namespace Ticket.Data
         public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<BusSchedule> BusSchedules { get; set; } = null!;
         public DbSet<Models.Ticket> Tickets { get; set; } = null!;
-        public DbSet<RefundTransaction> RefundTransactions { get; set; } = null!;
+
+
+        // ✅ FIX #1: ĐÃ XOÁ dòng rác `public object Ticket { get; internal set; }`
+        //    (dòng này khiến EF cố map object → sinh shadow property hoặc crash migration)
 
         // =========================
-        // THANH TOÁN (US-64)
+        // THANH TOÁN & HOÀN TIỀN
         // =========================
         public DbSet<Payment> Payments { get; set; } = null!;
 
+        // ✅ US-109 → US-111: Entity RefundTransaction (đảm bảo Models/RefundTransaction.cs đã tồn tại)
+        public DbSet<RefundTransaction> RefundTransactions { get; set; } = null!;
+
+        // =========================
+        // XE, GHẾ & GIỮ CHỖ (SPRINT 2 - US-52, US-58)
+
+       
+
+  
+
         // =========================
         // XE, GHẾ & GIỮ CHỖ (US-52, US-58)
+
         // =========================
         public DbSet<Bus> Buses { get; set; } = null!;
         public DbSet<Seat> Seats { get; set; } = null!;
@@ -54,7 +68,9 @@ namespace Ticket.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1. Phân quyền & Tài khoản
+            // =========================
+            // 1. PHÂN QUYỀN & TÀI KHOẢN
+            // =========================
             modelBuilder.Entity<Role>()
                 .HasIndex(r => r.RoleCode)
                 .IsUnique();
@@ -75,7 +91,9 @@ namespace Ticket.Data
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 2. Tuyến xe -> Điểm dừng
+            // =========================
+            // 2. TUYẾN XE -> ĐIỂM DỪNG
+            // =========================
             modelBuilder.Entity<RouteStop>()
                 .HasOne(x => x.Route)
                 .WithMany(x => x.RouteStops)
@@ -88,7 +106,9 @@ namespace Ticket.Data
                 .HasForeignKey(x => x.StopId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 3. Chuyến xe (Trip)
+            // =========================
+            // 3. CHUYẾN XE (TRIP)
+            // =========================
             modelBuilder.Entity<Trip>()
                 .HasIndex(x => x.TripCode)
                 .IsUnique();
@@ -99,13 +119,26 @@ namespace Ticket.Data
                 .HasForeignKey(x => x.RouteId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ✅ FIX #4a: decimal cho Trip.Price (SQLite không có decimal native)
+            modelBuilder.Entity<Trip>()
+                .Property(t => t.Price)
+                .HasColumnType("decimal(18,0)");
+
+            // Liên kết Chuyến xe với Xe (Trip -> Bus) [US-52]
+
             modelBuilder.Entity<Trip>()
                 .HasOne(x => x.Bus)
                 .WithMany(b => b.Trips)
                 .HasForeignKey(x => x.BusId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+
+            // =========================
+            // 4. LỊCH TRÌNH CHUYẾN XE (TRIPSCHEDULE)
+            // =========================
+
             // 4. Lịch trình chuyến xe (TripSchedule)
+
             modelBuilder.Entity<TripSchedule>()
                 .HasOne(x => x.Trip)
                 .WithMany(x => x.Schedules)
@@ -126,7 +159,13 @@ namespace Ticket.Data
                 .HasIndex(x => new { x.TripId, x.StopId })
                 .IsUnique();
 
+
+            // =========================
+            // 5. GIAO DỊCH THANH TOÁN (US-64)
+            // =========================
+
             // 5. Giao dịch thanh toán (US-64)
+
             modelBuilder.Entity<Payment>()
                 .HasIndex(p => p.TransactionRef)
                 .IsUnique();
@@ -141,7 +180,13 @@ namespace Ticket.Data
                 .Property(p => p.Amount)
                 .HasColumnType("decimal(18,0)");
 
+
+            // =========================
+            // 6. CẤU HÌNH XE & GHẾ (US-52)
+            // =========================
+
             // 6. Cấu hình Xe & Ghế (US-52)
+
             modelBuilder.Entity<Seat>()
                 .HasOne(s => s.Bus)
                 .WithMany(b => b.Seats)
@@ -152,11 +197,65 @@ namespace Ticket.Data
                 .HasIndex(s => new { s.BusId, s.SeatNumber })
                 .IsUnique();
 
+            // ✅ FIX #4b: decimal cho Seat.Price
+            modelBuilder.Entity<Seat>()
+                .Property(s => s.Price)
+                .HasColumnType("decimal(18,0)");
+
+            // =========================
+            // 7. PHIÊN GIỮ CHỖ (US-58)
+            // =========================
+            modelBuilder.Entity<SeatHold>()
+                .HasIndex(sh => new { sh.TripId, sh.ExpiresAt });
+
+            // ✅ FIX TRIỆT ĐỂ: Ignore navigation Trip.SeatHolds
+            //    Nguyên nhân: Trip.SeatHolds khiến EF cố tạo quan hệ Trip ↔ SeatHold
+            //    → nhưng SeatHold.TripId (string "TRIP01") lệch kiểu với Trip.Id (int)
+            //    → EF đẻ shadow TripId1, TripId2, TripId3... mãi không dứt
+            modelBuilder.Entity<Trip>().Ignore(t => t.SeatHolds);
+
             // 7. Cấu hình Phiên giữ chỗ (US-58)
             modelBuilder.Entity<SeatHold>()
                 .HasIndex(sh => new { sh.TripId, sh.ExpiresAt });
 
-            // Nạp dữ liệu mẫu
+
+            // ✅ Backup dập các shadow cũ nếu còn sót từ migration trước
+            modelBuilder.Entity<SeatHold>().Ignore("TripId1");
+            modelBuilder.Entity<SeatHold>().Ignore("TripId2");
+            modelBuilder.Entity<SeatHold>().Ignore("TripId3");
+
+            // =========================
+            // 8. HOÀN TIỀN (US-109 → US-114)
+            // =========================
+            modelBuilder.Entity<RefundTransaction>()
+                .Property(r => r.Amount)
+                .HasColumnType("decimal(18,0)");
+
+            modelBuilder.Entity<RefundTransaction>()
+                .Property(r => r.Fee)
+                .HasColumnType("decimal(18,0)");
+
+            modelBuilder.Entity<RefundTransaction>()
+                .HasIndex(r => r.Status);
+
+            modelBuilder.Entity<RefundTransaction>()
+                .HasIndex(r => r.TicketId);
+
+            modelBuilder.Entity<RefundTransaction>()
+                .HasOne(r => r.Ticket)
+                .WithOne(t => t.RefundTransaction)
+                .HasForeignKey<RefundTransaction>(r => r.TicketId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RefundTransaction>()
+                .HasOne(r => r.ProcessedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.ProcessedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // =========================
+            // SEED DATA
+            // =========================
             SeedData(modelBuilder);
         }
 

@@ -8,7 +8,8 @@ namespace Ticket.Services
 {
     public interface ITicketService
     {
-        Task<bool> CancelTicketAsync(int ticketId, int userId, string reason);
+        // ✅ MỚI
+        Task<bool> CancelTicketAsync(int ticketId, string userId, string reason);
     }
 
     public class TicketService : ITicketService
@@ -22,7 +23,8 @@ namespace Ticket.Services
             _refundPolicy = refundPolicy;
         }
 
-        public async Task<bool> CancelTicketAsync(int ticketId, int userId, string reason)
+        // ✅ MỚI
+        public async Task<bool> CancelTicketAsync(int ticketId, string userId, string reason)
         {
             var ticket = await _context.Tickets
                 .Include(t => t.Seat)
