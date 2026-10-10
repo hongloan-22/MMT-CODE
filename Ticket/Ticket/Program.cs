@@ -49,9 +49,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // 5. ĐĂNG KÝ CÁC SERVICE GIỮ GHẾ, THANH TOÁN, VÉ (US-97 -> US-111)
 // =========================================================================
 builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
-builder.Services.AddSingleton<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IRefundService, RefundService>();
-builder.Services.AddScoped<ITicketService, TicketService>();
+
+// 5. Dang ky Service thanh toan Sprint 3 (US06) - Scoped vi dung DbContext
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var app = builder.Build();
 
