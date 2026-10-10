@@ -181,6 +181,55 @@ namespace Ticket.Service
             };
         }
 
+        // Xác nhận đặt chỗ sau khi cổng thanh toán xác nhận giao dịch thành công.
+        // Có tính idempotent: callback gửi lặp lại vẫn không làm hỏng trạng thái ghế.
+        public bool ConfirmHold(string holdId, out string message)
+        {
+            lock (_lockObject)
+            {
+                if (!_holds.TryGetValue(holdId, out var hold))
+                {
+                    message = "Không tìm thấy mã giữ chỗ!";
+                    return false;
+                }
+
+                if (hold.IsConfirmed)
+                {
+                    message = "Giữ chỗ đã được xác nhận trước đó.";
+                    return true;
+                }
+
+                if (hold.IsReleased || DateTime.UtcNow > hold.ExpiresAt)
+                {
+                    message = "Giữ chỗ đã bị giải phóng hoặc hết hạn, không thể xác nhận.";
+                    return false;
+                }
+
+                if (!_tripSeatMaps.TryGetValue(hold.TripId, out var seats))
+                {
+                    message = "Không tìm thấy sơ đồ ghế của chuyến.";
+                    return false;
+                }
+
+                var heldSeats = seats.Where(seat =>
+                    hold.SeatIds.Contains(seat.SeatId, StringComparer.OrdinalIgnoreCase)).ToList();
+
+                if (heldSeats.Count != hold.SeatIds.Count ||
+                    heldSeats.Any(seat => seat.Status != SeatStatus.Held))
+                {
+                    message = "Trạng thái ghế không còn hợp lệ để xác nhận.";
+                    return false;
+                }
+
+                foreach (var seat in heldSeats)
+                    seat.Status = SeatStatus.Booked;
+
+                hold.IsConfirmed = true;
+                message = "Thanh toán thành công, đặt chỗ và ghế đã được xác nhận.";
+                return true;
+            }
+        }
+
         // 4. Giải phóng (Hủy) giữ chỗ
         public bool ReleaseHold(string holdId, out string message)
         {

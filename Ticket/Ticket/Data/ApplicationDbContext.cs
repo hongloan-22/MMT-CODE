@@ -108,7 +108,15 @@ namespace Ticket.Data
                 .HasIndex(p => p.HoldId);
 
             modelBuilder.Entity<Payment>()
-                .HasIndex(p => p.GatewayOrderId);
+                .HasIndex(p => p.GatewayOrderId)
+                .IsUnique();
+
+            // Chống tạo nhiều vé đang Booked cho cùng ghế trong cùng lịch trình.
+            // Vé đã hủy không bị chặn đặt lại vì đây là filtered unique index.
+            modelBuilder.Entity<Models.Ticket>()
+                .HasIndex(t => new { t.ScheduleId, t.SeatId })
+                .IsUnique()
+                .HasFilter("Status = 1"); // TicketStatus.Booked = 1
 
             modelBuilder.Entity<Payment>()
                 .Property(p => p.Amount)
@@ -141,6 +149,17 @@ namespace Ticket.Data
 
             modelBuilder.Entity<TripSchedule>()
                 .HasIndex(x => new { x.TripId, x.StopId })
+                .IsUnique();
+
+            // Vé điện tử: khóa duy nhất để retry cùng yêu cầu không tạo thêm vé/giao dịch.
+            modelBuilder.Entity<ElectronicTicket>()
+                .HasIndex(t => t.IdempotencyKey)
+                .IsUnique();
+            modelBuilder.Entity<ElectronicTicket>()
+                .HasIndex(t => t.TransactionId)
+                .IsUnique();
+            modelBuilder.Entity<ElectronicTicket>()
+                .HasIndex(t => t.TicketCode)
                 .IsUnique();
 
             // 5. Cấu hình Xe & Ghế (US-52)

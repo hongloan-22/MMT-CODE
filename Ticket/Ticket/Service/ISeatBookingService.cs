@@ -8,5 +8,6 @@ namespace Ticket.Service
         HoldResponseDto CreateHold(CreateHoldRequestDto request);
         HoldResponseDto CheckHoldStatus(string holdId);
         bool ReleaseHold(string holdId, out string message);
+        bool ConfirmHold(string holdId, out string message);
     }
 }

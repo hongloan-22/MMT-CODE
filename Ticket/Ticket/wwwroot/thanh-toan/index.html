@@ -78,10 +78,22 @@
                     </label>
                 </div>
 
-                <div class="method-note" id="methodNote">
+                <div class="method-note" id="methodNote" aria-live="polite">
                     <span>ⓘ</span>
                     <p>Bạn sẽ được chuyển tới giao diện thanh toán của VNPay để thực hiện giao dịch.</p>
                 </div>
+
+                <div id="paymentAlert" class="payment-alert" role="status" aria-live="polite" hidden></div>
+
+                <section id="bankTransferPanel" class="bank-transfer-panel" aria-labelledby="bankTransferTitle" hidden>
+                    <div class="bank-panel-heading"><span class="bank-panel-icon">↗</span><div><h3 id="bankTransferTitle">Thông tin chuyển khoản</h3><p>Vui lòng chuyển đúng số tiền và nội dung bên dưới.</p></div></div>
+                    <div class="bank-detail"><span>Ngân hàng</span><strong id="bankName">NCB</strong></div>
+                    <div class="bank-detail"><span>Số tài khoản</span><strong id="bankAccount">—</strong></div>
+                    <div class="bank-detail"><span>Số tiền</span><strong id="bankAmount">—</strong></div>
+                    <div class="bank-detail"><span>Nội dung chuyển khoản</span><strong id="bankContent">—</strong></div>
+                    <button id="copyBankInfo" class="copy-bank-btn" type="button">Sao chép thông tin chuyển khoản</button>
+                    <p class="bank-warning">Đây là hướng dẫn chuyển khoản, không phải xác nhận thanh toán. Vé chỉ được xác nhận sau khi hệ thống nhận được xác nhận thanh toán hợp lệ.</p>
+                </section>
 
                 <button class="pay-btn" id="payBtn" type="button">
                     Thanh toán <strong id="payAmount">120.000đ</strong>
@@ -99,18 +111,18 @@
                 <div class="route-box">
                     <div class="route-point">
                         <span class="dot from"></span>
-                        <div><small>Điểm đi</small><strong>Hà Nội</strong><span>Bến xe Mỹ Đình</span></div>
+                        <div><small>Điểm đi</small><strong>Thông tin theo chuyến đã chọn</strong><span>Chi tiết chuyến sẽ được xác nhận từ lịch trình</span></div>
                     </div>
                     <div class="route-line"></div>
                     <div class="route-point">
                         <span class="dot to"></span>
-                        <div><small>Điểm đến</small><strong>Thái Nguyên</strong><span>Cổng Trường ĐH ICTU</span></div>
+                        <div><small>Điểm đến</small><strong>Chuyến xe SmartBus</strong><span>Vui lòng kiểm tra lại thông tin trước khi thanh toán</span></div>
                     </div>
                 </div>
 
                 <div class="trip-info">
-                    <div><small>Ngày đi</small><strong>30/09/2026</strong></div>
-                    <div><small>Khởi hành</small><strong>06:30</strong></div>
+                    <div><small>Giữ chỗ</small><strong id="holdStatusText">Đang giữ</strong></div>
+                    <div><small>Mã chuyến</small><strong id="tripCodeText">—</strong></div>
                     <div><small>Số ghế</small><strong id="seatText">A03</strong></div>
                 </div>
 

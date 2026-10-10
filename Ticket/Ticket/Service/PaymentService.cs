@@ -18,9 +18,11 @@ namespace Ticket.Service
         // In-memory store (tương tự SeatBookingService - phù hợp dự án học thuật)
         private static readonly ConcurrentDictionary<string, Payment> _payments = new();
         private static int _sequenceCounter = 0;
+        private static readonly object _paymentCreationLock = new();
 
         private readonly IConfiguration _config;
         private readonly ILogger<PaymentService> _logger;
+        private readonly ISeatBookingService _seatBookingService;
 
         // ===========================================================
         // CẤU HÌNH SANDBOX CÁC CỔNG THANH TOÁN
@@ -48,10 +50,11 @@ namespace Ticket.Service
         private string ZaloPayPaymentUrl => _config["Payment:ZaloPay:PaymentUrl"] ?? "https://sb-openapi.zalopay.vn/v2/create";
         private string ZaloPayCallbackUrl => _config["Payment:ZaloPay:CallbackUrl"] ?? "https://localhost:5001/api/payment/zalopay/callback";
 
-        public PaymentService(IConfiguration config, ILogger<PaymentService> logger)
+        public PaymentService(IConfiguration config, ILogger<PaymentService> logger, ISeatBookingService seatBookingService)
         {
             _config = config;
             _logger = logger;
+            _seatBookingService = seatBookingService;
         }
 
         // ============================================================
@@ -70,6 +73,34 @@ namespace Ticket.Service
         // ============================================================
         public async Task<CreatePaymentResponseDto> CreatePaymentAsync(CreatePaymentRequestDto request)
         {
+            if (string.IsNullOrWhiteSpace(request.HoldId))
+            {
+                return new CreatePaymentResponseDto { Success = false, Message = "HoldId không được để trống." };
+            }
+
+            // Chặn tạo nhiều giao dịch cho cùng một lượt giữ chỗ khi giao dịch trước vẫn đang xử lý/đã thành công.
+            // Lock bảo đảm kiểm tra + tạo bản ghi không bị race trong nhiều request đồng thời.
+            lock (_paymentCreationLock)
+            {
+                var existing = _payments.Values.FirstOrDefault(p =>
+                    string.Equals(p.HoldId, request.HoldId, StringComparison.OrdinalIgnoreCase) &&
+                    p.Status is PaymentStatus.Pending or PaymentStatus.Processing or PaymentStatus.Success);
+                if (existing != null)
+                {
+                    return new CreatePaymentResponseDto
+                    {
+                        Success = existing.Status != PaymentStatus.Success,
+                        TransactionRef = existing.TransactionRef,
+                        Method = existing.Method.ToString(),
+                        PaymentUrl = existing.ReturnUrl,
+                        ExpiresAt = existing.ExpiresAt,
+                        Message = existing.Status == PaymentStatus.Success
+                            ? "Lượt giữ chỗ này đã được thanh toán thành công; không tạo giao dịch hoặc vé mới."
+                            : "Đã có giao dịch đang chờ xử lý cho lượt giữ chỗ này; sử dụng giao dịch hiện có."
+                    };
+                }
+            }
+
             // Xác định phương thức thanh toán
             if (!Enum.TryParse<PaymentMethod>(request.Method, true, out var method))
             {
@@ -101,7 +132,26 @@ namespace Ticket.Service
                 UserIpAddress = request.ClientIp
             };
 
-            _payments[transactionRef] = payment;
+            lock (_paymentCreationLock)
+            {
+                // Kiểm tra lần hai bên trong lock để tránh hai request đồng thời cùng tạo giao dịch.
+                var existing = _payments.Values.FirstOrDefault(p =>
+                    string.Equals(p.HoldId, request.HoldId, StringComparison.OrdinalIgnoreCase) &&
+                    p.Status is PaymentStatus.Pending or PaymentStatus.Processing or PaymentStatus.Success);
+                if (existing != null)
+                {
+                    return new CreatePaymentResponseDto
+                    {
+                        Success = existing.Status != PaymentStatus.Success,
+                        TransactionRef = existing.TransactionRef,
+                        Method = existing.Method.ToString(),
+                        PaymentUrl = existing.ReturnUrl,
+                        ExpiresAt = existing.ExpiresAt,
+                        Message = "Đã có giao dịch cho lượt giữ chỗ này; không tạo giao dịch trùng."
+                    };
+                }
+                _payments[transactionRef] = payment;
+            }
 
             _logger.LogInformation("[Payment US-64] Đã tạo giao dịch {TransRef} | Method={Method} | Amount={Amount}đ | HoldId={HoldId}",
                 transactionRef, method, request.Amount, request.HoldId);
@@ -183,17 +233,29 @@ namespace Ticket.Service
                 return Task.FromResult(false);
             }
 
-            // Cập nhật thông tin từ VNPay
-            payment.GatewayTransactionId = callback.vnp_TransactionNo;
-            payment.GatewayResponseCode = callback.vnp_ResponseCode;
-            payment.GatewayResponseMessage = callback.vnp_ResponseCode == "00" ? "Giao dịch thành công" : $"Lỗi mã {callback.vnp_ResponseCode}";
-            payment.GatewaySignature = callback.vnp_SecureHash;
-            payment.CompletedAt = DateTime.UtcNow;
+            lock (payment)
+            {
+                // Idempotency: callback lặp sau thành công không được cập nhật trạng thái hay xác nhận Booking lần nữa.
+                if (payment.Status == PaymentStatus.Success)
+                {
+                    _logger.LogInformation("[Payment] Bỏ qua callback lặp cho giao dịch đã thành công {TransRef}", payment.TransactionRef);
+                    return Task.FromResult(true);
+                }
 
-            // Cập nhật trạng thái
-            payment.Status = (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
-                ? PaymentStatus.Success
-                : PaymentStatus.Failed;
+                // Cập nhật thông tin từ VNPay
+                payment.GatewayTransactionId = callback.vnp_TransactionNo;
+                payment.GatewayResponseCode = callback.vnp_ResponseCode;
+                payment.GatewayResponseMessage = callback.vnp_ResponseCode == "00" ? "Giao dịch thành công" : $"Lỗi mã {callback.vnp_ResponseCode}";
+                payment.GatewaySignature = callback.vnp_SecureHash;
+                payment.CompletedAt = DateTime.UtcNow;
+
+                // Cập nhật trạng thái
+                payment.Status = (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
+                    ? PaymentStatus.Success
+                    : PaymentStatus.Failed;
+
+                CompleteBookingIfPaid(payment);
+            }
 
             _logger.LogInformation("[VNPay Callback] Giao dịch {TransRef} -> {Status} | VNPay TxnNo={TxnNo}",
                 payment.TransactionRef, payment.Status, callback.vnp_TransactionNo);
@@ -224,16 +286,28 @@ namespace Ticket.Service
                 return Task.FromResult(false);
             }
 
-            payment.GatewayTransactionId = callback.transId.ToString();
-            payment.GatewayResponseCode = callback.resultCode.ToString();
-            payment.GatewayResponseMessage = callback.message;
-            payment.GatewaySignature = callback.signature;
-            payment.CompletedAt = DateTime.UtcNow;
+            lock (payment)
+            {
+                // Idempotency: callback lặp sau thành công không được cập nhật trạng thái hay xác nhận Booking lần nữa.
+                if (payment.Status == PaymentStatus.Success)
+                {
+                    _logger.LogInformation("[Payment] Bỏ qua callback lặp cho giao dịch đã thành công {TransRef}", payment.TransactionRef);
+                    return Task.FromResult(true);
+                }
 
-            // resultCode = 0 là thành công (MoMo)
-            payment.Status = callback.resultCode == 0
-                ? PaymentStatus.Success
-                : PaymentStatus.Failed;
+                payment.GatewayTransactionId = callback.transId.ToString();
+                payment.GatewayResponseCode = callback.resultCode.ToString();
+                payment.GatewayResponseMessage = callback.message;
+                payment.GatewaySignature = callback.signature;
+                payment.CompletedAt = DateTime.UtcNow;
+
+                // resultCode = 0 là thành công (MoMo)
+                payment.Status = callback.resultCode == 0
+                    ? PaymentStatus.Success
+                    : PaymentStatus.Failed;
+
+                CompleteBookingIfPaid(payment);
+            }
 
             _logger.LogInformation("[MoMo Callback] Giao dịch {TransRef} -> {Status} | MoMo TransId={TransId}",
                 payment.TransactionRef, payment.Status, callback.transId);
@@ -286,16 +360,28 @@ namespace Ticket.Service
                 return Task.FromResult(false);
             }
 
-            payment.GatewayTransactionId = data.zp_trans_id.ToString();
-            payment.GatewayResponseCode = callback.type.ToString();
-            payment.GatewayResponseMessage = callback.type == 1 ? "Thanh toán thành công" : "Thanh toán thất bại";
-            payment.GatewaySignature = callback.mac;
-            payment.CompletedAt = DateTime.UtcNow;
+            lock (payment)
+            {
+                // Idempotency: callback lặp sau thành công không được cập nhật trạng thái hay xác nhận Booking lần nữa.
+                if (payment.Status == PaymentStatus.Success)
+                {
+                    _logger.LogInformation("[Payment] Bỏ qua callback lặp cho giao dịch đã thành công {TransRef}", payment.TransactionRef);
+                    return Task.FromResult(true);
+                }
 
-            // type = 1 là thành công (ZaloPay)
-            payment.Status = callback.type == 1
-                ? PaymentStatus.Success
-                : PaymentStatus.Failed;
+                payment.GatewayTransactionId = data.zp_trans_id.ToString();
+                payment.GatewayResponseCode = callback.type.ToString();
+                payment.GatewayResponseMessage = callback.type == 1 ? "Thanh toán thành công" : "Thanh toán thất bại";
+                payment.GatewaySignature = callback.mac;
+                payment.CompletedAt = DateTime.UtcNow;
+
+                // type = 1 là thành công (ZaloPay)
+                payment.Status = callback.type == 1
+                    ? PaymentStatus.Success
+                    : PaymentStatus.Failed;
+
+                CompleteBookingIfPaid(payment);
+            }
 
             _logger.LogInformation("[ZaloPay Callback] Giao dịch {TransRef} -> {Status} | ZaloPay ZpTransId={ZpTransId}",
                 payment.TransactionRef, payment.Status, data.zp_trans_id);
@@ -306,6 +392,26 @@ namespace Ticket.Service
         // ============================================================
         // Hủy giao dịch
         // ============================================================
+        // Xác nhận đặt vé sau khi callback thanh toán đã được xác thực.
+        private void CompleteBookingIfPaid(Payment payment)
+        {
+            if (payment.Status != PaymentStatus.Success)
+                return;
+
+            if (string.IsNullOrWhiteSpace(payment.HoldId))
+            {
+                _logger.LogError("[Payment] Giao dịch {TransRef} thành công nhưng thiếu HoldId.", payment.TransactionRef);
+                return;
+            }
+
+            bool confirmed = _seatBookingService.ConfirmHold(payment.HoldId, out string message);
+            if (confirmed)
+                _logger.LogInformation("[Booking] {TransRef}: {Message}", payment.TransactionRef, message);
+            else
+                _logger.LogError("[Booking] Không thể xác nhận HoldId={HoldId} sau khi thanh toán {TransRef} thành công: {Message}",
+                    payment.HoldId, payment.TransactionRef, message);
+        }
+
         public Task<bool> CancelPaymentAsync(string transactionRef, string reason = "")
         {
             if (!_payments.TryGetValue(transactionRef, out var payment))

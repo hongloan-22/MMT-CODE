@@ -22,6 +22,11 @@ namespace Ticket.Models
         [StringLength(100)]
         public string TransactionId { get; set; } = string.Empty;
 
+        // Khóa idempotency do client gửi, phải giữ nguyên khi retry cùng một yêu cầu.
+        [Required]
+        [StringLength(100)]
+        public string IdempotencyKey { get; set; } = string.Empty;
+
         // Liên kết với Chuyến xe / Lịch trình
         public int BusScheduleId { get; set; }
 
