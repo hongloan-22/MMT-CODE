@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Ticket.Data;
 using Ticket.Models;
 using Ticket.Service;
+using Ticket.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,13 +37,15 @@ builder.Services.AddScoped<ITripService, TripServices>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// =========================================================================
+// ĐĂNG KÝ CÁC SERVICE CHO GIỮ GHẾ, THANH TOÁN VÀ VÉ (US-97 -> US-107)
+// =========================================================================
 builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
-
-// US-64 + US-65: Đăng ký service thanh toán (VNPay, MoMo, ZaloPay sandbox)
 builder.Services.AddSingleton<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IRefundService, RefundService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
 
 var app = builder.Build();
-
 
 // =========================================================================
 // KHỞI TẠO CSDL VÀ SEED DATA TUYẾN - TRẠM
@@ -174,6 +177,7 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Trips mau thanh cong!");
         }
+
         // 4.1 Seed Xe và Ghế mẫu (US-52)
         if (!db.Buses.Any())
         {
@@ -217,6 +221,7 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Bus va 24 Seats cho TRIP01!");
         }
+
         // 5. Seed Lịch trình chi tiết từng trạm cho Chuyến xe (TripSchedules - US-25)
         if (!db.TripSchedules.Any())
         {
@@ -281,18 +286,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseCors("AllowAll");
 
 // Cho phép phục vụ file tĩnh trong wwwroot
 app.UseDefaultFiles();
-
-app.UseDefaultFiles(); // Cho phép truy cập trực tiếp vào index.html trong wwwroot
-
 app.UseStaticFiles();
 
 app.UseRouting();
-
 app.UseAuthorization();
 
 app.MapControllers();
