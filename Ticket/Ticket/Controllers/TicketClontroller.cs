@@ -20,13 +20,19 @@ namespace Ticket.Controllers
         [HttpPost("{id}/cancel")]
         public async Task<IActionResult> CancelTicket(int id, [FromBody] CancelTicket request)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdClaim, out int userId)) return Unauthorized();
+            // ✅ Lấy userId từ JWT Claim — GIỮ NGUYÊN string (GUID)
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Không xác định được người dùng." });
 
-#pragma warning disable CS8604 // Possible null reference argument.
+            // ✅ FIX CS8604: Validate reason trước khi truyền vào service
+            if (string.IsNullOrWhiteSpace(request.Reason))
+                return BadRequest(new { message = "Vui lòng nhập lý do hủy vé." });
+
             var isSuccess = await _ticketService.CancelTicketAsync(id, userId, request.Reason);
-#pragma warning restore CS8604 // Possible null reference argument.
-            if (!isSuccess) return BadRequest(new { message = "Không thể hủy vé." });
+
+            if (!isSuccess)
+                return BadRequest(new { message = "Không thể hủy vé." });
 
             return Ok(new { message = "Hủy vé thành công." });
         }
