@@ -60,7 +60,7 @@ namespace Ticket.Service
         }
 
         // 1. Lấy sơ đồ & trạng thái ghế theo chuyến
-        public SeatMapResponseDto GetSeatMap(string tripId)
+        public SeatMapResponseDto? GetSeatMap(string tripId)
         {
             // 🛑 BÁO LỖI NGAY: Nếu mã chuyến không phải dạng TRIP (VD: BC02, TB-01, abc...)
             if (!IsValidTripId(tripId))

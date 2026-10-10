@@ -5,10 +5,13 @@ using System.Text.Json.Serialization;
 using Ticket.Data;
 using Ticket.Models;
 using Ticket.Service;
+using Ticket.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Cho phép CORS để Frontend fetch() không bị chặn
+// =========================================================================
+// 1. CORS — cho phép Frontend fetch()
+// =========================================================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -19,7 +22,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 2. Controllers + Views & chống lặp tuần tự hóa JSON
+// =========================================================================
+// 2. Controllers + Views + chống lặp tuần tự hóa JSON
+// =========================================================================
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
@@ -29,20 +34,26 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 3. Đăng ký Service tìm kiếm chuyến xe US-31
+// =========================================================================
+// 3. Service tìm kiếm chuyến xe (US-31)
+// =========================================================================
 builder.Services.AddScoped<ITripService, TripServices>();
 
+// =========================================================================
 // 4. Cấu hình Database SQLite
+// =========================================================================
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// =========================================================================
+// 5. ĐĂNG KÝ CÁC SERVICE GIỮ GHẾ, THANH TOÁN, VÉ (US-97 -> US-111)
+// =========================================================================
 builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
 
 // 5. Dang ky Service thanh toan Sprint 3 (US06) - Scoped vi dung DbContext
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var app = builder.Build();
-
 
 // =========================================================================
 // KHỞI TẠO CSDL VÀ SEED DATA TUYẾN - TRẠM
@@ -54,7 +65,6 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // Tự động tạo sạch các bảng và nạp sẵn Users/Roles từ ApplicationDbContext.SeedData
         db.Database.EnsureCreated();
     }
     catch (Exception ex)
@@ -64,7 +74,9 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // 1. Seed Trạm xe buýt chuẩn (BusStops - US-24)
+        // -------------------------------
+        // 1. Seed Trạm xe buýt (BusStops - US-24)
+        // -------------------------------
         if (!db.BusStops.Any())
         {
             var stops = new List<BusStop>
@@ -81,7 +93,9 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine("--> [Seed Data] Da nap BusStops");
         }
 
-        // 2. Seed Tuyến xe buýt chuẩn (BusRoutes - US-15, US-30)
+        // -------------------------------
+        // 2. Seed Tuyến xe buýt (BusRoutes - US-15, US-30)
+        // -------------------------------
         if (!db.BusRoutes.Any())
         {
             var routes = new List<BusRoute>
@@ -106,7 +120,9 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine("--> [Seed Data] Da nap BusRoutes");
         }
 
-        // 3. Seed liên kết Tuyến xe - Trạm dừng (RouteStops - có thứ tự StopOrder phục vụ US-33)
+        // -------------------------------
+        // 3. Seed liên kết Tuyến - Trạm (RouteStops - US-33)
+        // -------------------------------
         if (!db.RouteStops.Any())
         {
             var routeList = db.BusRoutes.ToList();
@@ -114,10 +130,10 @@ using (var scope = app.Services.CreateScope())
 
             if (routeList.Count >= 2)
             {
-                var route1 = routeList[0]; // Tuyến 01
-                var route2 = routeList[1]; // Tuyến 02
+                var route1 = routeList[0];
+                var route2 = routeList[1];
 
-                // Tuyến 01: Gia Lâm (Order 1) -> Long Biên (Order 2) -> Yên Nghĩa (Order 3)
+                // Tuyến 01: Gia Lâm -> Long Biên -> Yên Nghĩa
                 if (allStops.ContainsKey("Bến xe Gia Lâm") && allStops.ContainsKey("Bến xe Yên Nghĩa"))
                 {
                     db.RouteStops.AddRange(
@@ -127,7 +143,7 @@ using (var scope = app.Services.CreateScope())
                     );
                 }
 
-                // Tuyến 02: Mỹ Đình (Order 1) -> Bến xe Thái Nguyên (Order 2) -> Cổng Trường ĐH ICTU (Order 3)
+                // Tuyến 02: Mỹ Đình -> Thái Nguyên -> ICTU
                 if (allStops.ContainsKey("Bến xe Mỹ Đình") && allStops.ContainsKey("Cổng Trường ĐH ICTU"))
                 {
                     db.RouteStops.AddRange(
@@ -142,7 +158,9 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        // 4. Seed Trạm xe (Stations) và Chuyến xe (Trips - US-31)
+        // -------------------------------
+        // 4. Seed Trạm (Stations) + Chuyến xe (Trips - US-31)
+        // -------------------------------
         if (!db.Stations.Any())
         {
             var st1 = new Station { StationId = 1, StationName = "Bến xe Gia Lâm" };
@@ -174,7 +192,10 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Trips mau thanh cong!");
         }
-        // 4.1 Seed Xe và Ghế mẫu (US-52)
+
+        // -------------------------------
+        // 4.1. Seed Xe và Ghế mẫu (US-52)
+        // -------------------------------
         if (!db.Buses.Any())
         {
             var bus = new Bus
@@ -217,13 +238,19 @@ using (var scope = app.Services.CreateScope())
             db.SaveChanges();
             Console.WriteLine("--> [Seed Data] Da nap Bus va 24 Seats cho TRIP01!");
         }
-        // 5. Seed Lịch trình chi tiết từng trạm cho Chuyến xe (TripSchedules - US-25)
+
+        // -------------------------------
+        // 5. Seed Lịch trình chi tiết (TripSchedules - US-25)
+        // -------------------------------
         if (!db.TripSchedules.Any())
         {
             var sampleTrip = db.Trips.FirstOrDefault();
             var allStops = db.BusStops.ToDictionary(s => s.Name, s => s.Id);
 
-            if (sampleTrip != null && allStops.ContainsKey("Bến xe Gia Lâm") && allStops.ContainsKey("Trạm Long Biên") && allStops.ContainsKey("Bến xe Yên Nghĩa"))
+            if (sampleTrip != null
+                && allStops.ContainsKey("Bến xe Gia Lâm")
+                && allStops.ContainsKey("Trạm Long Biên")
+                && allStops.ContainsKey("Bến xe Yên Nghĩa"))
             {
                 db.TripSchedules.AddRange(
                     new TripSchedule
@@ -266,7 +293,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// 5. Cấu hình Swagger UI
+// =========================================================================
+// SWAGGER UI
+// =========================================================================
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -280,25 +309,22 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// =========================================================================
+// MIDDLEWARE PIPELINE
+// =========================================================================
 app.UseHttpsRedirection();
-
 app.UseCors("AllowAll");
 
 // Cho phép phục vụ file tĩnh trong wwwroot
 app.UseDefaultFiles();
-
-app.UseDefaultFiles(); // Cho phép truy cập trực tiếp vào index.html trong wwwroot
-
 app.UseStaticFiles();
 
 app.UseRouting();
-
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=./wwwroot/Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
