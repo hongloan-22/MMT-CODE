@@ -292,7 +292,7 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"--> [Lỗi Seed Data]: {ex.Message}");
     }
 }
-
+// Test CI - dòng này xoá sau
 // =========================================================================
 // SWAGGER UI
 // =========================================================================
