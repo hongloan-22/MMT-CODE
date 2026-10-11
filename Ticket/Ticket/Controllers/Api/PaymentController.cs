@@ -55,8 +55,8 @@ namespace Ticket.Controllers.Api
             if (!result.Success)
                 return BadRequest(result);
 
-            _logger.LogInformation("[API US-64] Tạo giao dịch {TransRef} thành công | Method={Method}",
-                result.TransactionRef, result.Method);
+            _logger.LogInformation("[API US-64] Tạo giao dịch {TransactionCode} thành công | Method={Method}",
+                result.TransactionCode, result.Method);
 
             return Ok(result);
         }
@@ -65,13 +65,13 @@ namespace Ticket.Controllers.Api
         /// US-64: Tra cứu trạng thái giao dịch theo mã tham chiếu nội bộ
         /// GET /api/payment/{transactionRef}
         /// </summary>
-        [HttpGet("{transactionRef}")]
-        public async Task<IActionResult> GetPaymentStatus(string transactionRef)
+        [HttpGet("{transactionCode}")]
+        public async Task<IActionResult> GetPaymentStatus(string transactionCode)
         {
-            var result = await _paymentService.GetPaymentStatusAsync(transactionRef);
+            var result = await _paymentService.GetPaymentStatusAsync(transactionCode);
 
             if (result == null)
-                return NotFound(new { Success = false, Message = $"Không tìm thấy giao dịch '{transactionRef}'." });
+                return NotFound(new { Success = false, Message = $"Không tìm thấy giao dịch '{transactionCode}'." });
 
             return Ok(result);
         }
@@ -199,24 +199,15 @@ namespace Ticket.Controllers.Api
         [HttpPost("cancel")]
         public async Task<IActionResult> CancelPayment([FromBody] CancelPaymentDto request)
         {
-            if (string.IsNullOrWhiteSpace(request?.TransactionRef))
-                return BadRequest(new { Success = false, Message = "transactionRef không được để trống." });
+            if (string.IsNullOrWhiteSpace(request?.TransactionCode))
+                return BadRequest(new { Success = false, Message = "transactionCode không được để trống." });
 
-            bool success = await _paymentService.CancelPaymentAsync(request.TransactionRef, request.Reason ?? "");
+            bool success = await _paymentService.CancelPaymentAsync(request.TransactionCode, request.Reason ?? "");
 
             if (!success)
                 return BadRequest(new { Success = false, Message = "Không thể huỷ giao dịch. Giao dịch không tồn tại hoặc đã hoàn tất." });
 
-            return Ok(new { Success = true, Message = $"Đã huỷ giao dịch {request.TransactionRef}." });
+            return Ok(new { Success = true, Message = $"Đã huỷ giao dịch {request.TransactionCode}." });
         }
-    }
-
-    /// <summary>
-    /// DTO cho request huỷ giao dịch
-    /// </summary>
-    public class CancelPaymentDto
-    {
-        public string TransactionRef { get; set; } = string.Empty;
-        public string? Reason { get; set; }
     }
 }

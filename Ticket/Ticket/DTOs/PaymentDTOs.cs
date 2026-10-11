@@ -41,10 +41,16 @@ namespace Ticket.Models
     public class CreatePaymentResponseDto
     {
         public bool Success { get; set; }
-        public string TransactionRef { get; set; } = string.Empty;
+
+        /// <summary>Ma tham chieu noi bo (TransactionCode)</summary>
+        public string TransactionCode { get; set; } = string.Empty;
+
         public string Method { get; set; } = string.Empty;
 
-        /// <summary>URL chuyển hướng đến cổng thanh toán sandbox</summary>
+        /// <summary>Trang thai hien tai (PENDING/SUCCESS/FAILED/CANCELLED/UNKNOWN)</summary>
+        public string Status { get; set; } = string.Empty;
+
+        /// <summary>URL chuyen huong den cong thanh toan sandbox (null voi Cash)</summary>
         public string? PaymentUrl { get; set; }
 
         /// <summary>Thời gian hết hạn giao dịch</summary>
@@ -58,10 +64,11 @@ namespace Ticket.Models
     /// </summary>
     public class PaymentStatusResponseDto
     {
-        public string TransactionRef { get; set; } = string.Empty;
+        public string TransactionCode { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string Method { get; set; } = string.Empty;
         public decimal Amount { get; set; }
+        public string? HoldId { get; set; }
         public string? GatewayTransactionId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
@@ -76,10 +83,10 @@ namespace Ticket.Models
     /// </summary>
     public class VNPayCallbackDto
     {
-        public string? vnp_TxnRef { get; set; }         // Mã đơn hàng gửi đi
-        public string? vnp_ResponseCode { get; set; }   // "00" = thành công
-        public string? vnp_TransactionNo { get; set; }  // Mã GD tại VNPay
-        public string? vnp_Amount { get; set; }         // Số tiền * 100
+        public string? vnp_TxnRef { get; set; }
+        public string? vnp_ResponseCode { get; set; }
+        public string? vnp_TransactionNo { get; set; }
+        public string? vnp_Amount { get; set; }
         public string? vnp_BankCode { get; set; }
         public string? vnp_PayDate { get; set; }
         public string? vnp_SecureHash { get; set; }
@@ -96,13 +103,13 @@ namespace Ticket.Models
     public class MoMoCallbackDto
     {
         public string? partnerCode { get; set; }
-        public string? orderId { get; set; }           // Mã đơn hàng gửi đi
+        public string? orderId { get; set; }
         public string? requestId { get; set; }
         public long amount { get; set; }
         public string? orderInfo { get; set; }
         public string? orderType { get; set; }
-        public long transId { get; set; }               // Mã GD tại MoMo
-        public int resultCode { get; set; }             // 0 = thành công
+        public long transId { get; set; }
+        public int resultCode { get; set; }
         public string? message { get; set; }
         public string? payType { get; set; }
         public long responseTime { get; set; }
@@ -118,9 +125,9 @@ namespace Ticket.Models
     /// </summary>
     public class ZaloPayCallbackDto
     {
-        public string? data { get; set; }       // JSON string chứa thông tin đơn hàng
-        public string? mac { get; set; }        // Chữ ký xác thực HMAC
-        public int type { get; set; }           // 1 = success payment
+        public string? data { get; set; }
+        public string? mac { get; set; }
+        public int type { get; set; }
     }
 
     /// <summary>
@@ -129,17 +136,26 @@ namespace Ticket.Models
     public class ZaloPayCallbackData
     {
         public string? app_id { get; set; }
-        public string? app_trans_id { get; set; }  // Mã đơn hàng gửi đi
+        public string? app_trans_id { get; set; }
         public string? app_user { get; set; }
         public long amount { get; set; }
         public long app_time { get; set; }
         public string? embed_data { get; set; }
         public string? item { get; set; }
-        public long zp_trans_id { get; set; }      // Mã GD tại ZaloPay
+        public long zp_trans_id { get; set; }
         public long server_time { get; set; }
         public int channel { get; set; }
         public string? merchant_user_id { get; set; }
         public long user_fee_amount { get; set; }
         public long discount_amount { get; set; }
+    }
+
+    /// <summary>
+    /// DTO cho request huy giao dich.
+    /// </summary>
+    public class CancelPaymentDto
+    {
+        public string TransactionCode { get; set; } = string.Empty;
+        public string? Reason { get; set; }
     }
 }

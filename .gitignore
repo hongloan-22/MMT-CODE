@@ -21,3 +21,6 @@
 ## Database SQLite tạm (nếu có sinh ra)
 *.db-shm
 *.db-wal
+
+## File log chạy ứng dụng
+*.log
