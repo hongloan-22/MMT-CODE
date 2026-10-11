@@ -5,6 +5,8 @@ namespace Ticket.Models
 {
     public class Trip
     {
+        internal DateTime TimeSpan;
+
         [Key]
         public int Id { get; set; }
 
@@ -34,7 +36,7 @@ namespace Ticket.Models
 
         public DateTime TripDate { get; set; }
 
-        public TimeSpan DepartureTime { get; set; }
+        public DateTime DepartureTime { get; set; }
 
         public TimeSpan? ArrivalTime { get; set; }
 

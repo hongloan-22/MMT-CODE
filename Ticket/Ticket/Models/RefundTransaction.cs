@@ -19,6 +19,11 @@ namespace Ticket.Models
         Failed = 3,
         Rejected = 4
     }
+    public enum TransactionType
+    {
+        Cancel,
+        Exchange
+    }
 
     /// <summary>
     /// US-109: Entity RefundTransaction — Yêu cầu hoàn tiền cho vé đã thanh toán
@@ -30,27 +35,22 @@ namespace Ticket.Models
         [Key]
         public int Id { get; set; }
 
-        // =========================
-        // LIÊN KẾT VÉ
-        // =========================
         [Required]
         public int TicketId { get; set; }
+        public global::Ticket.Models.Ticket Ticket { get; set; } = null!;
 
-        [ForeignKey(nameof(TicketId))]
-        public Ticket? Ticket { get; set; }
+        [Column(TypeName = "decimal(18,0)")]
+        public decimal OriginalAmount { get; set; }
 
-        // =========================
-        // SỐ TIỀN (US-111)
-        // =========================
         [Column(TypeName = "decimal(18,0)")]
         public decimal Amount { get; set; }
 
         [Column(TypeName = "decimal(18,0)")]
         public decimal Fee { get; set; } = 0m;
 
-        // =========================
-        // TRẠNG THÁI & LÝ DO
-        // =========================
+        [Column(TypeName = "decimal(18,0)")]
+        public decimal CancellationFee { get; set; } = 0m;
+
         public RefundStatus Status { get; set; } = RefundStatus.Pending;
 
         [MaxLength(500)]
@@ -59,19 +59,21 @@ namespace Ticket.Models
         [MaxLength(100)]
         public string? GatewayTxnRef { get; set; }
 
-        // =========================
-        // THỜI GIAN
-        // =========================
+        public string TransactionType { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ProcessedAt { get; set; }
 
-        // =========================
-        // NGƯỜI XỬ LÝ (ADMIN)
-        // =========================
         [MaxLength(36)]
         public string? ProcessedByUserId { get; set; }
 
         [ForeignKey(nameof(ProcessedByUserId))]
         public User? ProcessedByUser { get; set; }
+
+        public decimal OriginalPrice { get; set; }
+        public decimal RefundAmount { get; set; }
+        public decimal NewPrice { get; set; }
+        public decimal NetAmount { get; set; }
+        public TransactionType Type { get; set; }
     }
 }

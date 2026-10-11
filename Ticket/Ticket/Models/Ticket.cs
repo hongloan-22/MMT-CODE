@@ -9,39 +9,37 @@ namespace Ticket.Models
         [Key]
         public int Id { get; set; }
 
-        // ✅ FIX: UserId là string (khớp User.UserId GUID)
         [MaxLength(36)]
         public string UserId { get; set; } = string.Empty;
 
         [ForeignKey(nameof(UserId))]
         public User? User { get; set; }
 
-        // Khóa ngoại liên kết với Lịch trình chuyến xe
         public int ScheduleId { get; set; }
 
-        [ForeignKey("ScheduleId")]
-        public TripSchedule Schedule { get; set; } = null!;
+        [ForeignKey(nameof(ScheduleId))]
+        public TripSchedule? Schedule { get; set; }
 
-        // Khóa ngoại liên kết với Ghế ngồi
         public int SeatId { get; set; }
 
-        [ForeignKey("SeatId")]
-        public Seat Seat { get; set; } = null!;
+        [ForeignKey(nameof(SeatId))]
+        public Seat? Seat { get; set; }
 
-        // ✅ FIX: sửa typo `decimal(18,2)]` → `decimal(18,0)`
+        public int TripId { get; set; }
+
+        [ForeignKey(nameof(TripId))]
+        public Trip? Trip { get; set; }
+
         [Column(TypeName = "decimal(18,0)")]
         public decimal Price { get; set; }
 
-        // Trạng thái vé (Pending, Booked, Cancelled, Completed...)
         public TicketStatus Status { get; set; } = TicketStatus.Booked;
-
-        // Thời gian đặt vé
         public DateTime BookingDate { get; set; } = DateTime.Now;
-
-        // Lý do hủy vé (US-77, US-78)
+        public string SeatNumber { get; set; } = string.Empty;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public string TicketCode { get; set; } = string.Empty;
         public string? CancelReason { get; set; }
 
-        // Quan hệ 1-1 với giao dịch hoàn tiền
         public RefundTransaction? RefundTransaction { get; set; }
     }
 
@@ -50,6 +48,7 @@ namespace Ticket.Models
         Pending,
         Booked,
         Cancelled,
-        Completed
+        Completed,
+        Paid
     }
 }

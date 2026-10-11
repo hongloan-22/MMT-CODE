@@ -18,14 +18,12 @@ namespace Ticket.Controllers
         }
 
         [HttpPost("{id}/cancel")]
-        public async Task<IActionResult> CancelTicket(int id, [FromBody] CancelTicket request)
+        public async Task<IActionResult> CancelTicket(int id, [FromBody] CancelTicketDto request)
         {
-            // ✅ Lấy userId từ JWT Claim — GIỮ NGUYÊN string (GUID)
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "Không xác định được người dùng." });
 
-            // ✅ FIX CS8604: Validate reason trước khi truyền vào service
             if (string.IsNullOrWhiteSpace(request.Reason))
                 return BadRequest(new { message = "Vui lòng nhập lý do hủy vé." });
 

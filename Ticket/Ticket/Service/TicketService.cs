@@ -1,26 +1,27 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Ticket.Models; // Thay đổi đường dẫn đến các class Ticket, RefundTransaction...
-using Ticket.Data;   // Thay đổi đường dẫn đến AppDbContext
+using Ticket.Models; 
+using Ticket.Data;   
 
 namespace Ticket.Services
 {
     public interface ITicketService
     {
-        // ✅ MỚI
+        // MỚI
         Task<bool> CancelTicketAsync(int ticketId, string userId, string reason);
+        Task<bool> ExchangeTicketAsync(int oldTicketId, int newScheduleId, string newSeatId, int userId);
     }
 
     public class TicketService : ITicketService
     {
         private readonly ApplicationDbContext _context;
-        private readonly IRefundService _refundPolicy;
+        private readonly IRefundService _refundService;
 
-        public TicketService(ApplicationDbContext context, IRefundService refundPolicy)
+        public TicketService(ApplicationDbContext context, IRefundService refundService)
         {
             _context = context;
-            _refundPolicy = refundPolicy;
+            _refundService = refundService;
         }
 
         // ✅ MỚI
@@ -32,6 +33,8 @@ namespace Ticket.Services
                 .FirstOrDefaultAsync(t => t.Id == ticketId && t.UserId == userId);
 
             if (ticket == null || ticket.Status != Ticket.Models.TicketStatus.Booked) return false;
+            if (ticket.Schedule == null)
+                return false;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -41,7 +44,7 @@ namespace Ticket.Services
 
                 if (ticket.Seat != null) ticket.Seat.Status = SeatStatus.Available;
 
-                var refundAmount = _refundPolicy.CalculateRefundAmount(ticket.Price, ticket.Schedule.DepartureTime);
+                var refundAmount = _refundService.CalculateRefundAmount(ticket.Price, ticket.Schedule.DepartureTime);
                 if (refundAmount > 0)
                 {
                     _context.RefundTransactions.Add(new RefundTransaction
@@ -62,6 +65,11 @@ namespace Ticket.Services
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public Task<bool> ExchangeTicketAsync(int oldTicketId, int newScheduleId, string newSeatId, int userId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

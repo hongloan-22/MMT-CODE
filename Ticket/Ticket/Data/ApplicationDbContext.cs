@@ -48,17 +48,12 @@ namespace Ticket.Data
 
         // ✅ US-109 → US-111: Entity RefundTransaction (đảm bảo Models/RefundTransaction.cs đã tồn tại)
         public DbSet<RefundTransaction> RefundTransactions { get; set; } = null!;
-
-        // =========================
-        // XE, GHẾ & GIỮ CHỖ (SPRINT 2 - US-52, US-58)
-
        
-
   
 
         // =========================
         // XE, GHẾ & GIỮ CHỖ (US-52, US-58)
-
+        public DbSet<Ticket.Models.Ticket> Ticket { get; set; } = null!;
         // =========================
         public DbSet<Bus> Buses { get; set; } = null!;
         public DbSet<Seat> Seats { get; set; } = null!;
