@@ -65,13 +65,13 @@ namespace Ticket.Controllers.Api
         /// US-64: Tra cứu trạng thái giao dịch theo mã tham chiếu nội bộ
         /// GET /api/payment/{transactionRef}
         /// </summary>
-        [HttpGet("{transactionCode}")]
-        public async Task<IActionResult> GetPaymentStatus(string transactionCode)
+        [HttpGet("{transactionRef}")]
+        public async Task<IActionResult> GetPaymentStatus(string transactionRef)
         {
-            var result = await _paymentService.GetPaymentStatusAsync(transactionCode);
+            var result = await _paymentService.GetPaymentStatusAsync(transactionRef);
 
             if (result == null)
-                return NotFound(new { Success = false, Message = $"Không tìm thấy giao dịch '{transactionCode}'." });
+                return NotFound(new { Success = false, Message = $"Không tìm thấy giao dịch '{transactionRef}'." });
 
             return Ok(result);
         }
@@ -199,15 +199,16 @@ namespace Ticket.Controllers.Api
         [HttpPost("cancel")]
         public async Task<IActionResult> CancelPayment([FromBody] CancelPaymentDto request)
         {
-            if (string.IsNullOrWhiteSpace(request?.TransactionCode))
-                return BadRequest(new { Success = false, Message = "transactionCode không được để trống." });
+            if (string.IsNullOrWhiteSpace(request?.TransactionRef))
+                return BadRequest(new { Success = false, Message = "transactionRef không được để trống." });
 
-            bool success = await _paymentService.CancelPaymentAsync(request.TransactionCode, request.Reason ?? "");
+            bool success = await _paymentService.CancelPaymentAsync(request.TransactionRef, request.Reason ?? "");
 
             if (!success)
                 return BadRequest(new { Success = false, Message = "Không thể huỷ giao dịch. Giao dịch không tồn tại hoặc đã hoàn tất." });
 
-            return Ok(new { Success = true, Message = $"Đã huỷ giao dịch {request.TransactionCode}." });
+            return Ok(new { Success = true, Message = $"Đã huỷ giao dịch {request.TransactionRef}." });
+        }
     }
 
     /// <summary>

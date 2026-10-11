@@ -17,11 +17,12 @@ namespace Ticket.Models
     /// </summary>
     public enum PaymentStatus
     {
-        Pending = 0,    // Dang cho thanh toan
-        Success = 1,    // Thanh toan thanh cong
-        Failed = 2,     // Thanh toan that bai
-        Cancelled = 3,  // Da huy (het han giu cho hoac nguoi dung huy)
-        Unknown = 4     // Ket qua khong xac dinh, cho doi soat
+        Pending = 0,    // Đang chờ xử lý (vừa tạo yêu cầu, chưa thanh toán)
+        Processing = 1, // Đang xử lý tại cổng thanh toán
+        Success = 2,    // Thanh toán thành công
+        Failed = 3,     // Thanh toán thất bại
+        Cancelled = 4,  // Bị huỷ (do hết thời gian giữ chỗ hoặc người dùng huỷ)
+        Refunded = 5    // Đã hoàn tiền
     }
 
     /// <summary>
@@ -32,15 +33,13 @@ namespace Ticket.Models
         VNPay = 1,
         MoMo = 2,
         ZaloPay = 3,
-        BankTransfer = 4,
-        Cash = 5        // Thanh toan tien mat (thanh cong ngay)
+        BankTransfer = 4
     }
 
     /// <summary>
     /// Bảng Payment - Lưu thông tin giao dịch thanh toán
     /// </summary>
-    [Table("payment_transactions")]
-    public class PaymentTransaction
+    public class Payment
     {
         [Key]
         public int Id { get; set; }
@@ -52,8 +51,7 @@ namespace Ticket.Models
         /// </summary>
         [Required]
         [StringLength(50)]
-        [Column("transaction_code")]
-        public string TransactionCode { get; set; } = string.Empty;
+        public string TransactionRef { get; set; } = string.Empty;
 
         // ------ MÃ THAM CHIẾU TỪ CỔNG THANH TOÁN ------
         /// <summary>
@@ -61,32 +59,20 @@ namespace Ticket.Models
         /// Dùng để đối soát và tra cứu tại cổng thanh toán
         /// </summary>
         [StringLength(100)]
-        [Column("order_code")]
-        public string? OrderCode { get; set; }
+        public string? GatewayTransactionId { get; set; }
 
         /// <summary>
         /// Mã đơn hàng gửi đến cổng thanh toán (app_trans_id cho ZaloPay, orderId cho MoMo, vnp_TxnRef cho VNPay)
         /// </summary>
         [StringLength(100)]
-        [Column("provider_transaction_id")]
-        public string? ProviderTransactionId { get; set; }
+        public string? GatewayOrderId { get; set; }
 
         // ------ THÔNG TIN LIÊN KẾT ------
         /// <summary>
-        /// Cong thanh toan su dung (VNPay/MoMo/ZaloPay/BankTransfer/Cash).
-        /// </summary>
-        [Required]
-        [StringLength(30)]
-        [Column("provider")]
-        public string Provider { get; set; } = string.Empty;
-
-        // ------ THONG TIN LIEN KET ------
-        /// <summary>
-        /// Ma phien giu cho (SeatHold.HoldId).
+        /// Mã giữ chỗ tạm thời (HoldId từ SeatHold)
         /// </summary>
         [Required]
         [StringLength(100)]
-        [Column("hold_id")]
         public string HoldId { get; set; } = string.Empty;
 
         /// <summary>
@@ -94,22 +80,18 @@ namespace Ticket.Models
         /// </summary>
         [Required]
         [StringLength(50)]
-        [Column("trip_code")]
         public string TripCode { get; set; } = string.Empty;
 
         /// <summary>
         /// Danh sách mã ghế đã đặt (lưu dưới dạng JSON, VD: "A1,A2,B3")
         /// </summary>
         [Required]
-        [StringLength(500)]
-        [Column("seat_ids")]
         public string SeatIds { get; set; } = string.Empty;
 
         /// <summary>
         /// Mã người dùng thực hiện giao dịch
         /// </summary>
         [StringLength(50)]
-        [Column("user_id")]
         public string? UserId { get; set; }
 
         // ------ THÔNG TIN THANH TOÁN ------
@@ -117,61 +99,64 @@ namespace Ticket.Models
         /// Phương thức thanh toán
         /// </summary>
         [Required]
-        [Column("method")]
         public PaymentMethod Method { get; set; }
 
-        [Required]
-        [Column("amount", TypeName = "decimal(18,0)")]
+        /// <summary>
+        /// Số tiền cần thanh toán (VND)
+        /// </summary>
+        [Column(TypeName = "decimal(18,0)")]
         public decimal Amount { get; set; }
 
-        [Required]
-        [Column("status")]
+        /// <summary>
+        /// Trạng thái giao dịch hiện tại
+        /// </summary>
         public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
 
-        // ------ THONG TIN THOI GIAN ------
-        [Column("created_at")]
+        // ------ THÔNG TIN THỜI GIAN ------
+        /// <summary>
+        /// Thời điểm tạo giao dịch
+        /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [Column("expires_at")]
+        /// <summary>
+        /// Thời điểm giao dịch hết hạn (thường là 10-15 phút sau khi tạo)
+        /// </summary>
         public DateTime ExpiresAt { get; set; }
 
-        [Column("paid_at")]
-        public DateTime? PaidAt { get; set; }
-
-        [Column("completed_at")]
+        /// <summary>
+        /// Thời điểm hoàn tất giao dịch (thành công hoặc thất bại)
+        /// </summary>
         public DateTime? CompletedAt { get; set; }
 
-        // ------ THONG TIN PHAN HOI TU CONG ------
+        // ------ THÔNG TIN PHẢN HỒI TỪ CỔNG ------
+        /// <summary>
+        /// Mã phản hồi từ cổng thanh toán (VD: "00" = thành công cho VNPay)
+        /// </summary>
         [StringLength(20)]
-        [Column("gateway_response_code")]
         public string? GatewayResponseCode { get; set; }
 
         /// <summary>
         /// Mô tả phản hồi từ cổng thanh toán
         /// </summary>
         [StringLength(500)]
-        [Column("gateway_response_message")]
         public string? GatewayResponseMessage { get; set; }
 
         /// <summary>
         /// Chữ ký xác thực (checksum) nhận từ cổng thanh toán để xác minh tính toàn vẹn
         /// </summary>
         [StringLength(256)]
-        [Column("gateway_signature")]
         public string? GatewaySignature { get; set; }
 
         /// <summary>
         /// URL redirect sau khi thanh toán (cổng trả về người dùng)
         /// </summary>
         [StringLength(500)]
-        [Column("return_url")]
         public string? ReturnUrl { get; set; }
 
         /// <summary>
         /// URL IPN/webhook nhận kết quả từ cổng thanh toán (server-to-server)
         /// </summary>
         [StringLength(500)]
-        [Column("ipn_url")]
         public string? IpnUrl { get; set; }
 
         // ------ THÔNG TIN BỔ SUNG ------
@@ -179,18 +164,13 @@ namespace Ticket.Models
         /// IP của người dùng khi thực hiện giao dịch (dùng để xác thực VNPay)
         /// </summary>
         [StringLength(45)]
-        [Column("user_ip_address")]
         public string? UserIpAddress { get; set; }
 
         /// <summary>
         /// Ghi chú nội bộ (nếu có)
         /// </summary>
         [StringLength(500)]
-        [Column("note")]
         public string? Note { get; set; }
-
-        [Column("callback_count")]
-        public int CallbackCount { get; set; } = 0;
 
         // ------ COMPUTED PROPERTIES ------
         /// <summary>
@@ -205,6 +185,7 @@ namespace Ticket.Models
         [NotMapped]
         public bool IsFinished => Status == PaymentStatus.Success
                                || Status == PaymentStatus.Failed
-                               || Status == PaymentStatus.Cancelled;
+                               || Status == PaymentStatus.Cancelled
+                               || Status == PaymentStatus.Refunded;
     }
 }
