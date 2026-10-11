@@ -312,7 +312,7 @@ if (!app.Environment.IsDevelopment())
 // =========================================================================
 // MIDDLEWARE PIPELINE
 // =========================================================================
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 
 // Cho phép phục vụ file tĩnh trong wwwroot

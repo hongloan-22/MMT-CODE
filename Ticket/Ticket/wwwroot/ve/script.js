@@ -112,8 +112,53 @@ document.getElementById("copyBtn")?.addEventListener("click", async (event) => {
     }
 });
 
-document.getElementById("cancelBtn")?.addEventListener("click", () => {
-    if (confirm(`Bạn có chắc chắn muốn yêu cầu hủy vé: ${ticket.code}?`)) {
-        alert("Đã gửi yêu cầu hủy vé thành công đến ban quản trị!");
+document.getElementById("cancelBtn")?.addEventListener("click", async () => {
+    // ✅ Đọc ticketId từ URL (?ticketId=X) hoặc prompt cho demo
+    let ticketId = parseInt(params.get("ticketId")) || parseInt(params.get("id"));
+
+    if (!ticketId || isNaN(ticketId)) {
+        const input = prompt("Nhập ID vé cần hủy (xem trong DB, VD: 9):");
+        if (!input) return;
+        ticketId = parseInt(input);
+        if (isNaN(ticketId)) {
+            alert("❌ ID vé không hợp lệ");
+            return;
+        }
+    }
+
+    if (!confirm(`Bạn có chắc chắn muốn hủy vé: ${ticket.code}?`)) return;
+
+    const userId = localStorage.getItem("userId") || "usr-cus-001";
+    const reason = prompt("Nhập lý do hủy vé:", "Không đi được");
+    if (reason === null) return;
+
+    try {
+        const res = await fetch('/api/refunds/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ticketId: ticketId,
+                userId: userId,
+                reason: reason || "Không có lý do"
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            alert(
+                `✅ Yêu cầu hoàn tiền đã gửi!\n\n` +
+                `Mã vé: ${ticket.code}\n` +
+                `Số tiền hoàn: ${Number(data.data.amount).toLocaleString('vi-VN')}đ\n` +
+                `Phí hủy: ${Number(data.data.fee).toLocaleString('vi-VN')}đ\n` +
+                `Trạng thái: ${data.data.status}\n\n` +
+                `Vui lòng chờ admin duyệt.`
+            );
+        } else {
+            alert(`❌ ${data.message || "Không thể hủy vé"}`);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("❌ Không kết nối được server. Vui lòng thử lại.");
     }
 });
