@@ -1,9 +1,27 @@
 // ==========================================
-// 1. ĐỌC DỮ LIỆU ĐỘNG TỪ URL
+// 0. USER & TICKET CONTEXT
 // ==========================================
 const params = new URLSearchParams(window.location.search);
 const tripId = params.get("tripId") || "TRIP02";
 const holdId = params.get("holdId") || "";
+
+// ✅ Đọc userId từ userSession
+let userId = null;
+try {
+    const s = JSON.parse(localStorage.getItem("userSession") || "{}");
+    userId = s.userId || null;
+} catch (e) { console.warn("Parse userSession lỗi:", e); }
+
+// ✅ Đọc ticketId: URL → sessionStorage
+let ticketId = parseInt(params.get("ticketId")) || parseInt(params.get("id")) || null;
+if (!ticketId) {
+    const stored = sessionStorage.getItem("lastTicketId");
+    if (stored) ticketId = parseInt(stored) || null;
+}
+
+// ==========================================
+// 1. ĐỌC DỮ LIỆU ĐỘNG TỪ URL
+// ==========================================
 const selectedSeats = (params.get("seats") || "A03").split(",").filter(Boolean);
 const total = Number(params.get("total")) || 120000;
 const paymentMethod = params.get("paymentMethod") || "VNPAY";
@@ -12,24 +30,16 @@ const routeDataMap = {
     "TRIP01": {
         route: "Tuyến 01: Bến xe Gia Lâm - Bến xe Yên Nghĩa",
         routeName: "Tuyến 01",
-        fromCity: "Hà Nội",
-        fromStation: "Bến xe Gia Lâm",
-        toCity: "Hà Nội",
-        toStation: "Bến xe Yên Nghĩa",
-        depTime: "08:00",
-        arrTime: "09:30",
-        duration: "~ 1 giờ 30 phút"
+        fromCity: "Hà Nội", fromStation: "Bến xe Gia Lâm",
+        toCity: "Hà Nội", toStation: "Bến xe Yên Nghĩa",
+        depTime: "08:00", arrTime: "09:30", duration: "~ 1 giờ 30 phút"
     },
     "TRIP02": {
         route: "Tuyến 02: Bến xe Mỹ Đình - Thái Nguyên",
         routeName: "Tuyến 02",
-        fromCity: "Hà Nội",
-        fromStation: "Bến xe Mỹ Đình",
-        toCity: "Thái Nguyên",
-        toStation: "Cổng Trường ĐH ICTU",
-        depTime: "06:30",
-        arrTime: "08:00",
-        duration: "~ 1 giờ 30 phút"
+        fromCity: "Hà Nội", fromStation: "Bến xe Mỹ Đình",
+        toCity: "Thái Nguyên", toStation: "Cổng Trường ĐH ICTU",
+        depTime: "06:30", arrTime: "08:00", duration: "~ 1 giờ 30 phút"
     }
 };
 
@@ -47,7 +57,7 @@ const ticket = {
 };
 
 // ==========================================
-// 2. CẬP NHẬT GIAO DIỆN HTML ĐỘNG
+// 2. CẬP NHẬT GIAO DIỆN
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     const codeEl = document.getElementById("ticketCode");
@@ -60,7 +70,6 @@ document.addEventListener("DOMContentLoaded", () => {
         routeStations[0].querySelector(".time").textContent = currentTrip.depTime;
         routeStations[0].querySelector("strong").textContent = currentTrip.fromCity;
         routeStations[0].querySelector("small").textContent = currentTrip.fromStation;
-
         routeStations[1].querySelector(".time").textContent = currentTrip.arrTime;
         routeStations[1].querySelector("strong").textContent = currentTrip.toCity;
         routeStations[1].querySelector("small").textContent = currentTrip.toStation;
@@ -85,50 +94,61 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ==========================================
-// 3. XỬ LÝ VẼ MÃ QR (CĂN GIỮA CHUẨN XÁC)
+// 3. VẼ QR
 // ==========================================
 function renderTicketQr() {
     const qrImg = document.getElementById("qrDirectImg");
     if (!qrImg) return;
-
     const qrContent = encodeURIComponent(`SMARTBUS|${ticket.code}|${ticket.seats.join(",")}|${ticket.amount}`);
     qrImg.src = `https://quickchart.io/qr?text=${qrContent}&size=180`;
 }
 
 // ==========================================
-// 4. SỰ KIỆN NÚT BẤM (IN, SAO CHÉP, HỦY)
+// 4. NÚT BẤM
 // ==========================================
-document.getElementById("printBtn")?.addEventListener("click", () => {
-    window.print();
-});
+document.getElementById("printBtn")?.addEventListener("click", () => window.print());
 
 document.getElementById("copyBtn")?.addEventListener("click", async (event) => {
     try {
         await navigator.clipboard.writeText(ticket.code);
         event.currentTarget.textContent = "✓ Đã sao chép";
         setTimeout(() => event.currentTarget.textContent = "Sao chép mã vé", 1800);
-    } catch {
-        alert(`Mã vé: ${ticket.code}`);
-    }
+    } catch { alert(`Mã vé: ${ticket.code}`); }
 });
 
 document.getElementById("cancelBtn")?.addEventListener("click", async () => {
-    // ✅ Đọc ticketId từ URL (?ticketId=X) hoặc prompt cho demo
-    let ticketId = parseInt(params.get("ticketId")) || parseInt(params.get("id"));
+    // Check login
+    if (!userId) {
+        alert("Vui lòng đăng nhập lại!");
+        window.location.href = "/auth/dangnhap.html";
+        return;
+    }
 
-    if (!ticketId || isNaN(ticketId)) {
-        const input = prompt("Nhập ID vé cần hủy (xem trong DB, VD: 9):");
+    // ✅ Fallback: nếu chưa có ticketId → gọi BE lấy vé Booked mới nhất
+    if (!ticketId) {
+        try {
+            const r = await fetch(`/api/tickets/latest-booked?userId=${encodeURIComponent(userId)}`);
+            if (r.ok) {
+                const d = await r.json();
+                ticketId = d.ticketId;
+                console.log("✅ [ve] Fallback lấy ticketId:", ticketId);
+            } else if (r.status === 404) {
+                alert("❌ Bạn không có vé nào đang hiệu lực để hủy.");
+                return;
+            }
+        } catch (e) { console.warn("Fallback fetch lỗi:", e); }
+    }
+
+    // Fallback cuối — prompt
+    if (!ticketId) {
+        const input = prompt("Nhập ID vé cần hủy (VD: 16):");
         if (!input) return;
         ticketId = parseInt(input);
-        if (isNaN(ticketId)) {
-            alert("❌ ID vé không hợp lệ");
-            return;
-        }
+        if (isNaN(ticketId)) { alert("❌ ID vé không hợp lệ"); return; }
     }
 
     if (!confirm(`Bạn có chắc chắn muốn hủy vé: ${ticket.code}?`)) return;
 
-    const userId = localStorage.getItem("userId") || "usr-cus-001";
     const reason = prompt("Nhập lý do hủy vé:", "Không đi được");
     if (reason === null) return;
 
@@ -154,6 +174,7 @@ document.getElementById("cancelBtn")?.addEventListener("click", async () => {
                 `Trạng thái: ${data.data.status}\n\n` +
                 `Vui lòng chờ admin duyệt.`
             );
+            sessionStorage.removeItem("lastTicketId");
         } else {
             alert(`❌ ${data.message || "Không thể hủy vé"}`);
         }

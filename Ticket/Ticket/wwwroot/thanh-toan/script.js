@@ -16,6 +16,17 @@ function formatMoney(value) {
     return new Intl.NumberFormat("vi-VN").format(Number(value) || 0) + "đ";
 }
 
+// ✅ Helper: đọc userId từ userSession JSON (thay vì sessionStorage.userId không tồn tại)
+function getCurrentUserId() {
+    try {
+        const s = JSON.parse(localStorage.getItem("userSession") || "{}");
+        return s.userId || null;
+    } catch (e) {
+        console.warn("Không parse được userSession:", e);
+        return null;
+    }
+}
+
 // ---- Ghi chú phương thức ----
 const notes = {
     VNPay: "Bạn sẽ được chuyển tới giao diện thanh toán của VNPay để thực hiện giao dịch.",
@@ -76,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
             payBtn.innerHTML = `<span class="spinner">⏳</span> Đang kết nối ${selectedMethod}...`;
 
             try {
-                // Gọi API tạo giao dịch thanh toán
+                // ✅ Gọi API tạo giao dịch thanh toán — userId đọc từ userSession
                 const response = await fetch("/api/payment/create", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -86,19 +97,26 @@ document.addEventListener("DOMContentLoaded", () => {
                         seatIds: seats,
                         method: selectedMethod,
                         amount: total,
-                        userId: sessionStorage.getItem("userId") || null
+                        userId: getCurrentUserId()          // ✅ FIX: đọc từ userSession
                     })
                 });
 
                 const result = await response.json().catch(() => ({}));
 
                 if (response.ok && (result.success || result.paymentUrl)) {
+                    // ✅ Lưu context để trang kết quả + /ve/ dùng lại
+                    if (result.ticketId) sessionStorage.setItem("lastTicketId", result.ticketId);
+                    sessionStorage.setItem("lastTransRef", result.transactionRef || "");
+                    sessionStorage.setItem("lastHoldId", holdId);
+                    sessionStorage.setItem("lastSeatIds", seats.join(","));
+                    sessionStorage.setItem("lastTripId", tripId);
+                    sessionStorage.setItem("lastTotal", String(total));
+
                     // Nếu Backend trả về URL thanh toán Sandbox (MoMo/VNPay)
                     if (result.paymentUrl) {
-                        sessionStorage.setItem("lastTransRef", result.transactionRef || "");
                         window.location.href = result.paymentUrl;
                     } else {
-                        // Redirect thẳng trang kết quả nếu là Sandbox mock
+                        // Redirect sang trang kết quả — CÓ truyền ticketId
                         const query = new URLSearchParams({
                             status: "SUCCESS",
                             seats: seats.join(","),
@@ -106,7 +124,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             paymentMethod: selectedMethod,
                             holdId: holdId,
                             tripId: tripId,
-                            transRef: result.transactionRef || `SBGD-${Date.now()}`
+                            transRef: result.transactionRef || `SBGD-${Date.now()}`,
+                            ticketId: result.ticketId || ""     // ✅ FIX: truyền ticketId
                         });
                         window.location.href = `../ket-qua-thanh-toan/index.html?${query.toString()}`;
                     }

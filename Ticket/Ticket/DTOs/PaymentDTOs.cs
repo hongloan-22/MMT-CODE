@@ -41,22 +41,16 @@ namespace Ticket.Models
     public class CreatePaymentResponseDto
     {
         public bool Success { get; set; }
-
-        /// <summary>Ma tham chieu noi bo (TransactionCode)</summary>
         public string TransactionCode { get; set; } = string.Empty;
-
         public string Method { get; set; } = string.Empty;
-
-        /// <summary>Trang thai hien tai (PENDING/SUCCESS/FAILED/CANCELLED/UNKNOWN)</summary>
         public string Status { get; set; } = string.Empty;
-
-        /// <summary>URL chuyen huong den cong thanh toan sandbox (null voi Cash)</summary>
         public string? PaymentUrl { get; set; }
-
-        /// <summary>Thời gian hết hạn giao dịch</summary>
         public DateTime ExpiresAt { get; set; }
-
         public string Message { get; set; } = string.Empty;
+
+        // ✅ THÊM 2 field này
+        public int? TicketId { get; set; }
+        public string? TicketCode { get; set; }
     }
 
     /// <summary>

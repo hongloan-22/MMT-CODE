@@ -224,99 +224,237 @@ namespace Ticket.Migrations
                     b.ToTable("ElectronicTickets");
                 });
 
-            modelBuilder.Entity("Ticket.Models.Payment", b =>
+            modelBuilder.Entity("Ticket.Models.PaymentTransaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,0)");
+                        .HasColumnType("decimal(18,0)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("CallbackCount")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("callback_count");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("completed_at");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_at");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("GatewayOrderId")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("expires_at");
 
                     b.Property<string>("GatewayResponseCode")
                         .HasMaxLength(20)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("gateway_response_code");
 
                     b.Property<string>("GatewayResponseMessage")
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("gateway_response_message");
 
                     b.Property<string>("GatewaySignature")
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("GatewayTransactionId")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("gateway_signature");
 
                     b.Property<string>("HoldId")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("hold_id");
 
                     b.Property<string>("IpnUrl")
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ipn_url");
 
                     b.Property<int>("Method")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("method");
 
                     b.Property<string>("Note")
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("note");
+
+                    b.Property<string>("OrderCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("order_code");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("provider_transaction_id");
 
                     b.Property<string>("ReturnUrl")
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("return_url");
 
                     b.Property<string>("SeatIds")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("seat_ids");
 
                     b.Property<int>("Status")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("status");
 
-                    b.Property<string>("TransactionRef")
+                    b.Property<string>("TransactionCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("transaction_code");
 
                     b.Property<string>("TripCode")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("trip_code");
 
                     b.Property<string>("UserId")
                         .HasMaxLength(50)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("user_id");
 
                     b.Property<string>("UserIpAddress")
                         .HasMaxLength(45)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasColumnName("user_ip_address");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GatewayOrderId");
-
                     b.HasIndex("HoldId");
 
-                    b.HasIndex("TransactionRef")
+                    b.HasIndex("OrderCode");
+
+                    b.HasIndex("TransactionCode")
                         .IsUnique();
 
-                    b.ToTable("Payments");
+                    b.ToTable("payment_transactions");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Amount = 150000m,
+                            CallbackCount = 0,
+                            CompletedAt = new DateTime(2026, 10, 5, 8, 5, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2026, 10, 5, 8, 0, 0, 0, DateTimeKind.Utc),
+                            ExpiresAt = new DateTime(2026, 10, 5, 8, 15, 0, 0, DateTimeKind.Utc),
+                            GatewayResponseCode = "00",
+                            GatewayResponseMessage = "Giao dịch thành công",
+                            HoldId = "seed-hold-success-vnpay",
+                            Method = 1,
+                            Note = "Mẫu: thanh toán VNPay thành công",
+                            OrderCode = "SBGD2026100500001",
+                            PaidAt = new DateTime(2026, 10, 5, 8, 5, 0, 0, DateTimeKind.Utc),
+                            Provider = "VNPay",
+                            ProviderTransactionId = "VNP14000001",
+                            SeatIds = "A1,A2",
+                            Status = 1,
+                            TransactionCode = "SBGD-20261005-00001",
+                            TripCode = "TRIP01",
+                            UserId = "usr-cus-001"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Amount = 50000m,
+                            CallbackCount = 0,
+                            CreatedAt = new DateTime(2026, 10, 5, 9, 0, 0, 0, DateTimeKind.Utc),
+                            ExpiresAt = new DateTime(2026, 12, 31, 23, 59, 0, 0, DateTimeKind.Utc),
+                            HoldId = "seed-hold-pending-momo",
+                            Method = 2,
+                            Note = "Mẫu: giao dịch MoMo đang chờ thanh toán",
+                            OrderCode = "SBGD2026100500002",
+                            Provider = "MoMo",
+                            SeatIds = "B1",
+                            Status = 0,
+                            TransactionCode = "SBGD-20261005-00002",
+                            TripCode = "TRIP01",
+                            UserId = "usr-cus-001"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Amount = 100000m,
+                            CallbackCount = 0,
+                            CompletedAt = new DateTime(2026, 10, 6, 10, 3, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2026, 10, 6, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ExpiresAt = new DateTime(2026, 10, 6, 10, 15, 0, 0, DateTimeKind.Utc),
+                            GatewayResponseCode = "-49",
+                            GatewayResponseMessage = "Thanh toán thất bại",
+                            HoldId = "seed-hold-failed-zalo",
+                            Method = 3,
+                            Note = "Mẫu: thanh toán ZaloPay thất bại",
+                            OrderCode = "SBGD2026100600001",
+                            Provider = "ZaloPay",
+                            SeatIds = "C1,C2",
+                            Status = 2,
+                            TransactionCode = "SBGD-20261006-00001",
+                            TripCode = "TRIP01",
+                            UserId = "usr-cus-001"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Amount = 200000m,
+                            CallbackCount = 0,
+                            CompletedAt = new DateTime(2026, 10, 7, 11, 20, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2026, 10, 7, 11, 0, 0, 0, DateTimeKind.Utc),
+                            ExpiresAt = new DateTime(2026, 10, 7, 11, 15, 0, 0, DateTimeKind.Utc),
+                            HoldId = "seed-hold-cancelled-bank",
+                            Method = 4,
+                            Note = "Mẫu: hết thời gian thanh toán",
+                            OrderCode = "SBGD2026100700001",
+                            Provider = "BankTransfer",
+                            SeatIds = "D1,D2",
+                            Status = 3,
+                            TransactionCode = "SBGD-20261007-00001",
+                            TripCode = "TRIP01",
+                            UserId = "usr-cus-001"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Amount = 50000m,
+                            CallbackCount = 0,
+                            CompletedAt = new DateTime(2026, 10, 8, 7, 30, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2026, 10, 8, 7, 30, 0, 0, DateTimeKind.Utc),
+                            ExpiresAt = new DateTime(2026, 10, 8, 7, 45, 0, 0, DateTimeKind.Utc),
+                            HoldId = "seed-hold-cash-trip01",
+                            Method = 5,
+                            Note = "Mẫu: thanh toán tiền mặt thành công ngay",
+                            OrderCode = "SBGD2026100800001",
+                            PaidAt = new DateTime(2026, 10, 8, 7, 30, 0, 0, DateTimeKind.Utc),
+                            Provider = "Cash",
+                            SeatIds = "A3",
+                            Status = 1,
+                            TransactionCode = "SBGD-20261008-00001",
+                            TripCode = "TRIP01",
+                            UserId = "usr-cus-001"
+                        });
                 });
 
             modelBuilder.Entity("Ticket.Models.RefundTransaction", b =>
@@ -358,8 +496,6 @@ namespace Ticket.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProcessedByUserId");
-
-                    b.HasIndex("Status");
 
                     b.HasIndex("TicketId")
                         .IsUnique();
@@ -790,7 +926,7 @@ namespace Ticket.Migrations
                             RoleId = 1,
                             Salt = "a1b2c3d4",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 10, 10, 9, 12, 3, 217, DateTimeKind.Utc).AddTicks(5658)
+                            UpdatedAt = new DateTime(2026, 10, 11, 19, 44, 6, 902, DateTimeKind.Utc).AddTicks(7745)
                         },
                         new
                         {
@@ -805,7 +941,7 @@ namespace Ticket.Migrations
                             RoleId = 2,
                             Salt = "b2c3d4e5",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 10, 10, 9, 12, 3, 217, DateTimeKind.Utc).AddTicks(6098)
+                            UpdatedAt = new DateTime(2026, 10, 11, 19, 44, 6, 902, DateTimeKind.Utc).AddTicks(8125)
                         },
                         new
                         {
@@ -820,7 +956,7 @@ namespace Ticket.Migrations
                             RoleId = 3,
                             Salt = "c3d4e5f6",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 10, 10, 9, 12, 3, 217, DateTimeKind.Utc).AddTicks(6286)
+                            UpdatedAt = new DateTime(2026, 10, 11, 19, 44, 6, 902, DateTimeKind.Utc).AddTicks(8232)
                         },
                         new
                         {
@@ -835,7 +971,7 @@ namespace Ticket.Migrations
                             RoleId = 4,
                             Salt = "e5f6g7h8",
                             Status = "ACTIVE",
-                            UpdatedAt = new DateTime(2026, 10, 10, 9, 12, 3, 217, DateTimeKind.Utc).AddTicks(6395)
+                            UpdatedAt = new DateTime(2026, 10, 11, 19, 44, 6, 902, DateTimeKind.Utc).AddTicks(8327)
                         });
                 });
 
@@ -884,13 +1020,12 @@ namespace Ticket.Migrations
                 {
                     b.HasOne("Ticket.Models.User", "ProcessedByUser")
                         .WithMany()
-                        .HasForeignKey("ProcessedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ProcessedByUserId");
 
                     b.HasOne("Ticket.Models.Ticket", "Ticket")
                         .WithOne("RefundTransaction")
                         .HasForeignKey("Ticket.Models.RefundTransaction", "TicketId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ProcessedByUser");
