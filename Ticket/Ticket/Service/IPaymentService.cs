@@ -3,39 +3,39 @@ using Ticket.Models;
 namespace Ticket.Service
 {
     // ============================================================
-    // US-64 + US-65: Interface Service Thanh Toán
+    // SPRINT 3 - US06: Interface Service Thanh Toan
     // ============================================================
 
     public interface IPaymentService
     {
         /// <summary>
-        /// US-64: Tạo bản ghi giao dịch trong CSDL và sinh mã tham chiếu nội bộ
+        /// Tao ban ghi PaymentTransaction trong CSDL va sinh ma tham chieu noi bo.
         /// </summary>
         Task<CreatePaymentResponseDto> CreatePaymentAsync(CreatePaymentRequestDto request);
 
         /// <summary>
-        /// US-64: Truy vấn trạng thái giao dịch theo mã tham chiếu nội bộ
+        /// Truy van trang thai giao dich theo ma tham chieu noi bo.
         /// </summary>
-        Task<PaymentStatusResponseDto?> GetPaymentStatusAsync(string transactionRef);
+        Task<PaymentStatusResponseDto?> GetPaymentStatusAsync(string transactionCode);
 
         /// <summary>
-        /// US-65: Xử lý callback/IPN từ VNPay sandbox, cập nhật trạng thái
+        /// Xu ly callback/IPN tu VNPay sandbox, cap nhat trang thai.
         /// </summary>
         Task<bool> ProcessVNPayCallbackAsync(VNPayCallbackDto callback);
 
         /// <summary>
-        /// US-65: Xử lý callback/IPN từ MoMo sandbox, cập nhật trạng thái
+        /// Xu ly callback/IPN tu MoMo sandbox, cap nhat trang thai.
         /// </summary>
         Task<bool> ProcessMoMoCallbackAsync(MoMoCallbackDto callback);
 
         /// <summary>
-        /// US-65: Xử lý callback/IPN từ ZaloPay sandbox, cập nhật trạng thái
+        /// Xu ly callback/IPN tu ZaloPay sandbox, cap nhat trang thai.
         /// </summary>
         Task<bool> ProcessZaloPayCallbackAsync(ZaloPayCallbackDto callback);
 
         /// <summary>
-        /// Hủy giao dịch khi hết thời gian giữ chỗ hoặc người dùng huỷ
+        /// Huy giao dich khi het thoi gian giu cho hoac nguoi dung huy.
         /// </summary>
-        Task<bool> CancelPaymentAsync(string transactionRef, string reason = "");
+        Task<bool> CancelPaymentAsync(string transactionCode, string reason = "");
     }
 }
