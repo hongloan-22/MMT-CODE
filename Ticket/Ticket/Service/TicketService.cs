@@ -1,14 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Ticket.Models; // Thay đổi đường dẫn đến các class Ticket, RefundTransaction...
-using Ticket.Data;   // Thay đổi đường dẫn đến AppDbContext
+using Ticket.Models;
+using Ticket.Data;
 
 namespace Ticket.Services
 {
     public interface ITicketService
     {
-        // ✅ MỚI
         Task<bool> CancelTicketAsync(int ticketId, string userId, string reason);
     }
 
@@ -23,15 +22,16 @@ namespace Ticket.Services
             _refundPolicy = refundPolicy;
         }
 
-        // ✅ MỚI
         public async Task<bool> CancelTicketAsync(int ticketId, string userId, string reason)
         {
+            // ✅ FIX CS1503: Include thêm Trip để lấy TripDate + DepartureTime
             var ticket = await _context.Tickets
                 .Include(t => t.Seat)
-                .Include(t => t.Schedule)
+                .Include(t => t.Schedule).ThenInclude(s => s.Trip)
                 .FirstOrDefaultAsync(t => t.Id == ticketId && t.UserId == userId);
 
-            if (ticket == null || ticket.Status != Ticket.Models.TicketStatus.Booked) return false;
+            if (ticket == null || ticket.Status != Ticket.Models.TicketStatus.Booked)
+                return false;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -39,17 +39,28 @@ namespace Ticket.Services
                 ticket.Status = Ticket.Models.TicketStatus.Cancelled;
                 ticket.CancelReason = reason;
 
-                if (ticket.Seat != null) ticket.Seat.Status = SeatStatus.Available;
+                if (ticket.Seat != null)
+                    ticket.Seat.Status = SeatStatus.Available;
 
-                var refundAmount = _refundPolicy.CalculateRefundAmount(ticket.Price, ticket.Schedule.DepartureTime);
+                // ✅ FIX CS1503: Ghép TripDate + DepartureTime thành DateTime để gọi đúng overload
+                var refundAmount = 0m;
+                if (ticket.Schedule?.Trip != null)
+                {
+                    var departureDateTime = ticket.Schedule.Trip.TripDate.Date
+                                            + ticket.Schedule.Trip.DepartureTime;
+
+                    refundAmount = _refundPolicy.CalculateRefundAmount(ticket.Price, departureDateTime);
+                }
+
                 if (refundAmount > 0)
                 {
                     _context.RefundTransactions.Add(new RefundTransaction
                     {
                         TicketId = ticket.Id,
                         Amount = refundAmount,
-                        CreatedAt = DateTime.Now,
-                        Status = RefundStatus.Pending
+                        CreatedAt = DateTime.UtcNow,
+                        Status = RefundStatus.Pending,
+                        Reason = reason
                     });
                 }
 
