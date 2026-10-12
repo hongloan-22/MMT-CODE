@@ -52,6 +52,8 @@ builder.Services.AddSingleton<ISeatBookingService, SeatBookingService>();
 builder.Services.AddSingleton<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IRefundService, RefundService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<RefundService>();
+builder.Services.AddScoped<TicketExchangeService>();
 
 var app = builder.Build();
 
@@ -181,7 +183,7 @@ using (var scope = app.Services.CreateScope())
                 DestinationStation = st2,
                 DestinationStationId = 2,
                 TripDate = DateTime.Today,
-                DepartureTime = new TimeSpan(8, 0, 0),
+                DepartureTime = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day, 8, 0, 0),
                 TotalSeats = 40,
                 AvailableSeats = 35,
                 BookedSeats = 5,

@@ -32,25 +32,33 @@ namespace Ticket.Models
     /// </summary>
     public class RefundTransaction
     {
+        internal object? OriginalAmount;
+        internal decimal CancellationFee;
+
         [Key]
         public int Id { get; set; }
 
+        // =========================
+        // LIÊN KẾT VÉ
+        // =========================
         [Required]
         public int TicketId { get; set; }
         public global::Ticket.Models.Ticket Ticket { get; set; } = null!;
 
-        [Column(TypeName = "decimal(18,0)")]
-        public decimal OriginalAmount { get; set; }
+        [ForeignKey(nameof(TicketId))]
 
+        // =========================
+        // SỐ TIỀN (US-111)
+        // =========================
         [Column(TypeName = "decimal(18,0)")]
         public decimal Amount { get; set; }
 
         [Column(TypeName = "decimal(18,0)")]
         public decimal Fee { get; set; } = 0m;
 
-        [Column(TypeName = "decimal(18,0)")]
-        public decimal CancellationFee { get; set; } = 0m;
-
+        // =========================
+        // TRẠNG THÁI & LÝ DO
+        // =========================
         public RefundStatus Status { get; set; } = RefundStatus.Pending;
 
         [MaxLength(500)]
@@ -59,21 +67,23 @@ namespace Ticket.Models
         [MaxLength(100)]
         public string? GatewayTxnRef { get; set; }
 
-        public string TransactionType { get; set; } = string.Empty;
-
+        // =========================
+        // THỜI GIAN
+        // =========================
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ProcessedAt { get; set; }
-
+        // =========================
+        // NGƯỜI XỬ LÝ (ADMIN)
+        // =========================
         [MaxLength(36)]
         public string? ProcessedByUserId { get; set; }
-
         [ForeignKey(nameof(ProcessedByUserId))]
         public User? ProcessedByUser { get; set; }
-
-        public decimal OriginalPrice { get; set; }
-        public decimal RefundAmount { get; set; }
-        public decimal NewPrice { get; set; }
-        public decimal NetAmount { get; set; }
+        public decimal OriginalPrice { get; set; }  // Giá vé gốc
+        public decimal RefundAmount { get; set; }   // Số tiền hoàn lại từ vé cũ
+        public decimal NewPrice { get; set; }       // Giá vé mới (nếu đổi vé)
+        public decimal NetAmount { get; set; }      // Chênh lệch (Dương: Khách trả thêm, Âm: Hoàn trả lại khách)
         public TransactionType Type { get; set; }
+
     }
 }

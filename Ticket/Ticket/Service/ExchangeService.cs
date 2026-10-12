@@ -11,7 +11,7 @@ namespace Ticket.Service
     public class TicketExchangeService
     {
         private readonly ApplicationDbContext _context;
-        private readonly Services.RefundService _refundService;
+        private readonly RefundService _refundService;
 
         public TicketExchangeService(ApplicationDbContext context, RefundService refundService)
         {
@@ -21,39 +21,41 @@ namespace Ticket.Service
 
         public async Task<TicketActionResponseDto> ExchangeTicketAsync(ExchangeTicketDto request, string userId)
         {
+            // 1. Lấy thông tin vé cũ
             var oldTicket = await _context.Tickets
                 .Include(t => t.Trip)
                 .FirstOrDefaultAsync(t => t.Id == request.OldTicketId && t.UserId == userId);
 
-            if (oldTicket == null || oldTicket.Status != TicketStatus.Booked)
+            if (oldTicket == null || oldTicket.Status != TicketStatus.Paid)
                 return new TicketActionResponseDto { Success = false, Message = "Vé cũ không hợp lệ hoặc chưa thanh toán." };
 
-            var departureDateTime = oldTicket.Trip != null
-                ? oldTicket.Trip.TripDate.Date.Add(oldTicket.Trip.DepartureTime)
-                : oldTicket.Schedule?.Trip != null
-                    ? oldTicket.Schedule.Trip.TripDate.Date.Add(oldTicket.Schedule.DepartureTime)
-                    : DateTime.Now;
-
-            double hoursToDeparture = (departureDateTime - DateTime.Now).TotalHours;
+            double hoursToDeparture = (oldTicket.Trip.DepartureTime - DateTime.Now).TotalHours;
             if (hoursToDeparture < 4)
                 return new TicketActionResponseDto { Success = false, Message = "Chỉ được phép đổi vé trước giờ khởi hành ít nhất 4 tiếng." };
 
+            // 2. Lấy thông tin chuyến xe mới
             var newTrip = await _context.Trips.FindAsync(request.NewTripId);
-            if (newTrip == null || (newTrip.Status != "Active" && newTrip.Status != "SCHEDULED"))
+            if (newTrip == null || newTrip.Status != "Active")
                 return new TicketActionResponseDto { Success = false, Message = "Chuyến xe mới không khả dụng." };
 
+            // 3. Kiểm tra ghế mới đã có người đặt chưa
             bool isSeatTaken = await _context.Tickets.AnyAsync(t => t.TripId == request.NewTripId &&
                                                                    t.SeatNumber == request.NewSeatNumber &&
-                                                                   t.Status != TicketStatus.Cancelled);
+                                                                   t.Status != TicketStatus.Booked);
             if (isSeatTaken)
                 return new TicketActionResponseDto { Success = false, Message = "Ghế mới chọn đã có người đặt." };
 
-            decimal exchangeFeeRate = hoursToDeparture >= 24 ? 0.00m : 0.10m;
+            // 4. Tính phí đổi vé & Số tiền chênh lệch (US-108)
+            decimal exchangeFeeRate = hoursToDeparture >= 24 ? 0.00m : 0.10m; // Miễn phí đổi >24h, 10% nếu 4-24h
             decimal exchangeFee = oldTicket.Price * exchangeFeeRate;
+
+            // Công thức: Chênh lệch = (Giá vé mới - Giá vé cũ) + Phí đổi vé
             decimal priceDifference = (newTrip.Price - oldTicket.Price) + exchangeFee;
 
+            // Xử lý các trường hợp chênh lệch:
             if (priceDifference > 0)
             {
+                // Trường hợp 1: Khách cần trả thêm tiền -> Trả về yêu cầu thanh toán bổ sung
                 return new TicketActionResponseDto
                 {
                     Success = true,
@@ -64,20 +66,24 @@ namespace Ticket.Service
             }
             else if (priceDifference < 0)
             {
+                // Trường hợp 2: Giá vé mới thấp hơn -> Hoàn lại phần tiền thừa
                 decimal refundAmount = Math.Abs(priceDifference);
 
+                // Cập nhật thông tin vé sang chuyến mới
                 oldTicket.TripId = newTrip.Id;
                 oldTicket.SeatNumber = request.NewSeatNumber;
                 oldTicket.Price = newTrip.Price;
                 oldTicket.UpdatedAt = DateTime.Now;
 
+                // Tạo bản ghi giao dịch hoàn tiền phần chênh lệch
                 var refundTx = new RefundTransaction
                 {
                     TicketId = oldTicket.Id,
+                    ProcessedByUserId = userId,
                     OriginalAmount = oldTicket.Price,
                     CancellationFee = exchangeFee,
                     RefundAmount = refundAmount,
-                    TransactionType = "Exchange_Difference",
+                    Type = TransactionType.Exchange,
                     Reason = $"Hoàn tiền chênh lệch khi đổi sang chuyến #{newTrip.Id}",
                     Status = RefundStatus.Pending,
                     CreatedAt = DateTime.Now
@@ -96,6 +102,7 @@ namespace Ticket.Service
             }
             else
             {
+                // Trường hợp 3: Không chênh lệch giá -> Đổi vé ngay
                 oldTicket.TripId = newTrip.Id;
                 oldTicket.SeatNumber = request.NewSeatNumber;
                 oldTicket.UpdatedAt = DateTime.Now;

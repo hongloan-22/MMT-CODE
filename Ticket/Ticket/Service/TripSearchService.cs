@@ -43,7 +43,7 @@ namespace SmartBusTicketing.Services
                 RouteName = t.Route != null ? t.Route.RouteName : string.Empty,
                 OriginStationName = t.OriginStation != null ? t.OriginStation.StationName : "Điểm đi mặc định",
                 DestinationStationName = t.DestinationStation != null ? t.DestinationStation.StationName : "Điểm đến mặc định",
-                DepartureTime = t.TripDate.Date + t.DepartureTime,
+                DepartureTime = t.TripDate.Date.Add(t.DepartureTime.TimeOfDay),
                 Price = t.Price,
                 AvailableSeats = t.TotalSeats - t.BookedSeats
             }).ToList();
