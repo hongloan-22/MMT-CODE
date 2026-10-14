@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Ticket.Data;
@@ -12,10 +15,12 @@ namespace Ticket.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _config;
 
-        public AuthController(ApplicationDbContext context)
+        public AuthController(ApplicationDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
 
         public class RegisterDto
@@ -107,10 +112,13 @@ namespace Ticket.Controllers
             var userSalt = user.Salt ?? "";
             var hashedInput = ComputeHash(dto.Password + userSalt);
 
-            if (user.PasswordHash != hashedInput && user.PasswordHash != dto.Password)
+            if (user.PasswordHash != hashedInput)
             {
                 return BadRequest(new { message = "Email hoặc mật khẩu không chính xác" });
             }
+
+            var roleCode = user.Role != null ? user.Role.RoleCode : "USER";
+            var (token, expiresAt) = GenerateJwtToken(user, roleCode);
 
             return Ok(new
             {
@@ -118,8 +126,44 @@ namespace Ticket.Controllers
                 userId = user.UserId,
                 fullName = user.FullName,
                 email = user.Email,
-                role = user.Role != null ? user.Role.RoleCode : "USER"
+                role = roleCode,
+                token,
+                expiresAt
             });
+        }
+
+        // =====================================================
+        // Sinh JWT token chứa claim định danh người dùng (US-171)
+        // =====================================================
+        private (string token, DateTime expiresAt) GenerateJwtToken(User user, string roleCode)
+        {
+            var jwtSection = _config.GetSection("Jwt");
+            var key = jwtSection["Key"]
+                ?? throw new InvalidOperationException("Thiếu cấu hình 'Jwt:Key'");
+
+            var expiryMinutes = int.TryParse(jwtSection["ExpiryMinutes"], out var minutes) ? minutes : 120;
+            var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
+
+            var credentials = new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+                SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId),
+                new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, roleCode)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: expiresAt,
+                signingCredentials: credentials);
+
+            return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
         }
     }
 }

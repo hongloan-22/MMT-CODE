@@ -58,6 +58,17 @@ namespace Ticket.Models
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        [Column("date_of_birth")]
+        public DateTime? DateOfBirth { get; set; }
+
+        [MaxLength(255)]
+        [Column("address")]
+        public string? Address { get; set; }
+
+        [MaxLength(500)]
+        [Column("avatar_url")]
+        public string? AvatarUrl { get; set; }
+
         public bool IsActive { get; set; } = true;
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     }
