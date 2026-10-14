@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Quản lý tài khoản</title>
+
+    <script>
+                (function () {
+                    const raw = localStorage.getItem("userSession");
+
+                    if (!raw) {
+                        window.location.replace("../auth/dangnhap.html");
+                        return;
+                    }
+
+                    try {
+                        const u = JSON.parse(raw);
+
+                        const roleName = String(
+                            u.role ||
+                            u.Role ||
+                            u.roleCode ||
+                            u.RoleCode ||
+                            u.roleName ||
+                            ""
+                        ).trim().toUpperCase();
+
+                        const roleId = Number(
+                            u.roleId ||
+                            u.RoleId ||
+                            0
+                        );
+
+                        const isAdmin =
+                            roleName === "ADMIN" ||
+                            roleName === "QUẢN TRỊ VIÊN" ||
+                            roleId === 1;
+
+                        if (!isAdmin) {
+                            window.location.replace(
+                                "../quan-ly-tuyen-tram/index.html");
+                        }
+                    }
+                    catch (err) {
+                        console.error(err);
+                        window.location.replace("../auth/dangnhap.html");
+                    }
+                })();
+    </script>
+
+    <link rel="stylesheet" href="../quan-ly-tuyen-tram/style.css">
+    <script src="../js/admin-manager-layout.js"></script>
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- ===================================================== -->
+        <!-- SIDEBAR -->
+        <!-- ===================================================== -->
+
+        <aside class="sidebar">
+
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+            <nav class="side-nav">
+                <!-- Đã sửa href trỏ đúng về trang chủ/tổng quan -->
+                <a href="../index.html" class="side-link">
+                    <span>▦</span><span>Tổng quan</span>
+                </a>
+                <a href="../quan-ly-tuyen-tram/index.html"
+                   class="side-link">
+
+                    <span>⇄</span>
+                    <span>Tuyến & trạm</span>
+
+                </a>
+                <!-- Đã sửa href trỏ đúng sang trang Lập lịch trình -->
+                <a href="../lap-lich-trinh/index.html" class="side-link">
+                    <span>◷</span><span>Lịch trình</span>
+                </a>
+                <a href="../phan-quyen/index.html"
+                   class="side-link active"
+                   id="linkPhanQuyen">
+
+                    <span>👤</span>
+                    <span>Phân quyền</span>
+
+                </a>
+                <a href="../doi-xe/index.html"
+                   class="side-link">
+
+                    <span>🚌</span>
+                    <span>Đội xe</span>
+
+                </a>
+
+                <a href="../doi-xe/index.html#staff"
+                   class="side-link">
+
+                    <span>👤</span>
+                    <span>Tài xế / phụ xe</span>
+
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO</div>
+            <nav class="side-nav">
+                   class="side-link">
+
+                    <span>▤</span>
+                    <span>Nhật ký hoạt động</span>
+
+                </a>
+                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
+                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+            </nav>
+
+            <div class="sidebar-bottom">
+
+                <div class="account-mini">
+
+                    <div class="avatar"
+                         id="sidebarAvatar">
+                        AD
+                    </div>
+
+                    <div>
+                        <strong id="sidebarUserName">
+                            Admin
+                        </strong>
+
+                        <small id="sidebarUserRole">
+                            Quản trị hệ thống
+                        </small>
+                    </div>
+
+                </div>
+
+                <button class="logout-btn"
+                        id="logoutBtn"
+                        type="button">
+                    ↪ Đăng xuất
+                </button>
+
+            </div>
+
+        </aside>
+
+        <!-- ===================================================== -->
+        <!-- MAIN -->
+        <!-- ===================================================== -->
+
+        <main class="main">
+
+            <header class="topbar">
+
+                <div>
+
+                    <div class="breadcrumb">
+                        Quản trị hệ thống
+                        <span>/</span>
+                        Tài khoản
+                    </div>
+
+                    <h1>
+                        Quản lý tài khoản
+                    </h1>
+
+                    <p>
+                        Quản lý người dùng, vai trò và trạng thái tài khoản.
+                    </p>
+
+                </div>
+
+                <div class="top-actions">
+
+                    <button class="icon-btn"
+                            type="button">
+                        ?
+                    </button>
+
+                    <button class="user-btn"
+                            type="button">
+
+                        <span class="avatar small"
+                              id="topAvatar">
+                            AD
+                        </span>
+
+                        <span id="topUserRole">
+                            Admin
+                        </span>
+
+                        ▾
+
+                    </button>
+
+                </div>
+
+            </header>
+
+            <!-- ================================================= -->
+            <!-- CONTENT -->
+            <!-- ================================================= -->
+
+            <section class="content">
+
+                <div class="page-card">
+
+                    <div class="card-head">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                QUẢN TRỊ VIÊN
+                            </div>
+
+                            <h2>
+                                Danh sách tài khoản
+                            </h2>
+
+                            <p>
+                                Tạo, sửa, khóa/mở khóa tài khoản và thay đổi vai trò.
+                            </p>
+
+                        </div>
+
+                        <button class="primary-btn"
+                                id="addUserBtn"
+                                type="button">
+                            ＋ Tạo tài khoản
+                        </button>
+
+                    </div>
+
+                    <!-- SEARCH -->
+
+                    <div class="toolbar">
+
+                        <div class="search-box">
+
+                            <span>
+                                ⌕
+                            </span>
+
+                            <input id="userSearch"
+                                   type="search"
+                                   placeholder="Tìm theo họ tên, email, mã user...">
+
+                        </div>
+
+                        <select id="statusFilter">
+
+                            <option value="all">
+                                Tất cả trạng thái
+                            </option>
+
+                            <option value="ACTIVE">
+                                Đang hoạt động
+                            </option>
+
+                            <option value="LOCKED">
+                                Đã khóa
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <!-- TABLE -->
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Mã User</th>
+
+                                    <th>Họ và tên</th>
+
+                                    <th>Email</th>
+
+                                    <th>Số điện thoại</th>
+
+                                    <th>Vai trò</th>
+
+                                    <th>Trạng thái</th>
+
+                                    <th style="width: 220px;">
+                                        Thao tác
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="userTableBody">
+
+                                <tr>
+
+                                    <td colspan="7"
+                                        style="
+                                text-align:center;
+                                padding:25px;
+                                color:#8a99a5;
+                                ">
+
+                                        Đang tải dữ liệu...
+
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL TẠO / SỬA USER -->
+    <!-- ========================================================= -->
+
+    <div class="modal-backdrop"
+         id="userModal">
+
+        <div class="modal">
+
+            <div class="modal-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        TÀI KHOẢN
+                    </div>
+
+                    <h3 id="userModalTitle">
+                        Tạo tài khoản
+                    </h3>
+
+                </div>
+
+                <button class="close-btn"
+                        id="closeUserModal"
+                        type="button">
+                    ×
+                </button>
+
+            </div>
+
+            <form id="userForm">
+
+                <input type="hidden"
+                       id="editingUserId">
+
+                <div class="form-grid">
+
+                    <label>
+                        Họ và tên *
+                        <input id="userFullName"
+                               type="text"
+                               required
+                               placeholder="Nguyễn Văn A">
+                    </label>
+
+                    <label>
+                        Email *
+                        <input id="userEmail"
+                               type="email"
+                               required
+                               placeholder="example@gmail.com">
+                    </label>
+
+                    <label>
+                        Số điện thoại
+                        <input id="userPhone"
+                               type="text"
+                               placeholder="0912345678">
+                    </label>
+
+                    <label>
+                        Vai trò *
+                        <select id="userRole"
+                                required>
+                        </select>
+                    </label>
+
+                    <label id="passwordGroup">
+
+                        Mật khẩu *
+
+                        <input id="userPassword"
+                               type="password"
+                               placeholder="Ít nhất 6 ký tự">
+
+                    </label>
+
+                    <label id="newPasswordGroup">
+
+                        Mật khẩu mới
+
+                        <input id="userNewPassword"
+                               type="password"
+                               placeholder="Để trống nếu không đổi">
+
+                    </label>
+
+                    <label id="statusGroup">
+
+                        Trạng thái
+
+                        <select id="userStatus">
+
+                            <option value="ACTIVE">
+                                Đang hoạt động
+                            </option>
+
+                            <option value="LOCKED">
+                                Đã khóa
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                    <label id="activeGroup">
+
+                        Kích hoạt
+
+                        <select id="userIsActive">
+
+                            <option value="true">
+                                Có
+                            </option>
+
+                            <option value="false">
+                                Không
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                </div>
+
+                <div class="modal-actions">
+
+                    <button type="button"
+                            class="secondary-btn"
+                            id="cancelUserBtn">
+                        Hủy
+                    </button>
+
+                    <button type="submit"
+                            class="primary-btn">
+                        Lưu tài khoản
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL ĐĂNG XUẤT -->
+    <!-- ========================================================= -->
+
+    <div class="modal-backdrop"
+         id="logoutModal">
+
+        <div class="modal logout-modal">
+
+            <div class="logout-icon">
+                ↪
+            </div>
+
+            <h3>
+                Xác nhận đăng xuất
+            </h3>
+
+            <p>
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+            </p>
+
+            <div class="logout-actions">
+
+                <button type="button"
+                        class="secondary-btn"
+                        id="cancelLogoutBtn">
+
+                    Hủy
+
+                </button>
+
+                <button type="button"
+                        class="logout-confirm-btn"
+                        id="confirmLogoutBtn">
+
+                    Đăng xuất
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="toast"
+         id="toast">
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

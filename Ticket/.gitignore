@@ -1,13 +1,11 @@
-## Thư mục build của .NET
-[Bb]in/
-[Oo]bj/
-
-## Cấu hình cá nhân của Visual Studio & VS Code
+# Build / Visual Studio
 .vs/
-.vscode/
+bin/
+obj/
 *.user
 *.suo
 
+<<<<<<< Updated upstream
 ## File cơ sở dữ liệu tạm thời
 *.mdf
 *.ldf
@@ -19,3 +17,12 @@
 *.db-shm
 *.db-wal
 ticket.db
+=======
+# Local SQLite databases and sidecar files
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets / local environment
+appsettings.Local.json
+>>>>>>> Stashed changes
