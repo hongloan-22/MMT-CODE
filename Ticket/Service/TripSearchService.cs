@@ -328,5 +328,176 @@ namespace SmartBusTicketing.Services
                 OccupancyRate = occupancyRate
             };
         }
+
+        // =====================================================
+        // US-165: LẤY DANH SÁCH CHUYẾN CÓ PHÂN TRANG + LỌC + SẮP XẾP
+        // GET: /api/TraCuuTuyenXe/danh-sach
+        // =====================================================
+        public async Task<TripListResponseDto> GetTripListAsync(
+            TripListRequestDto request)
+        {
+            // 1. Chuẩn hóa tham số phân trang
+            var page = request.Page < 1 ? 1 : request.Page;
+            var pageSize = request.PageSize < 1 ? 20 : request.PageSize;
+            if (pageSize > 100) pageSize = 100;
+
+            // 2. Query cơ bản — chỉ lọc cái gì DB làm được
+            var query = _context.Trips
+                .AsNoTracking()
+                .Include(t => t.Route)
+                    .ThenInclude(r => r!.RouteStops)
+                        .ThenInclude(rs => rs.BusStop)
+                .Include(t => t.Schedules)
+                    .ThenInclude(s => s.BusStop)
+                .Include(t => t.Bus)
+                .Where(t =>
+                    t.IsActive &&
+                    t.Status == "ACTIVE" &&
+                    t.Route != null &&
+                    t.Route.IsActive &&
+                    t.BusId != null)
+                .AsQueryable();
+
+            // Lọc theo ngày
+            if (request.DepartureDate.HasValue)
+            {
+                var date = request.DepartureDate.Value.Date;
+                query = query.Where(t => t.TripDate.Date == date);
+            }
+
+            // Lọc theo giá
+            if (request.MinFare.HasValue)
+            {
+                query = query.Where(t =>
+                    t.Route!.Fare >= request.MinFare.Value);
+            }
+
+            if (request.MaxFare.HasValue)
+            {
+                query = query.Where(t =>
+                    t.Route!.Fare <= request.MaxFare.Value);
+            }
+
+            // 3. Load về memory để xử lý keyword + giờ
+            var trips = await query.ToListAsync();
+
+            // 4. Filter keyword + giờ (client-side vì cần match linh hoạt)
+            var origin = request.OriginKeyword?.Trim().ToLower();
+            var destination = request.DestinationKeyword?.Trim().ToLower();
+            var minTime = request.MinDepartureTime;
+
+            var filtered = trips
+                .Where(t => !minTime.HasValue || t.DepartureTime >= minTime.Value)
+                .Select(t =>
+                {
+                    var schedules = t.Schedules
+                        .Where(s => s.BusStop != null)
+                        .OrderBy(s => s.StopOrder)
+                        .ToList();
+
+                    var start = string.IsNullOrEmpty(origin)
+                        ? schedules.FirstOrDefault()
+                        : schedules.FirstOrDefault(s =>
+                            s.BusStop!.Name.ToLower().Contains(origin));
+
+                    var end = string.IsNullOrEmpty(destination)
+                        ? schedules.LastOrDefault()
+                        : schedules.FirstOrDefault(s =>
+                            s.BusStop!.Name.ToLower().Contains(destination));
+
+                    if (start == null || end == null) return null;
+                    if (start.StopOrder >= end.StopOrder) return null;
+
+                    var routeStops = t.Route!.RouteStops
+                        .OrderBy(rs => rs.StopOrder)
+                        .ToList();
+
+                    var routeStart = routeStops.FirstOrDefault(rs => rs.StopId == start.StopId);
+                    var routeEnd = routeStops.FirstOrDefault(rs => rs.StopId == end.StopId);
+
+                    double distanceKm = 0;
+                    if (routeStart != null && routeEnd != null &&
+                        routeEnd.DistanceFromStartKm >= routeStart.DistanceFromStartKm)
+                    {
+                        distanceKm = routeEnd.DistanceFromStartKm - routeStart.DistanceFromStartKm;
+                    }
+
+                    int durationMinutes = 0;
+                    if (end.ArrivalTime >= start.DepartureTime)
+                    {
+                        durationMinutes = (int)(end.ArrivalTime - start.DepartureTime).TotalMinutes;
+                    }
+
+                    // Xử lý chuyến đêm: nếu đến giờ nhỏ hơn giờ đi → +1 ngày
+                    var departureDateTime = t.TripDate.Date + t.DepartureTime;
+                    var arrivalDateTime = t.TripDate.Date + end.ArrivalTime;
+                    if (end.ArrivalTime < t.DepartureTime)
+                    {
+                        arrivalDateTime = arrivalDateTime.AddDays(1);
+                    }
+
+                    var totalSeats = t.TotalSeats > 0
+                        ? t.TotalSeats
+                        : (t.Bus?.SeatCount ?? 0);
+
+                    return new TripListItemDto
+                    {
+                        TripId = t.Id,
+                        TripCode = t.TripCode,
+                        RouteCode = t.Route.RouteCode,
+                        RouteName = t.Route.RouteName,
+                        OriginStopName = start.BusStop!.Name,
+                        DestinationStopName = end.BusStop!.Name,
+                        DepartureDateTime = departureDateTime,
+                        ArrivalDateTime = arrivalDateTime,
+                        DurationMinutes = durationMinutes,
+                        DistanceKm = distanceKm,
+                        Fare = t.Route.Fare,
+                        TotalSeats = totalSeats,
+                        AvailableSeats = t.AvailableSeats,
+                        BusCode = t.Bus?.BusCode ?? string.Empty,
+                        LicensePlate = t.Bus?.LicensePlate ?? string.Empty
+                    };
+                })
+                .Where(x => x != null)
+                .Select(x => x!)
+                .ToList();
+
+            // 5. Sắp xếp
+            var sortBy = request.SortBy?.ToLower() ?? "time";
+            var isDesc = string.Equals(request.SortOrder, "desc",
+                StringComparison.OrdinalIgnoreCase);
+
+            filtered = sortBy switch
+            {
+                "price" => isDesc
+                    ? filtered.OrderByDescending(x => x.Fare).ToList()
+                    : filtered.OrderBy(x => x.Fare).ToList(),
+                "duration" => isDesc
+                    ? filtered.OrderByDescending(x => x.DurationMinutes).ToList()
+                    : filtered.OrderBy(x => x.DurationMinutes).ToList(),
+                _ => isDesc
+                    ? filtered.OrderByDescending(x => x.DepartureDateTime).ToList()
+                    : filtered.OrderBy(x => x.DepartureDateTime).ToList()
+            };
+
+            // 6. Phân trang
+            var totalCount = filtered.Count;
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            var items = filtered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // 7. Trả kết quả
+            return new TripListResponseDto
+            {
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                Items = items
+            };
+        }
     }
 }

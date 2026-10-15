@@ -25,7 +25,7 @@ namespace TuyenXe.Controllers
             return Ok(new
             {
                 message =
-                    "API tra cứu chính sử dụng /api/TraCuuTuyenXe/theo-diem"
+                    "API tra cứu chính sử dụng /api/TraCuuTuyenXe/theo-diem và /api/TraCuuTuyenXe/danh-sach"
             });
         }
 
@@ -96,6 +96,94 @@ namespace TuyenXe.Controllers
                 await _tripService
                     .SearchTripsByOriginAsync(
                         request);
+
+            return Ok(result);
+        }
+
+        // =====================================================
+        // US-165: DANH SÁCH CHUYẾN ĐÃ LÊN LỊCH (PHÂN TRANG)
+        //
+        // Ví dụ:
+        // /api/TraCuuTuyenXe/danh-sach
+        // ?diemDi=Bến xe Gia Lâm
+        // &diemDen=Bến xe Yên Nghĩa
+        // &ngay=2026-10-20
+        // &gioMin=06:00
+        // &giaMin=50000
+        // &giaMax=200000
+        // &sortBy=price
+        // &sortOrder=asc
+        // &page=1
+        // &pageSize=20
+        // =====================================================
+        [HttpGet("danh-sach")]
+        public async Task<IActionResult> GetTripList(
+            [FromQuery] string? diemDi,
+            [FromQuery] string? diemDen,
+            [FromQuery] DateTime? ngay,
+            [FromQuery] TimeSpan? gioMin,
+            [FromQuery] decimal? giaMin,
+            [FromQuery] decimal? giaMax,
+            [FromQuery] string? sortBy,
+            [FromQuery] string? sortOrder,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            // Validate phân trang
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+            if (pageSize > 100) pageSize = 100;
+
+            // Validate giá
+            if (giaMin.HasValue && giaMin.Value < 0)
+            {
+                return BadRequest(new
+                {
+                    message = "Giá tối thiểu không được âm."
+                });
+            }
+
+            if (giaMax.HasValue && giaMax.Value < 0)
+            {
+                return BadRequest(new
+                {
+                    message = "Giá tối đa không được âm."
+                });
+            }
+
+            if (giaMin.HasValue && giaMax.HasValue &&
+                giaMin.Value > giaMax.Value)
+            {
+                return BadRequest(new
+                {
+                    message = "Giá tối thiểu không được lớn hơn giá tối đa."
+                });
+            }
+
+            // Validate ngày
+            if (ngay.HasValue && ngay.Value.Date < DateTime.Today)
+            {
+                return BadRequest(new
+                {
+                    message = "Ngày đi không được ở trong quá khứ."
+                });
+            }
+
+            var request = new TripListRequestDto
+            {
+                OriginKeyword = diemDi?.Trim(),
+                DestinationKeyword = diemDen?.Trim(),
+                DepartureDate = ngay?.Date,
+                MinDepartureTime = gioMin,
+                MinFare = giaMin,
+                MaxFare = giaMax,
+                SortBy = sortBy,
+                SortOrder = sortOrder,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            var result = await _tripService.GetTripListAsync(request);
 
             return Ok(result);
         }
