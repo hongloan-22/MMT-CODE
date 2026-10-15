@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smartbus - Đội xe</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="../js/admin-manager-layout.js"></script>
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <aside class="sidebar">
+
+            <a class="brand"
+               href="../index.html">
+
+                <span class="brand-icon">🚌</span>
+
+                <span class="brand-name">
+                    Smart<span>bus</span>
+                </span>
+
+            </a>
+
+            <div class="sidebar-label">
+                QUẢN LÝ VẬN HÀNH
+            </div>
+
+            <nav class="side-nav">
+
+                <a href="../index.html"
+                   class="side-link">
+
+                    <span>▦</span>
+                    <span>Tổng quan</span>
+
+                </a>
+
+                <a href="../quan-ly-tuyen-tram/index.html"
+                   class="side-link">
+
+                    <span>⇄</span>
+                    <span>Tuyến & trạm</span>
+
+                </a>
+
+                <a href="../lap-lich-trinh/index.html"
+                   class="side-link">
+
+                    <span>◷</span>
+                    <span>Lịch trình</span>
+
+                </a>
+
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen">
+
+                    <span>👤</span><span>Phân quyền</span>
+
+                </a>
+
+                <a href="index.html"
+                   class="side-link active">
+
+                    <span>🚌</span>
+                    <span>Đội xe</span>
+
+                </a>
+
+                <a href="#staff"
+                   class="side-link">
+
+                    <span>👤</span>
+                    <span>Tài xế / phụ xe</span>
+
+                </a>
+
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO</div>
+            <nav class="side-nav">
+                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
+                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+            </nav>
+
+            <div class="sidebar-bottom">
+
+                <div class="account-mini">
+
+                    <div class="avatar"
+                         id="sidebarAvatar">
+                        AD
+                    </div>
+
+                    <div>
+
+                        <strong id="sidebarUserName">
+                            Quản lý
+                        </strong>
+
+                        <small id="sidebarUserRole">
+                            Quản lý vận hành
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <button class="logout-btn"
+                        id="logoutBtn"
+                        type="button">
+
+                    ↪ Đăng xuất
+
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <main class="main">
+
+            <header class="topbar">
+
+                <div>
+
+                    <div class="breadcrumb">
+                        Quản lý vận hành
+                        <span>/</span>
+                        Đội xe
+                    </div>
+
+                    <h1>
+                        Đội xe
+                    </h1>
+
+                    <p>
+                        Quản lý danh sách xe và nhân sự được phân công.
+                    </p>
+
+                </div>
+
+                <div class="top-actions">
+
+                    <button class="icon-btn">
+                        ?
+                    </button>
+
+                    <div class="user-btn">
+
+                        <div class="avatar small"
+                             id="topAvatar">
+                            QL
+                        </div>
+
+                        <span id="topUserRole">
+                            Quản lý
+                        </span>
+
+                        ▾
+
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <section class="content">
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon blue">
+                            🚌
+                        </div>
+
+                        <div>
+                            <span>Tổng số xe</span>
+                            <strong id="totalBuses">
+                                0
+                            </strong>
+                            <small>Trong hệ thống</small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon green">
+                            ✓
+                        </div>
+
+                        <div>
+                            <span>Xe đang hoạt động</span>
+                            <strong id="activeBuses">
+                                0
+                            </strong>
+                            <small>Đang phục vụ</small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon cyan">
+                            👤
+                        </div>
+
+                        <div>
+                            <span>Tài xế / phụ xe</span>
+                            <strong id="totalStaff">
+                                0
+                            </strong>
+                            <small>Có quyền DRIVER</small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon yellow">
+                            ✓
+                        </div>
+
+                        <div>
+                            <span>Xe đã có tài xế</span>
+                            <strong id="assignedBuses">
+                                0
+                            </strong>
+                            <small>Đã phân công</small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="page-card">
+
+                    <div class="card-head">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                ĐỘI XE
+                            </div>
+
+                            <h2>
+                                Danh sách xe bus
+                            </h2>
+
+                            <p>
+                                Xe được sử dụng cho các chuyến và lịch trình.
+                            </p>
+
+                        </div>
+
+                        <button class="primary-btn"
+                                id="addBusBtn">
+
+                            ＋ Thêm xe
+
+                        </button>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Mã xe</th>
+
+                                    <th>Biển số</th>
+
+                                    <th>Số ghế</th>
+
+                                    <th>Tài xế</th>
+
+                                    <th>Phụ xe</th>
+
+                                    <th>Trạng thái</th>
+
+                                    <th>Thao tác</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="busTableBody">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+
+                <div class="page-card"
+                     id="staff">
+
+                    <div class="card-head">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                NHÂN SỰ
+                            </div>
+
+                            <h2>
+                                Tài xế / phụ xe
+                            </h2>
+
+                            <p>
+                                Danh sách tự động lấy từ các tài khoản có vai trò DRIVER trong Phân quyền.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Họ tên</th>
+
+                                    <th>Email</th>
+
+                                    <th>Số điện thoại</th>
+
+                                    <th>Vai trò</th>
+
+                                    <th>Phân công hiện tại</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="staffTableBody">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =====================================================
+         MODAL THÊM XE
+         ===================================================== -->
+
+    <div class="modal-backdrop"
+         id="busModal">
+
+        <div class="modal">
+
+            <div class="modal-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        ĐỘI XE
+                    </div>
+
+                    <h3>
+                        Thêm xe
+                    </h3>
+
+                </div>
+
+                <button class="close-btn"
+                        data-close="busModal">
+
+                    ×
+
+                </button>
+
+            </div>
+
+            <form id="busForm">
+
+                <div class="form-grid">
+
+                    <label>
+                        Mã xe *
+                        <input id="busCode"
+                               maxlength="20"
+                               placeholder="VD: BUS02"
+                               required>
+                    </label>
+
+                    <label>
+                        Biển số *
+                        <input id="licensePlate"
+                               maxlength="20"
+                               placeholder="VD: 29A-67890"
+                               required>
+                    </label>
+
+                    <label style="grid-column:span 2;">
+                        Số ghế *
+                        <input id="seatCount"
+                               type="number"
+                               min="5"
+                               max="100"
+                               value="21"
+                               required>
+                    </label>
+
+                </div>
+
+                <div class="modal-actions">
+
+                    <button type="button"
+                            class="secondary-btn"
+                            data-close="busModal">
+
+                        Hủy
+
+                    </button>
+
+                    <button type="submit"
+                            class="primary-btn"
+                            id="saveBusBtn">
+
+                        Lưu xe
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MODAL PHÂN CÔNG
+         ===================================================== -->
+
+    <div class="modal-backdrop"
+         id="staffModal">
+
+        <div class="modal">
+
+            <div class="modal-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        NHÂN SỰ
+                    </div>
+
+                    <h3>
+                        Phân công nhân sự
+                    </h3>
+
+                </div>
+
+                <button class="close-btn"
+                        data-close="staffModal">
+
+                    ×
+
+                </button>
+
+            </div>
+
+            <form id="staffForm">
+
+                <input type="hidden"
+                       id="assignmentBusId">
+
+                <div class="form-grid">
+
+                    <label style="grid-column:span 2;">
+                        Xe
+                        <select id="assignmentBus"
+                                disabled>
+                        </select>
+                    </label>
+
+                    <label style="grid-column:span 2;">
+                        Nhân sự *
+                        <select id="assignmentUser"
+                                required>
+                        </select>
+                    </label>
+
+                    <label style="grid-column:span 2;">
+                        Vị trí *
+                        <select id="assignmentType"
+                                required>
+
+                            <option value="DRIVER">
+                                Tài xế
+                            </option>
+
+                            <option value="ATTENDANT">
+                                Phụ xe
+                            </option>
+
+                        </select>
+                    </label>
+
+                </div>
+
+                <div class="form-note">
+
+                    Chỉ các tài khoản đã được phân quyền
+                    <strong>DRIVER</strong> trong mục Phân quyền
+                    mới xuất hiện ở đây.
+
+                </div>
+
+                <div class="modal-actions">
+
+                    <button type="button"
+                            class="secondary-btn"
+                            data-close="staffModal">
+
+                        Hủy
+
+                    </button>
+
+                    <button type="submit"
+                            class="primary-btn">
+
+                        Lưu phân công
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         LOGOUT
+         ===================================================== -->
+
+    <div class="modal-backdrop"
+         id="logoutModal">
+
+        <div class="modal logout-modal">
+
+            <div class="logout-icon">
+                ↪
+            </div>
+
+            <h3>
+                Xác nhận đăng xuất
+            </h3>
+
+            <p>
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+            </p>
+
+            <div class="logout-actions">
+
+                <button type="button"
+                        class="secondary-btn"
+                        id="cancelLogoutBtn">
+
+                    Hủy
+
+                </button>
+
+                <button type="button"
+                        class="logout-confirm-btn"
+                        id="confirmLogoutBtn">
+
+                    Đăng xuất
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="toast"
+         id="toast">
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Smartbus - Lịch trình</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="../js/admin-manager-layout.js"></script>
+</head>
+<script>
+        (function () {
+
+            const raw =
+                localStorage.getItem("userSession");
+
+            if (!raw) {
+                window.location.replace(
+                    "../auth/dangnhap.html"
+                );
+                return;
+            }
+
+            try {
+
+                const user =
+                    JSON.parse(raw);
+
+                const role =
+                    String(
+                        user.role ||
+                        user.roleCode ||
+                        ""
+                    )
+                        .trim()
+                        .toUpperCase();
+
+                if (role !== "ADMIN" && role !== "MANAGER") {
+                    window.location.replace(
+                        "../index.html"
+                    );
+
+                    return;
+                }
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                localStorage.removeItem(
+                    "userSession"
+                );
+
+                window.location.replace(
+                    "../auth/dangnhap.html"
+                );
+            }
+
+        })();
+</script>
+
+<body>
+
+    <div class="app-shell">
+
+        <aside class="sidebar">
+
+            <a class="brand"
+               href="../index.html">
+
+                <span class="brand-icon">🚌</span>
+
+                <span class="brand-name">
+                    Smart<span>bus</span>
+                </span>
+
+            </a>
+
+            <div class="sidebar-label">
+                QUẢN LÝ VẬN HÀNH
+            </div>
+
+            <nav class="side-nav">
+
+                <a href="../index.html"
+                   class="side-link">
+
+                    <span>▦</span>
+                    <span>Tổng quan</span>
+
+                </a>
+
+                <a href="../quan-ly-tuyen-tram/index.html"
+                   class="side-link">
+
+                    <span>⇄</span>
+                    <span>Tuyến & trạm</span>
+
+                </a>
+
+                <a href="index.html"
+                   class="side-link active">
+
+                    <span>◷</span>
+                    <span>Lịch trình</span>
+
+                </a>
+
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen"
+                   style="display: none;">
+
+                    <span>👤</span>
+                    <span>Phân quyền</span>
+
+                </a>
+
+                <a href="../doi-xe/index.html"
+                   class="side-link">
+
+                    <span>🚌</span>
+                    <span>Đội xe</span>
+
+                </a>
+
+                <a href="../doi-xe/index.html#staff"
+                   class="side-link">
+
+                    <span>👤</span>
+                    <span>Tài xế / phụ xe</span>
+
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO
+            </div>
+
+            <nav class="side-nav">
+                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
+                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+            </nav>
+
+            <div class="sidebar-bottom">
+
+                <div class="account-mini">
+
+                    <div class="avatar">
+                        QL
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Quản lý
+                        </strong>
+
+                        <small>
+                            Quản lý vận hành
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <button class="logout-btn"
+                        type="button">
+
+                    ↪ Đăng xuất
+
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <main class="main">
+
+            <header class="topbar">
+
+                <div>
+
+                    <div class="breadcrumb">
+                        Quản lý vận hành
+                        <span>/</span>
+                        Lịch trình
+                    </div>
+
+                    <h1>
+                        Lịch trình
+                    </h1>
+
+                    <p>
+                        Tạo lịch để hệ thống tự sinh
+                        các chuyến xe theo ngày.
+                    </p>
+
+                </div>
+
+                <div class="top-actions">
+
+                    <button class="user-btn"
+                            type="button">
+
+                        <span class="avatar small">
+                            QL
+                        </span>
+
+                        Quản lý ▾
+
+                    </button>
+
+                </div>
+
+            </header>
+
+
+            <section class="content">
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon blue">
+                            ◷
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Lịch chạy xe
+                            </span>
+
+                            <strong id="recurringCount">
+                                0
+                            </strong>
+
+                            <small>
+                                Đang hoạt động
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon cyan">
+                            🚌
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Xe hoạt động
+                            </span>
+
+                            <strong id="busCount">
+                                0
+                            </strong>
+
+                            <small>
+                                Theo dữ liệu xe
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon yellow">
+                            ⇄
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Tuyến hoạt động
+                            </span>
+
+                            <strong id="routeCount">
+                                0
+                            </strong>
+
+                            <small>
+                                Theo dữ liệu tuyến
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon green">
+                            ✓
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Chuyến sắp chạy
+                            </span>
+
+                            <strong id="tripCount">
+                                0
+                            </strong>
+
+                            <small>
+                                Các chuyến đã sinh
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     LỊCH CỐ ĐỊNH
+                     ================================================= -->
+
+                <div class="page-card">
+
+                    <div class="card-head">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                LỊCH CHẠY XE
+                            </div>
+
+                            <h2>
+                                Lịch chạy tự động
+                            </h2>
+
+                            <p>
+                              Hệ thống tự sinh chuyến theo lịch.
+                            </p>
+
+                        </div>
+
+                        <div class="card-head-actions">
+
+                            <button class="secondary-btn"
+                                    id="addTripBtn"
+                                    type="button">
+
+                                ＋ Tạo chuyến thủ công
+
+                            </button>
+
+                            <button class="primary-btn"
+                                    id="addRecurringBtn"
+                                    type="button">
+
+                                ＋ Tạo lịch cố định
+
+                            </button>
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Tuyến
+                                    </th>
+
+                                    <th>
+                                        Xe
+                                    </th>
+
+                                    <th>
+                                        Tần suất
+                                    </th>
+
+                                    <th>
+                                        Thời gian
+                                    </th>
+
+                                    <th>
+                                        Hiệu lực
+                                    </th>
+
+                                    <th>
+                                        Chuyến đã sinh
+                                    </th>
+
+                                    <th>
+                                        Trạng thái
+                                    </th>
+
+                                    <th></th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="recurringTableBody">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div id="recurringEmpty"
+                         class="empty-state hidden">
+
+                        <div class="empty-icon">
+                            ◷
+                        </div>
+
+                        <h3>
+                            Chưa có lịch cố định
+                        </h3>
+
+                        <p>
+                            Tạo lịch cố định để hệ thống
+                            tự sinh các chuyến xe.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     CHUYẾN ĐÃ SINH
+                     ================================================= -->
+
+                <div class="page-card">
+
+                    <div class="card-head">
+
+                        <div>
+
+                            <div class="eyebrow">
+                                CHUYẾN XE
+                            </div>
+
+                            <h2>
+                                Các chuyến đã tạo
+                            </h2>
+
+                            <p>
+                                Các Trip được sinh từ lịch cố định
+                                hoặc tạo thủ công.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="toolbar">
+
+                        <label class="search-box">
+
+                            <span>⌕</span>
+
+                            <input id="searchInput"
+                                   type="search"
+                                   placeholder="Tìm mã chuyến, tuyến...">
+
+                        </label>
+
+                        <select id="dateFilter">
+
+                            <option value="all">
+                                Tất cả ngày
+                            </option>
+
+                            <option value="today">
+                                Hôm nay
+                            </option>
+
+                            <option value="upcoming">
+                                Sắp chạy
+                            </option>
+
+                        </select>
+
+                        <select id="statusFilter">
+
+                            <option value="all">
+                                Tất cả trạng thái
+                            </option>
+
+                            <option value="SCHEDULED">
+                                Đã lên lịch
+                            </option>
+
+                            <option value="ACTIVE">
+                                Đang hoạt động
+                            </option>
+
+                            <option value="CANCELLED">
+                                Đã hủy
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Mã chuyến
+                                    </th>
+
+                                    <th>
+                                        Tuyến
+                                    </th>
+
+                                    <th>
+                                        Xe
+                                    </th>
+
+                                    <th>
+                                        Ngày
+                                    </th>
+
+                                    <th>
+                                        Giờ
+                                    </th>
+
+                                    <th>
+                                        Ghế
+                                    </th>
+
+                                    <th>
+                                        Trạng thái
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="tripTableBody">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    <div id="tripEmpty"
+                         class="empty-state hidden">
+
+                        <div class="empty-icon">
+                            ◷
+                        </div>
+
+                        <h3>
+                            Không có chuyến phù hợp
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================================================
+         MODAL LỊCH CỐ ĐỊNH
+         ========================================================= -->
+
+    <div class="modal-backdrop hidden"
+         id="recurringModal">
+
+        <div class="modal"
+             role="dialog"
+             aria-modal="true">
+
+            <div class="modal-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        LỊCH CHẠY
+                    </div>
+
+                    <h3 id="modalTitle">
+                        Tạo lịch cố định
+                    </h3>
+
+                </div>
+
+                <button class="close-btn"
+                        id="closeModal"
+                        type="button">
+
+                    ×
+
+                </button>
+
+            </div>
+
+
+            <form id="recurringForm">
+
+                <input type="hidden"
+                       id="editingScheduleId"
+                       value="0">
+
+
+                <div class="form-grid">
+
+                    <label style="grid-column: span 2;">
+
+                        Tuyến xe *
+
+                        <select id="routeSelect"
+                                required>
+
+                            <option value="">
+                                -- Chọn tuyến --
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label style="grid-column: span 2;">
+
+                        Xe *
+
+                        <select id="busSelect"
+                                required>
+
+                            <option value="">
+                                -- Chọn xe --
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label>
+
+                        Tần suất *
+
+                        <select id="scheduleType"
+                                required>
+
+                            <option value="DAILY">
+                                Hàng ngày
+                            </option>
+
+                            <option value="WEEKLY">
+                                Theo thứ cố định
+                            </option>
+
+                        </select>
+
+                    </label>
+
+
+                    <label>
+
+                        Giờ xuất phát *
+
+                        <input id="departureTime"
+                               type="time"
+                               value="08:00"
+                               required>
+
+                    </label>
+
+
+                    <label style="grid-column: span 2;"
+                           id="daysWrapper">
+
+                        Các thứ chạy
+
+                        <div id="daysOfWeek"
+                             class="days-of-week">
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="1">
+                                <span>T2</span>
+                            </label>
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="2">
+                                <span>T3</span>
+                            </label>
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="3">
+                                <span>T4</span>
+                            </label>
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="4">
+                                <span>T5</span>
+                            </label>
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="5">
+                                <span>T6</span>
+                            </label>
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="6">
+                                <span>T7</span>
+                            </label>
+
+                            <label class="day-checkbox">
+                                <input type="checkbox" value="0">
+                                <span>CN</span>
+                            </label>
+
+                        </div>
+
+                    </label>
+
+
+                    <label>
+
+                        Ngày bắt đầu *
+
+                        <input id="startDate"
+                               type="date"
+                               required>
+
+                    </label>
+
+
+                    <label>
+
+                        Ngày kết thúc
+
+                        <input id="endDate"
+                               type="date">
+
+                    </label>
+
+
+                    <label class="active-checkbox">
+                        <input id="isActive"
+                               type="checkbox"
+                               checked>
+                        <span>Lịch đang hoạt động</span>
+                    </label>
+                </div>
+
+
+                <div class="form-note">
+                    Lịch hàng ngày sẽ tự sinh chuyến cho mỗi ngày.
+                    Lịch theo thứ chỉ sinh chuyến vào các thứ đã chọn.
+                </div>
+
+
+                <div class="modal-actions">
+
+                    <button class="secondary-btn"
+                            type="button"
+                            id="cancelModal">
+
+                        Hủy
+
+                    </button>
+
+                    <button class="primary-btn"
+                            type="submit"
+                            id="saveBtn">
+
+                        Lưu lịch
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="modal-backdrop hidden"
+         id="tripModal">
+
+        <div class="modal trip-modal"
+             role="dialog"
+             aria-modal="true">
+
+            <div class="modal-head">
+
+                <div>
+
+                    <div class="eyebrow">
+                        CHUYẾN XE
+                    </div>
+
+                    <h3>
+                        Tạo chuyến thủ công
+                    </h3>
+
+                </div>
+
+                <button class="close-btn"
+                        id="closeTripModal"
+                        type="button">
+
+                    ×
+
+                </button>
+
+            </div>
+
+            <form id="tripForm">
+
+                <div class="form-grid">
+
+                    <label>
+                        Tuyến xe *
+
+                        <select id="tripRouteSelect"
+                                required>
+
+                            <option value="">
+                                -- Chọn tuyến --
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                    <label>
+                        Xe *
+
+                        <select id="tripBusSelect"
+                                required>
+
+                            <option value="">
+                                -- Chọn xe --
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                    <label>
+                        Ngày chạy *
+
+                        <input id="tripDate"
+                               type="date"
+                               required>
+
+                    </label>
+
+                    <label>
+                        Giờ khởi hành *
+
+                        <input id="tripDepartureTime"
+                               type="time"
+                               value="08:00"
+                               required>
+
+                    </label>
+
+                    <label style="grid-column: span 2;">
+                        Mã chuyến
+                        <input id="tripCode"
+                               maxlength="50"
+                               placeholder="Để trống để hệ thống tự tạo">
+                    </label>
+
+                    <label style="grid-column: span 2;">
+                        Ghi chú
+                        <textarea id="tripNote"
+                                  class="fixed-textarea"
+                                  rows="4"
+                                  placeholder="Ghi chú cho chuyến xe (không bắt buộc)"></textarea>
+                    </label>
+                </div>
+
+                <div class="form-note">
+
+                    Chuyến thủ công chỉ áp dụng cho một ngày cụ thể
+                    và không thuộc lịch cố định.
+
+                </div>
+
+                <div class="modal-actions">
+
+                    <button class="secondary-btn"
+                            type="button"
+                            id="cancelTripModal">
+
+                        Hủy
+
+                    </button>
+
+                    <button class="primary-btn"
+                            type="submit"
+                            id="saveTripBtn">
+
+                        Lưu chuyến
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="modal-backdrop hidden"
+         id="logoutModal">
+
+        <div class="modal logout-modal"
+             role="dialog"
+             aria-modal="true">
+
+            <div class="logout-icon">
+                ↪
+            </div>
+
+            <h3>
+                Xác nhận đăng xuất
+            </h3>
+
+            <p>
+                Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?
+            </p>
+
+            <div class="logout-actions">
+
+                <button type="button"
+                        class="secondary-btn"
+                        id="cancelLogoutBtn">
+
+                    Hủy
+
+                </button>
+
+                <button type="button"
+                        class="logout-confirm-btn"
+                        id="confirmLogoutBtn">
+
+                    Đăng xuất
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="toast"
+         style="
+        position:fixed;
+        right:24px;
+        bottom:24px;
+        background:#1f2937;
+        color:white;
+        padding:12px 18px;
+        border-radius:10px;
+        opacity:0;
+        pointer-events:none;
+        transition:.2s;
+        z-index:9999;
+    ">
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

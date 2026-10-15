@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Kiểm tra vé - Smartbus</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e9f0;
+            padding: 16px 28px;
+        }
+
+
+        .header-inner {
+            max-width: 1100px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #172033;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+
+            .brand span {
+                color: #2196f3;
+            }
+
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+
+        .role-badge {
+            padding: 8px 12px;
+            border-radius: 20px;
+            background: #edf6ff;
+            color: #1687df;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .logout-btn {
+            border: 1px solid #d7e0ea;
+            background: #ffffff;
+            color: #536174;
+            padding: 9px 14px;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+
+            .logout-btn:hover {
+                background: #f4f7fb;
+                border-color: #bdc9d7;
+            }
+
+
+        /* =====================================================
+           CONTAINER
+        ===================================================== */
+
+        .container {
+            max-width: 1100px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+
+        /* =====================================================
+           PAGE TITLE
+        ===================================================== */
+
+        .page-title {
+            margin-bottom: 25px;
+        }
+
+
+            .page-title small {
+                color: #7a8699;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: .12em;
+            }
+
+
+            .page-title h1 {
+                margin: 7px 0;
+                font-size: 30px;
+                color: #172033;
+            }
+
+
+            .page-title p {
+                margin: 0;
+                color: #6f7b8d;
+                font-size: 14px;
+            }
+
+
+        /* =====================================================
+           LAYOUT
+        ===================================================== */
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+
+        /* =====================================================
+           CARD
+        ===================================================== */
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e4e9f0;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(31,45,61,.05);
+        }
+
+
+            .card h2 {
+                margin-top: 0;
+                margin-bottom: 22px;
+                font-size: 20px;
+            }
+
+
+        /* =====================================================
+           FIELD
+        ===================================================== */
+
+        .field {
+            margin-bottom: 18px;
+        }
+
+
+            .field label {
+                display: block;
+                margin-bottom: 7px;
+                font-size: 13px;
+                font-weight: 700;
+                color: #536174;
+            }
+
+
+        select,
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d7dde7;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #ffffff;
+            color: #172033;
+            outline: none;
+        }
+
+
+            select:focus,
+            input:focus {
+                border-color: #2196f3;
+                box-shadow: 0 0 0 3px rgba(33,150,243,.10);
+            }
+
+
+        /* =====================================================
+           SELECTED TRIP
+        ===================================================== */
+
+        .selected-trip {
+            display: none;
+            padding: 14px;
+            border-radius: 12px;
+            background: #f5f8fc;
+            border: 1px solid #e7edf4;
+            margin-bottom: 5px;
+        }
+
+
+        .selected-trip-code {
+            display: block;
+            font-size: 15px;
+            font-weight: 800;
+            color: #1c527e;
+        }
+
+
+        .selected-trip-info {
+            color: #6f7b8d;
+            margin-top: 5px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+
+        /* =====================================================
+           DIVIDER
+        ===================================================== */
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #9aa4b3;
+            font-size: 12px;
+            margin: 18px 0;
+        }
+
+
+            .divider::before,
+            .divider::after {
+                content: "";
+                flex: 1;
+                height: 1px;
+                background: #e2e7ef;
+            }
+
+
+        /* =====================================================
+           QR
+        ===================================================== */
+
+        .qr-box {
+            border: 2px dashed #d6dce6;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 18px;
+            background: #fbfcfe;
+        }
+
+
+        #reader {
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+
+
+        /* =====================================================
+           BUTTON
+        ===================================================== */
+
+        .btn {
+            width: 100%;
+            border: 0;
+            border-radius: 10px;
+            padding: 13px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+
+        .btn-primary {
+            background: #2196f3;
+            color: #ffffff;
+        }
+
+
+            .btn-primary:hover {
+                background: #1687df;
+            }
+
+
+        .btn-success {
+            background: #22a06b;
+            color: #ffffff;
+            margin-top: 12px;
+        }
+
+
+            .btn-success:hover {
+                background: #188b5b;
+            }
+
+
+            .btn-success.confirming {
+                background: #e08b00;
+            }
+
+
+        .btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+
+        /* =====================================================
+           RESULT
+        ===================================================== */
+
+        .result {
+            display: none;
+            border-radius: 14px;
+            padding: 18px;
+            margin-top: 18px;
+        }
+
+
+            .result.valid {
+                display: block;
+                background: #edf9f2;
+                border: 1px solid #b9e8ca;
+            }
+
+
+            .result.invalid {
+                display: block;
+                background: #fff2f2;
+                border: 1px solid #f2c2c2;
+            }
+
+
+        .result-title {
+            font-weight: 800;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+
+        .ticket-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,.06);
+        }
+
+
+            .ticket-row:last-child {
+                border-bottom: 0;
+            }
+
+
+            .ticket-row span {
+                color: #6c7788;
+                font-size: 13px;
+            }
+
+
+            .ticket-row strong {
+                text-align: right;
+                max-width: 60%;
+                font-size: 13px;
+            }
+
+
+        .status-message {
+            margin-top: 10px;
+            color: #6b7482;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+
+        /* =====================================================
+           EMPTY RESULT
+        ===================================================== */
+
+        .empty-result {
+            color: #7a8699;
+            padding: 35px 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           TOAST
+        ===================================================== */
+
+        .app-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 28px;
+            transform: translate(-50%,18px);
+            min-width: 280px;
+            max-width: 430px;
+            padding: 13px 18px;
+            background: #ffffff;
+            border: 1px solid #dce7ee;
+            border-radius: 10px;
+            color: #294e72;
+            font-size: 13px;
+            font-weight: 650;
+            text-align: center;
+            box-shadow: 0 12px 30px rgba(25,65,95,.14);
+            opacity: 0;
+            pointer-events: none;
+            transition: .2s ease;
+            z-index: 9999;
+        }
+
+
+            .app-toast.show {
+                opacity: 1;
+                transform: translate(-50%,0);
+            }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media(max-width: 800px) {
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+
+            .header {
+                padding: 14px 16px;
+            }
+
+
+            .header-inner {
+                align-items: flex-start;
+            }
+
+
+            .header-right {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+
+            .role-badge {
+                display: none;
+            }
+
+
+            .container {
+                margin: 25px auto;
+                padding: 0 14px;
+            }
+
+
+            .page-title h1 {
+                font-size: 25px;
+            }
+        }
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         HEADER
+    ===================================================== -->
+
+    <header class="header">
+
+        <div class="header-inner">
+
+
+            <a href="../index.html"
+               class="brand">
+
+                🚌 Smart
+                <span>bus</span>
+
+            </a>
+
+
+            <div class="header-right">
+
+                <span class="role-badge"
+                      id="roleBadge">
+                    DRIVER
+                </span>
+
+
+                <button class="logout-btn"
+                        id="driverLogout"
+                        type="button">
+
+                    Đăng xuất
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN
+    ===================================================== -->
+
+    <main class="container">
+
+
+        <div class="page-title">
+
+            <small>
+                DRIVER / NHÂN VIÊN KIỂM TRA
+            </small>
+
+
+            <h1>
+                Kiểm tra vé bằng QR
+            </h1>
+
+
+            <p>
+                Quét mã QR và xác nhận vé thuộc đúng
+                chuyến đang kiểm tra.
+            </p>
+
+        </div>
+
+
+        <div class="layout">
+
+
+            <!-- =================================================
+                 LEFT
+            ================================================= -->
+
+            <section class="card">
+
+
+                <h2>
+                    Chuyến đang kiểm tra
+                </h2>
+
+
+                <div class="field">
+
+                    <label for="tripSelect">
+                        Chuyến xe
+                    </label>
+
+
+                    <select id="tripSelect">
+
+                        <option value="">
+                            -- Chọn chuyến hôm nay --
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div id="selectedTrip"
+                     class="selected-trip">
+
+
+                    <strong id="selectedTripCode"
+                            class="selected-trip-code">
+
+                        —
+
+                    </strong>
+
+
+                    <div id="selectedTripInfo"
+                         class="selected-trip-info">
+
+                        —
+
+                    </div>
+
+                </div>
+
+
+                <div class="divider">
+                    QUÉT QR
+                </div>
+
+
+                <div class="qr-box">
+
+                    <div id="reader"></div>
+
+                </div>
+
+
+                <div class="divider">
+                    HOẶC NHẬP MÃ QR
+                </div>
+
+
+                <div class="field">
+
+                    <label for="qrToken">
+                        QR Token
+                    </label>
+
+
+                    <input id="qrToken"
+                           type="text"
+                           placeholder="Nhập token từ QR">
+
+                </div>
+
+
+                <button class="btn btn-primary"
+                        id="verifyBtn"
+                        type="button"
+                        disabled>
+
+                    Kiểm tra vé
+
+                </button>
+
+            </section>
+
+
+            <!-- =================================================
+                 RIGHT
+            ================================================= -->
+
+            <section class="card">
+
+
+                <h2>
+                    Kết quả kiểm tra
+                </h2>
+
+
+                <div id="emptyResult"
+                     class="empty-result">
+
+                    Chưa có vé được kiểm tra.
+
+                </div>
+
+
+                <div class="result"
+                     id="resultBox">
+
+
+                    <div class="result-title"
+                         id="resultTitle">
+
+                        Vé hợp lệ
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Mã vé
+                        </span>
+
+
+                        <strong id="ticketCode">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Hành khách
+                        </span>
+
+
+                        <strong id="passengerName">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Ghế
+                        </span>
+
+
+                        <strong id="seatCode">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Tuyến
+                        </span>
+
+
+                        <strong id="routeCode">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Điểm đi
+                        </span>
+
+
+                        <strong id="departureStop">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Điểm đến
+                        </span>
+
+
+                        <strong id="arrivalStop">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <div class="ticket-row">
+
+                        <span>
+                            Trạng thái
+                        </span>
+
+
+                        <strong id="ticketStatus">
+                            —
+                        </strong>
+
+                    </div>
+
+
+                    <button class="btn btn-success"
+                            id="useBtn"
+                            type="button"
+                            disabled>
+
+                        ✓ Xác nhận hành khách đã lên xe
+
+                    </button>
+
+
+                    <div class="status-message"
+                         id="statusMessage">
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- =====================================================
+         TOAST
+    ===================================================== -->
+
+    <div id="appToast"
+         class="app-toast"
+         role="status"
+         aria-live="polite">
+    </div>
+
+
+    <!-- =====================================================
+         QR LIBRARY
+    ===================================================== -->
+
+    <script src="https://unpkg.com/html5-qrcode"
+            type="text/javascript">
+    </script>
+
+
+    <!-- =====================================================
+         AUTH + LOGOUT
+    ===================================================== -->
+
+    <script>
+
+                (function () {
+
+                    const raw =
+                        localStorage.getItem(
+                            "userSession"
+                        );
+
+
+                    if (!raw) {
+
+                        window.location.replace(
+                            "../auth/dangnhap.html"
+                        );
+
+                        return;
+                    }
+
+
+                    try {
+
+                        const user =
+                            JSON.parse(raw);
+
+
+                        const role =
+                            String(
+                                user.role ||
+                                user.Role ||
+                                user.roleCode ||
+                                user.RoleCode ||
+                                user.roleName ||
+                                user.RoleName ||
+                                ""
+                            )
+                                .trim()
+                                .toUpperCase();
+
+
+                        const allowed =
+                            role === "ADMIN" ||
+                            role === "MANAGER" ||
+                            role === "DRIVER";
+
+
+                        if (!allowed) {
+
+                            window.location.replace(
+                                "../index.html"
+                            );
+
+                            return;
+                        }
+
+
+                        const roleBadge =
+                            document.getElementById(
+                                "roleBadge"
+                            );
+
+
+                        if (roleBadge) {
+
+                            roleBadge.textContent =
+                                role === "DRIVER"
+                                    ? "DRIVER"
+                                    : role === "MANAGER"
+                                        ? "MANAGER"
+                                        : "ADMIN";
+                        }
+
+
+                    }
+                    catch (error) {
+
+                        console.error(error);
+
+
+                        localStorage.removeItem(
+                            "userSession"
+                        );
+
+
+                        window.location.replace(
+                            "../auth/dangnhap.html"
+                        );
+
+                    }
+
+                })();
+
+
+                /* =====================================================
+                   LOGOUT
+                ===================================================== */
+
+                document
+                    .getElementById(
+                        "driverLogout"
+                    )
+                    .addEventListener(
+                        "click",
+                        function () {
+
+                            localStorage.removeItem(
+                                "userSession"
+                            );
+
+
+                            sessionStorage.removeItem(
+                                "currentPayment"
+                            );
+
+
+                            sessionStorage.removeItem(
+                                "confirmedPayment"
+                            );
+
+
+                            window.location.href =
+                                "../auth/dangnhap.html";
+
+                        }
+                    );
+
+    </script>
+
+
+    <!-- =====================================================
+         QR SCRIPT
+    ===================================================== -->
+
+    <script src="script.js"></script>
+
+
+</body>
+
+</html>

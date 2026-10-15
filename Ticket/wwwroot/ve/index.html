@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vé điện tử - Smartbus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="ticket-header">
+        <div class="header-inner">
+            <a href="../index.html" class="brand" aria-label="Smartbus">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+            <nav class="nav-menu">
+                <a href="../index.html">Trang chủ</a>
+                <a href="../chon-ghe/index.html">Đặt vé</a>
+                <a href="#" class="active">Chuyến đi của tôi</a>
+            </nav>
+            <button class="help-btn" type="button" title="Trợ giúp">?</button>
+        </div>
+    </header>
+
+    <main class="ticket-page">
+        <div class="page-heading">
+            <div>
+                <span class="eyebrow">VÉ ĐIỆN TỬ</span>
+                <h1>Vé của bạn</h1>
+                <p>Hiển thị mã QR này khi lên xe để nhân viên kiểm tra vé.</p>
+            </div>
+            <span class="status-badge"
+                  id="ticketStatusBadge">
+                <span></span>
+                Đang tải...
+            </span>
+        </div>
+
+        <div id="ticketSelector"
+             style="
+        display:none;
+        margin:0 0 20px;
+        padding:14px 16px;
+        border:1px solid #e1e6ee;
+        border-radius:12px;
+        background:#fff;
+    ">
+        </div>
+
+        <section class="ticket-layout">
+            <article class="ticket-card" id="ticketCard">
+                <div class="ticket-top">
+                    <div class="ticket-brand">
+                        <span class="mini-bus">🚌</span>
+                        <div>
+                            <strong>Smart<span>bus</span></strong>
+                            <small>Vé điện tử</small>
+                        </div>
+                    </div>
+                    <div class="ticket-code">
+                        <small>MÃ VÉ</small>
+                        <strong id="ticketCode">—</strong>
+                    </div>
+                </div>
+
+                <div class="route-summary">
+                    <div class="route-station">
+                        <span class="time">--:--</span>
+                        <strong>Đang tải...</strong>
+                        <small>Điểm đi</small>
+                    </div>
+                    <div class="route-arrow">
+                        <span class="route-line"></span>
+                        <span class="bus-dot">🚌</span>
+                        <span class="duration">~ 1 giờ 30 phút</span>
+                    </div>
+                    <div class="route-station destination">
+                        <span class="time">--:--</span>
+                        <strong>Đang tải...</strong>
+                        <small>Điểm đến</small>
+                    </div>
+                </div>
+
+                <div class="ticket-divider"><span></span><span></span></div>
+
+                <div class="ticket-info-grid">
+                    <div class="info-item">
+                        <small>Ngày đi</small>
+                        <strong>Đang tải...</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Tuyến xe</small>
+                        <strong>Đang tải...</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Số ghế</small>
+                        <strong id="seatNumber">Đang tải...</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Loại vé</small>
+                        <strong>Đang tải...</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Hành khách</small>
+                        <strong>Đang tải...</strong>
+                    </div>
+                    <div class="info-item">
+                        <small>Số điện thoại</small>
+                        <strong>Đang tải...</strong>
+                    </div>
+                </div>
+
+                <div class="ticket-payment">
+                    <span>Thanh toán qua <strong>Đã thanh toán</strong></span>
+                    <strong>Đang tải...</strong>
+                </div>
+            </article>
+
+            <aside class="qr-card">
+                <div class="qr-heading">
+                    <span class="eyebrow">SOÁT VÉ</span>
+                    <h2>Mã QR của bạn</h2>
+                    <p>Đưa mã QR trước màn hình máy quét khi lên xe.</p>
+                </div>
+
+                <div class="qr-wrapper">
+                    <div id="qrcode" aria-label="Mã QR vé điện tử"></div>
+                    <div class="qr-center">🚌</div>
+                </div>
+
+                <strong class="qr-code-text" id="qrText">Đang tải...</strong>
+                <span class="qr-note">Mã QR chứa thông tin xác thực của vé</span>
+
+                <div class="qr-actions">
+                    <button class="primary-btn" id="printBtn" type="button">🖨 In vé</button>
+                    <button class="secondary-btn" id="copyBtn" type="button">Sao chép mã vé</button>
+                </div>
+            </aside>
+        </section>
+
+        <section class="notice-card">
+            <div class="notice-icon">✓</div>
+            <div>
+                <strong>Lưu ý khi sử dụng vé</strong>
+                <p>Vui lòng có mặt trước giờ khởi hành ít nhất 10 phút. Mỗi mã QR chỉ được sử dụng cho một lần soát vé.</p>
+            </div>
+        </section>
+
+        <div class="bottom-actions">
+            <a class="back-link" href="../index.html">
+                ← Về trang chủ
+            </a>
+
+            <div style="display:flex; gap:10px;">
+                <button class="secondary-btn"
+                        id="changeBtn"
+                        type="button">
+                    Đổi vé
+                </button>
+
+                <button class="cancel-btn"
+                        id="cancelBtn"
+                        type="button">
+                    Yêu cầu hủy vé
+                </button>
+            </div>
+        </div>
+
+        <div id="changeModal"
+             class="change-modal"
+             style="display:none;">
+
+            <div class="change-modal-content">
+
+                <button type="button"
+                        id="closeChangeModal"
+                        class="change-close">
+                    ×
+                </button>
+
+                <span class="eyebrow">
+                    ĐỔI VÉ
+                </span>
+
+                <h2>
+                    Chọn chuyến mới
+                </h2>
+
+                <label>
+                    Chuyến mới
+                </label>
+
+                <select id="changeTripSelect">
+                    <option value="">
+                        -- Chọn chuyến --
+                    </option>
+                </select>
+
+                <label>
+                    Ghế mới
+                </label>
+
+                <select id="changeSeatSelect">
+                    <option value="">
+                        -- Chọn ghế --
+                    </option>
+                </select>
+
+                <div id="changePriceInfo"
+                     class="change-price-info">
+                </div>
+
+                <div class="change-actions">
+
+                    <button type="button"
+                            id="cancelChangeBtn"
+                            class="secondary-btn">
+                        Hủy
+                    </button>
+
+                    <button type="button"
+                            id="submitChangeBtn"
+                            class="primary-btn">
+                        Xác nhận đổi vé
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <div class="brand">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </div>
+            <p>© 2026 Smartbus. Hệ thống đặt vé xe khách thông minh.</p>
+        </div>
+    </footer>
+
+    <!-- QRCode.js dùng để tạo mã QR thật cho dữ liệu vé. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="script.js"></script>
+
+    <div id="appToast"
+         class="app-toast"
+         role="status"
+         aria-live="polite"></div>
+</body>
+</html>

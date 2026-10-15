@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Smart Bus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f9ff;
+            color: #12345b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border: 1px solid #dce9f4;
+            border-radius: 24px;
+            padding: 45px 50px;
+            box-shadow: 0 10px 35px rgba(0, 85, 170, 0.10);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 55px;
+            height: 55px;
+            background: #087df5;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 28px;
+        }
+
+        .login-header h1 {
+            color: #123c75;
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: #7890a8;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+            .form-group label {
+                display: block;
+                font-size: 14px;
+                font-weight: bold;
+                color: #294e72;
+                margin-bottom: 8px;
+            }
+
+        .input-box {
+            width: 100%;
+            height: 52px;
+            border: 1px solid #d5e3ef;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            background: #fbfdff;
+            transition: 0.25s;
+        }
+
+            .input-box:hover {
+                border-color: #9dccf7;
+            }
+
+            .input-box:focus-within {
+                border-color: #087df5;
+                background: white;
+                box-shadow: 0 0 0 3px rgba(8, 125, 245, 0.08);
+            }
+
+        .input-icon {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .input-box input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #294e72;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            height: 52px;
+            border: none;
+            border-radius: 10px;
+            background: #087df5;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.25s;
+            box-shadow: 0 7px 18px rgba(8, 125, 245, 0.25);
+            margin-top: 10px;
+        }
+
+            .login-btn:hover {
+                background: #0566cf;
+                transform: translateY(-2px);
+            }
+
+            .login-btn:disabled {
+                background: #b0c9e2;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+        .register-text {
+            text-align: center;
+            margin-top: 22px;
+            color: #7890a8;
+            font-size: 14px;
+        }
+
+            .register-text a {
+                color: #087df5;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #edf2f7;
+            color: #9aabbc;
+            font-size: 12px;
+        }
+    </style>
+    <style>
+        .login-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%) translateY(20px);
+            min-width: 280px;
+            max-width: 420px;
+            padding: 13px 18px;
+            border: 1px solid #d9e7f2;
+            border-radius: 10px;
+            background: #fff;
+            color: #25475c;
+            box-shadow: 0 10px 30px rgba(20,72,105,.16);
+            font-size: 13px;
+            font-weight: 650;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease, transform .2s ease;
+            z-index: 9999;
+        }
+
+            .login-toast.show {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">🚌</div>
+            <h1>ĐĂNG NHẬP</h1>
+            <p>Truy cập hệ thống vé xe Smart Bus</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email</label>
+                <div class="input-box">
+                    <span class="input-icon">👤</span>
+                    <input type="email"
+                           id="username"
+                           name="username"
+                           placeholder="Nhập email"
+                           autocomplete="email"
+                           required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <div class="input-box">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                </div>
+            </div>
+
+            <button type="submit" id="loginSubmitBtn" class="login-btn">Đăng nhập</button>
+        </form>
+
+        <div class="register-text">
+            Chưa có tài khoản?
+            <a href="/auth/dangky.html">Đăng ký ngay</a>
+        </div>
+
+        <div class="footer">
+            🚌 <strong>Smart Bus</strong> - Hệ thống đặt vé xe thông minh
+        </div>
+    </div>
+
+    <script>
+                    // @ts-nocheck
+function showLoginToast(message) {
+
+    const toast =
+        document.getElementById(
+            "loginToast"
+        );
+
+    if (!toast)
+        return;
+
+    toast.textContent =
+        message;
+
+    toast.classList.add(
+        "show"
+    );
+
+    clearTimeout(
+        window.loginToastTimer
+    );
+
+    window.loginToastTimer =
+        setTimeout(
+            () => {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+            },
+            1200
+        );
+}
+                    document.addEventListener("DOMContentLoaded", function () {
+
+                        const loginForm =
+                            document.getElementById("loginForm");
+
+                        if (!loginForm) return;
+
+                        loginForm.addEventListener(
+                            "submit",
+                            async function (event) {
+
+                                event.preventDefault();
+
+                                const usernameInput =
+                                    document.getElementById("username");
+
+                                const passwordInput =
+                                    document.getElementById("password");
+
+                                const loginSubmitBtn =
+                                    document.getElementById(
+                                        "loginSubmitBtn"
+                                    );
+
+                                if (!usernameInput ||
+                                    !passwordInput) {
+                                    return;
+                                }
+
+                                // =================================================
+                                // EMAIL
+                                // =================================================
+
+                                const email =
+                                    usernameInput.value.trim();
+
+                                // Không trim password
+                                // để không làm thay đổi password người dùng nhập
+                                const password =
+                                    passwordInput.value;
+
+                                // =================================================
+                                // VALIDATION
+                                // =================================================
+
+                                if (!email) {
+                                    showLoginToast(
+                                        "⚠️ Vui lòng nhập email."
+                                    );
+                                    usernameInput.focus();
+                                    return;
+                                }
+
+                                if (!password) {
+                                    showLoginToast(
+                                        "⚠️ Vui lòng nhập mật khẩu."
+                                    );
+                                    passwordInput.focus();
+                                    return;
+                                }
+
+                                // =================================================
+                                // DISABLE BUTTON
+                                // =================================================
+
+                                if (loginSubmitBtn) {
+                                    loginSubmitBtn.disabled = true;
+                                    loginSubmitBtn.textContent =
+                                        "Đang đăng nhập...";
+                                }
+
+                                // =================================================
+                                // CALL API
+                                // =================================================
+
+                                try {
+
+                                    const response =
+                                        await fetch(
+                                            "/api/Auth/login",
+                                            {
+                                                method: "POST",
+
+                                                headers: {
+                                                    "Content-Type":
+                                                        "application/json"
+                                                },
+
+                                                body:
+                                                    JSON.stringify({
+                                                        Email: email,
+                                                        Password: password
+                                                    })
+                                            }
+                                        );
+
+                                    const data =
+                                        await response
+                                            .json()
+                                            .catch(() => null);
+
+                                    // =================================================
+                                    // LOGIN SUCCESS
+                                    // =================================================
+
+                                    if (response.ok) {
+
+                                        // Xóa session cũ
+                                        localStorage.removeItem(
+                                            "userSession"
+                                        );
+
+                                        // Lưu session mới
+                                        localStorage.setItem(
+                                            "userSession",
+                                            JSON.stringify(data)
+                                        );
+
+                                        // =================================================
+                                        // LẤY ROLE
+                                        // =================================================
+
+                                        const role =
+                                            String(
+                                                data.role ||
+                                                data.Role ||
+                                                data.roleCode ||
+                                                data.RoleCode ||
+                                                data.roleName ||
+                                                data.RoleName ||
+                                                "USER"
+                                            )
+                                                .trim()
+                                                .toUpperCase();
+
+
+                                        // Lưu session
+                                        localStorage.removeItem(
+                                            "userSession"
+                                        );
+
+                                        localStorage.setItem(
+                                            "userSession",
+                                            JSON.stringify(data)
+                                        );
+
+
+                                        // Thông báo
+                                        showLoginToast(
+                                            "✓ Đăng nhập thành công! Xin chào " +
+                                            (
+                                                data.fullName ||
+                                                data.FullName ||
+                                                "bạn"
+                                            )
+                                        );
+
+
+                                        // =================================================
+                                        // ĐIỀU HƯỚNG THEO ROLE
+                                        // =================================================
+
+                                        setTimeout(
+                                            () => {
+
+                                                switch (role) {
+
+                                                    case "ADMIN":
+
+                                                        window.location.href =
+                                                            "/phan-quyen/index.html";
+
+                                                        break;
+
+
+                                                    case "MANAGER":
+
+                                                        window.location.href =
+                                                            "/quan-ly-tuyen-tram/index.html";
+
+                                                        break;
+
+
+                                                    case "DRIVER":
+
+                                                        window.location.href =
+                                                            "/kiem-tra-qr/index.html";
+
+                                                        break;
+
+
+                                                    case "USER":
+
+                                                    default:
+
+                                                        window.location.href =
+                                                            "/index.html";
+
+                                                        break;
+                                                }
+
+                                            },
+                                            900
+                                        );
+
+                                        return;
+                                    }
+
+                                    // =================================================
+                                    // LOGIN FAILED
+                                    // =================================================
+
+                                    showLoginToast(
+                                        "❌ " +
+                                        (
+                                            data?.message ||
+                                            "Email hoặc mật khẩu không chính xác."
+                                        )
+                                    );
+                                }
+                                catch (error) {
+
+                                    console.error(
+                                        "Login error:",
+                                        error
+                                    );
+
+                                    showLoginToast(
+                                        "❌ Không thể kết nối đến máy chủ."
+                                    );
+
+                                }
+                                finally {
+
+                                    if (loginSubmitBtn) {
+
+                                        loginSubmitBtn.disabled =
+                                            false;
+
+                                        loginSubmitBtn.textContent =
+                                            "Đăng nhập";
+                                    }
+                                }
+                            }
+                        );
+                    });
+    </script>
+    <div id="loginToast"
+         class="login-toast">
+    </div>
+</body>
+</html>

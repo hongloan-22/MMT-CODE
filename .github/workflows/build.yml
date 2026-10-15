@@ -19,7 +19,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore Ticket/Ticket/Ticket.csproj
+        run: dotnet restore Ticket/Ticket.csproj
 
       - name: Build
-        run: dotnet build Ticket/Ticket/Ticket.csproj --no-restore --configuration Release
+        run: dotnet build Ticket/Ticket.csproj --no-restore --configuration Release
