@@ -1,0 +1,535 @@
+/* =========================================================
+   DOANH THU
+   ========================================================= */
+
+.revenue-content {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   CARD BỘ LỌC
+   ========================================================= */
+
+.filter-card {
+    width: 100%;
+    margin: 0 auto 20px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+    /* Phần nội dung bên trong card được thu lại và căn giữa */
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 72px);
+        max-width: 1380px;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+    }
+
+/* =========================================================
+   BỘ LỌC
+   ========================================================= */
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(300px, 1.5fr) minmax(330px, 1.35fr);
+    gap: 22px;
+    margin-top: 24px;
+    align-items: end;
+}
+
+/* từng ô */
+
+.filter-field,
+.quick-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+}
+
+    /* tiêu đề */
+
+    .filter-field > span,
+    .quick-filter > span {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #667786;
+        line-height: 1.4;
+    }
+
+    /* =========================================================
+   INPUT + SELECT
+   ========================================================= */
+
+    .filter-field input,
+    .filter-field select {
+        width: 100%;
+        height: 46px;
+        box-sizing: border-box;
+        border: 1px solid #dbe7f0;
+        border-radius: 10px;
+        padding: 0 14px;
+        color: #30485a;
+        background: #fff;
+        outline: none;
+        font-size: 14px;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+        .filter-field input:hover,
+        .filter-field select:hover {
+            border-color: #c5d9e7;
+        }
+
+        .filter-field input:focus,
+        .filter-field select:focus {
+            border-color: #1685e8;
+            box-shadow: 0 0 0 3px rgba(22, 133, 232, .08);
+        }
+
+    /* =========================================================
+   KHOẢNG NHANH
+   ========================================================= */
+
+    .quick-filter > div {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 9px;
+        width: 100%;
+        height: 46px;
+    }
+
+    .quick-filter button {
+        width: 100%;
+        height: 46px;
+        border: 1px solid #dbe7f0;
+        background: #fff;
+        color: #667786;
+        border-radius: 10px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+    }
+
+        .quick-filter button:hover {
+            background: #f7fbfe;
+            border-color: #bfe3fb;
+            color: #1685e8;
+        }
+
+        .quick-filter button.selected {
+            background: #eaf6ff;
+            color: #1685e8;
+            border-color: #bfe3fb;
+        }
+
+/* =========================================================
+   KHU VỰC DƯỚI BỘ LỌC
+   ========================================================= */
+
+.filter-actions {
+    margin-top: 24px;
+    padding-top: 20px;
+    padding-bottom: 4px;
+    border-top: 1px solid #edf2f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    color: #8393a0;
+    font-size: 13px;
+}
+
+    /* dòng mô tả */
+
+    .filter-actions > span,
+    .filter-actions .filter-summary {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* =========================================================
+   NÚT XEM BÁO CÁO
+   ========================================================= */
+
+    .filter-actions button,
+    .btn-report,
+    .filter-actions .btn-primary {
+        flex-shrink: 0;
+        min-width: 180px;
+        height: 46px;
+        padding: 0 25px;
+        border: none;
+        border-radius: 10px;
+        background: #1685e8;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(22, 133, 232, .18);
+        transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+
+        .filter-actions button:hover,
+        .btn-report:hover,
+        .filter-actions .btn-primary:hover {
+            background: #0878da;
+            transform: translateY(-1px);
+            box-shadow: 0 7px 18px rgba(22, 133, 232, .22);
+        }
+
+/* =========================================================
+   THỐNG KÊ DOANH THU
+   ========================================================= */
+
+.revenue-stats {
+    margin-bottom: 20px;
+}
+
+/* =========================================================
+   BIỂU ĐỒ + TUYẾN XE
+   ========================================================= */
+
+.report-grid {
+    display: grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.chart-card,
+.route-card {
+    min-height: 355px;
+}
+
+.card-head.compact {
+    padding-bottom: 12px;
+}
+
+.chart-note {
+    font-size: 12px;
+    color: #8494a1;
+}
+
+/* =========================================================
+   BIỂU ĐỒ
+   ========================================================= */
+
+.chart {
+    height: 230px;
+    display: flex;
+    align-items: flex-end;
+    gap: 7px;
+    padding: 18px 8px 0;
+    border-bottom: 1px solid #e8eef3;
+    box-sizing: border-box;
+}
+
+.chart-bar-wrap {
+    flex: 1;
+    min-width: 8px;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: relative;
+}
+
+.chart-bar {
+    width: 100%;
+    max-width: 28px;
+    min-height: 3px;
+    border-radius: 6px 6px 0 0;
+    background: linear-gradient( 180deg, #1685e8, #67baf2 );
+    transition: height .25s ease;
+}
+
+    .chart-bar:hover {
+        opacity: .8;
+    }
+
+.chart-axis {
+    display: flex;
+    gap: 7px;
+    padding: 7px 8px 0;
+    color: #9aa8b3;
+    font-size: 10px;
+}
+
+    .chart-axis span {
+        flex: 1;
+        text-align: center;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+/* =========================================================
+   DOANH THU THEO TUYẾN
+   ========================================================= */
+
+.route-list {
+    display: grid;
+    gap: 13px;
+    padding-top: 7px;
+}
+
+.route-row {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.route-code {
+    font-size: 12px;
+    font-weight: 800;
+    color: #315a75;
+}
+
+.route-name {
+    font-size: 11px;
+    color: #8796a2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+}
+
+.route-progress {
+    height: 8px;
+    background: #edf3f7;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+    .route-progress span {
+        display: block;
+        height: 100%;
+        background: #4aa9ee;
+        border-radius: 20px;
+    }
+
+.route-value {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1d5c85;
+    text-align: right;
+}
+
+/* =========================================================
+   BADGE
+   ========================================================= */
+
+.report-badge {
+    background: #fff6e2;
+    color: #9a7110;
+    border: 1px solid #f4dfaa;
+    border-radius: 20px;
+    padding: 7px 11px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* =========================================================
+   BẢNG
+   ========================================================= */
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+    .table-wrap table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-wrap th {
+        background: #f8fbfd;
+        color: #7b8d9b;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        text-align: left;
+        padding: 13px 14px;
+        border-bottom: 1px solid #e7eef3;
+    }
+
+    .table-wrap td {
+        padding: 13px 14px;
+        border-bottom: 1px solid #edf2f5;
+        color: #40596a;
+        font-size: 13px;
+    }
+
+    .table-wrap tbody tr:hover {
+        background: #fbfdff;
+    }
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px !important;
+    color: #8b9aa7 !important;
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+.toast {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    background: #173247;
+    color: #fff;
+    padding: 11px 15px;
+    border-radius: 9px;
+    box-shadow: 0 8px 25px rgba(23, 50, 71, .18);
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: .2s;
+    z-index: 100;
+    font-size: 13px;
+}
+
+    .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1250px) {
+
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 60px);
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .quick-filter {
+        grid-column: span 2;
+    }
+
+        .quick-filter > div {
+            max-width: 450px;
+        }
+}
+
+@media (max-width: 1100px) {
+
+    .revenue-content {
+        max-width: calc(100% - 30px);
+    }
+
+    .report-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 800px) {
+
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 40px);
+    }
+
+    .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .quick-filter {
+        grid-column: auto;
+    }
+
+        .quick-filter > div {
+            max-width: none;
+        }
+}
+
+@media (max-width: 700px) {
+
+    .revenue-content {
+        width: calc(100% - 24px);
+        max-width: none;
+    }
+
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 30px);
+    }
+
+    .filter-grid {
+        gap: 14px;
+    }
+
+    .filter-actions {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+        .filter-actions button,
+        .btn-report,
+        .filter-actions .btn-primary {
+            width: 100%;
+            min-width: 0;
+        }
+
+    .chart {
+        gap: 3px;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .revenue-content {
+        width: calc(100% - 16px);
+    }
+
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 24px);
+    }
+
+    .quick-filter > div {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+
+    .quick-filter button {
+        padding: 0 5px;
+        font-size: 11px;
+    }
+
+    .chart {
+        height: 200px;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .chart-axis {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .table-wrap table {
+        min-width: 650px;
+    }
+}
