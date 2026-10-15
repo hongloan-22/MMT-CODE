@@ -361,6 +361,411 @@ h1 {
 }
 
 /* =========================================================
+   KHU VỰC DANH SÁCH CHUYẾN + THỐNG KÊ
+   ========================================================= */
+
+.trip-overview {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 18px;
+}
+
+.trip-overview-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 2px 2px 18px;
+    border-bottom: 1px solid #edf2f5;
+}
+
+.trip-overview-head h2 {
+    margin: 4px 0 5px;
+    font-size: 20px;
+    color: #1b527c;
+}
+
+.trip-overview-head p {
+    margin: 0;
+    color: #8493a0;
+    font-size: 12px;
+}
+
+.overview-date {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border: 1px solid #dbe7f0;
+    border-radius: 9px;
+    color: #5f7485;
+    background: #f9fcfe;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.trip-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(330px, .85fr);
+    gap: 18px;
+    padding-top: 18px;
+}
+
+.trip-list-panel,
+.trip-stats-panel {
+    min-width: 0;
+    border: 1px solid #e4ebf1;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.panel-head {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf2f5;
+}
+
+.panel-head > div {
+    min-width: 0;
+}
+
+.panel-head strong {
+    display: block;
+    color: #315a75;
+    font-size: 14px;
+}
+
+.panel-head span {
+    display: block;
+    margin-top: 3px;
+    color: #96a3ad;
+    font-size: 11px;
+}
+
+.panel-link {
+    flex-shrink: 0;
+    border: 0;
+    background: transparent;
+    color: var(--blue);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 6px 4px;
+}
+
+.panel-link:hover {
+    text-decoration: underline;
+}
+
+.trip-list {
+    display: grid;
+    gap: 0;
+    max-height: 390px;
+    overflow-y: auto;
+}
+
+.trip-list-item {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf2f5;
+    transition: background .18s ease;
+}
+
+.trip-list-item:last-child {
+    border-bottom: 0;
+}
+
+.trip-list-item:hover {
+    background: #f9fcff;
+}
+
+.trip-time-box {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.trip-time-box strong {
+    color: #1d5c85;
+    font-size: 16px;
+}
+
+.trip-time-box span {
+    color: #9aa8b3;
+    font-size: 10px;
+}
+
+.trip-route-info {
+    min-width: 0;
+}
+
+.trip-route-code {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 7px;
+    margin-bottom: 5px;
+    border-radius: 6px;
+    background: #eaf6ff;
+    color: #1685e8;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.trip-route-name {
+    color: #334f62;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.trip-bus-info {
+    margin-top: 4px;
+    color: #94a1ab;
+    font-size: 10px;
+}
+
+.trip-seat-box {
+    min-width: 74px;
+    text-align: right;
+}
+
+.trip-seat-box strong {
+    display: block;
+    color: #315a75;
+    font-size: 12px;
+}
+
+.trip-seat-box span {
+    display: block;
+    margin-top: 3px;
+    color: #97a5af;
+    font-size: 10px;
+}
+
+.trip-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.trip-status.active {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.trip-status.scheduled {
+    background: var(--blue-light);
+    color: var(--blue);
+}
+
+.trip-status.cancelled {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+/* =========================================================
+   THỐNG KÊ NHỎ
+   ========================================================= */
+
+.mini-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 15px;
+}
+
+.mini-stat {
+    min-height: 82px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e8eef3;
+    background: #fafcfe;
+}
+
+.mini-stat span {
+    display: block;
+    color: #7f909d;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.mini-stat strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.mini-stat.blue strong {
+    color: var(--blue);
+}
+
+.mini-stat.green strong {
+    color: var(--success);
+}
+
+.mini-stat.orange strong {
+    color: #c27a00;
+}
+
+.mini-stat.red strong {
+    color: var(--danger);
+}
+
+.occupancy-block {
+    margin: 0 15px 15px;
+    padding: 15px;
+    border-radius: 10px;
+    background: #f7fbfe;
+    border: 1px solid #e6eff5;
+}
+
+.occupancy-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.occupancy-head > div strong {
+    display: block;
+    color: #315a75;
+    font-size: 12px;
+}
+
+.occupancy-head > div span {
+    display: block;
+    margin-top: 3px;
+    color: #96a3ad;
+    font-size: 10px;
+}
+
+.occupancy-head > strong {
+    color: var(--blue);
+    font-size: 18px;
+}
+
+.occupancy-track {
+    width: 100%;
+    height: 9px;
+    margin-top: 14px;
+    background: #e6eef4;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.occupancy-track span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #1685e8, #58b6ef);
+    transition: width .35s ease;
+}
+
+.occupancy-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    color: #8797a3;
+    font-size: 10px;
+}
+
+.status-summary {
+    margin: 0 15px 15px;
+    border-top: 1px solid #edf2f5;
+}
+
+.status-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 9px 2px;
+    border-bottom: 1px solid #f0f3f6;
+    color: #667986;
+    font-size: 11px;
+}
+
+.status-summary-row:last-child {
+    border-bottom: 0;
+}
+
+.status-summary-row > span {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.status-summary-row strong {
+    color: #315a75;
+    font-size: 11px;
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.green {
+    background: #19a974;
+}
+
+.dot.orange {
+    background: #e7a62d;
+}
+
+.dot.red {
+    background: #ef6262;
+}
+
+.overview-empty {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #8b9aa7;
+    font-size: 11px;
+}
+
+.overview-empty strong {
+    color: #526879;
+    font-size: 13px;
+}
+
+.overview-empty-icon {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 4px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--blue-light);
+    color: var(--blue);
+    font-size: 20px;
+}
+
+/* =========================================================
    PAGE CARD
    ========================================================= */
 
@@ -1010,6 +1415,16 @@ h1 {
 
 @media(max-width:1100px) {
 
+    .trip-overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .trip-list {
+        max-height: 360px;
+    }
+
+
+
     .sidebar {
         width: 210px;
     }
@@ -1095,6 +1510,21 @@ h1 {
 
 @media(max-width:780px) {
 
+    .trip-overview {
+        padding: 16px;
+    }
+
+    .trip-overview-head {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .overview-date {
+        align-self: flex-start;
+    }
+
+
+
     .sidebar {
         position: static;
         width: 100%;
@@ -1149,6 +1579,37 @@ h1 {
 }
 
 @media(max-width:560px) {
+
+    .trip-list-item {
+        grid-template-columns: 66px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .trip-seat-box {
+        grid-column: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        text-align: left;
+        padding-top: 4px;
+        border-top: 1px dashed #e6edf2;
+    }
+
+    .trip-status {
+        margin-top: 0;
+    }
+
+    .mini-stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .occupancy-foot {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+
 
     .stats-grid {
         grid-template-columns: 1fr;

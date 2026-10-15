@@ -203,6 +203,7 @@
 
         renderRecurring();
         renderTrips();
+        renderTripOverview();
         updateStats();
     }
 
@@ -737,6 +738,137 @@
 
             body.appendChild(row);
         });
+    }
+
+
+    function tripStatusClass(status) {
+        const value = String(status || "").toUpperCase();
+        if (value === "CANCELLED") return "cancelled";
+        if (value === "SCHEDULED") return "scheduled";
+        return "active";
+    }
+
+    function tripStatusText(status) {
+        const value = String(status || "").toUpperCase();
+        const map = {
+            ACTIVE: "Đang hoạt động",
+            SCHEDULED: "Đã lên lịch",
+            CANCELLED: "Đã hủy"
+        };
+        return map[value] || status || "Chưa xác định";
+    }
+
+    function formatTripDateTime(item) {
+        return {
+            date: formatDate(item.tripDate),
+            time: String(item.departureTime || "").slice(0, 5) || "--:--"
+        };
+    }
+
+    function renderTripOverview() {
+        const listElement = $("overviewTripList");
+        const emptyElement = $("overviewTripEmpty");
+
+        if (!listElement) return;
+
+        const trips = [...state.trips].sort((a, b) => {
+            const aValue = `${a.tripDate || ""} ${a.departureTime || ""}`;
+            const bValue = `${b.tripDate || ""} ${b.departureTime || ""}`;
+            return aValue.localeCompare(bValue);
+        });
+
+        const visibleTrips = trips.slice(0, 6);
+        listElement.innerHTML = "";
+
+        if (!visibleTrips.length) {
+            emptyElement.classList.remove("hidden");
+            $("tripListCount").textContent = "0 chuyến";
+        } else {
+            emptyElement.classList.add("hidden");
+            $("tripListCount").textContent = `${trips.length} chuyến`;
+        }
+
+        visibleTrips.forEach(item => {
+            const row = document.createElement("div");
+            row.className = "trip-list-item";
+
+            const dateTime = formatTripDateTime(item);
+            const totalSeats = Number(item.totalSeats || 0);
+            const availableSeats = Number(item.availableSeats || 0);
+            const bookedSeats = Math.max(0, totalSeats - availableSeats);
+
+            row.innerHTML = `
+                <div class="trip-time-box">
+                    <strong>${escapeHtml(dateTime.time)}</strong>
+                    <span>${escapeHtml(dateTime.date)}</span>
+                </div>
+
+                <div class="trip-route-info">
+                    <span class="trip-route-code">${escapeHtml(item.routeCode || "—")}</span>
+                    <div class="trip-route-name">
+                        ${escapeHtml(item.routeName || "Chưa có tên tuyến")}
+                    </div>
+                    <div class="trip-bus-info">
+                        ${escapeHtml(item.busCode || "Chưa phân xe")} ·
+                        ${bookedSeats}/${totalSeats} ghế đã đặt
+                    </div>
+                </div>
+
+                <div class="trip-seat-box">
+                    <strong>${availableSeats}/${totalSeats} ghế</strong>
+                    <span>${escapeHtml(item.tripCode || "—")}</span>
+                    <span class="trip-status ${tripStatusClass(item.status)}">
+                        ${escapeHtml(tripStatusText(item.status))}
+                    </span>
+                </div>
+            `;
+
+            listElement.appendChild(row);
+        });
+
+        const total = trips.length;
+        const active = trips.filter(x =>
+            String(x.status || "").toUpperCase() === "ACTIVE"
+        ).length;
+        const scheduled = trips.filter(x =>
+            String(x.status || "").toUpperCase() === "SCHEDULED"
+        ).length;
+        const cancelled = trips.filter(x =>
+            String(x.status || "").toUpperCase() === "CANCELLED"
+        ).length;
+
+        const booked = trips.reduce((sum, x) => {
+            const totalSeats = Number(x.totalSeats || 0);
+            const availableSeats = Number(x.availableSeats || 0);
+            return sum + Math.max(0, totalSeats - availableSeats);
+        }, 0);
+
+        const available = trips.reduce(
+            (sum, x) => sum + Number(x.availableSeats || 0),
+            0
+        );
+
+        const totalSeats = booked + available;
+        const occupancy = totalSeats > 0
+            ? Math.round((booked / totalSeats) * 100)
+            : 0;
+
+        $("overviewTotalTrips").textContent = total;
+        $("overviewActiveTrips").textContent = active;
+        $("overviewScheduledTrips").textContent = scheduled;
+        $("overviewCancelledTrips").textContent = cancelled;
+        $("overviewOccupancy").textContent = `${occupancy}%`;
+        $("overviewOccupancyBar").style.width = `${occupancy}%`;
+        $("overviewBookedSeats").textContent = `${booked} ghế đã đặt`;
+        $("overviewAvailableSeats").textContent = `${available} ghế còn trống`;
+
+        $("statusActivePercent").textContent = `${total ? Math.round(active / total * 100) : 0}%`;
+        $("statusScheduledPercent").textContent = `${total ? Math.round(scheduled / total * 100) : 0}%`;
+        $("statusCancelledPercent").textContent = `${total ? Math.round(cancelled / total * 100) : 0}%`;
+
+        const now = new Date();
+        $("overviewDate").textContent =
+            `Cập nhật ${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
     }
 
 
@@ -1650,6 +1782,19 @@
 
 
     }
+
+
+    const viewAllTripsButton = $("viewAllTripsBtn");
+
+    viewAllTripsButton?.addEventListener("click", () => {
+        const target = $("tripTableBody");
+        const card = target?.closest(".page-card");
+
+        card?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    });
 
 
     document.addEventListener(
