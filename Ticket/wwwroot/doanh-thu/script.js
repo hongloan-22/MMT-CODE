@@ -72,7 +72,17 @@ function renderRoutes(routes) {
 function renderDaily(data) {
     const body = $("dailyTableBody");
     if (!data.length) {
-        body.innerHTML = '<tr><td colspan="4" class="empty-state">Không có giao dịch trong khoảng thời gian đã chọn.</td></tr>';
+        body.innerHTML = `
+            <tr>
+                <td colspan="4">
+                    <div class="data-empty">
+                        <div class="empty-icon">▤</div>
+                        <strong>Không có dữ liệu doanh thu</strong>
+                        <span>Chưa ghi nhận giao dịch thanh toán thành công trong khoảng thời gian này.</span>
+                        <button type="button" data-empty-action="reset">Đặt lại bộ lọc</button>
+                    </div>
+                </td>
+            </tr>`;
         return;
     }
 
@@ -87,26 +97,71 @@ function renderDaily(data) {
 }
 
 function renderChart(data) {
-    const chart = $("revenueChart");
+    const svg = $("revenueLineChart");
     const axis = $("chartAxis");
-    $("chartNote").textContent = `${data.length} ngày có dữ liệu`;
+    const yAxis = $("chartYAxis");
+    const grid = $("chartGridLines");
+    const empty = $("chartEmpty");
+
+    $("chartNote").textContent = data.length ? `${data.length} ngày` : "Không có dữ liệu";
 
     if (!data.length) {
-        chart.innerHTML = '<div class="empty-state" style="width:100%">Chưa có dữ liệu biểu đồ.</div>';
+        svg.innerHTML = "";
         axis.innerHTML = "";
+        yAxis.innerHTML = "";
+        grid.innerHTML = "";
+        empty.hidden = false;
         return;
     }
 
-    const max = Math.max(...data.map(x => Number(x.revenue)), 1);
-    chart.innerHTML = data.map(item => {
-        const height = Math.max((Number(item.revenue) / max) * 100, 2);
-        return `<div class="chart-bar-wrap" title="${formatDate(item.date)}: ${money(item.revenue)}">
-            <div class="chart-bar" style="height:${height}%"></div>
-        </div>`;
+    empty.hidden = true;
+
+    const values = data.map(item => Number(item.revenue || 0));
+    const max = Math.max(...values, 1);
+    const min = 0;
+    const width = 1000;
+    const height = 300;
+    const padX = 24;
+    const padY = 18;
+    const usableW = width - padX * 2;
+    const usableH = height - padY * 2;
+
+    const points = values.map((value, index) => {
+        const x = data.length === 1
+            ? width / 2
+            : padX + (index / (data.length - 1)) * usableW;
+        const y = height - padY - ((value - min) / max) * usableH;
+        return { x, y, value };
+    });
+
+    const line = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
+    const area = `${line} L ${points[points.length - 1].x.toFixed(2)} ${height - padY} L ${points[0].x.toFixed(2)} ${height - padY} Z`;
+
+    svg.innerHTML = `
+        <defs>
+            <linearGradient id="revenueAreaGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#1685e8" stop-opacity=".22"></stop>
+                <stop offset="100%" stop-color="#1685e8" stop-opacity=".02"></stop>
+            </linearGradient>
+        </defs>
+        <path d="${area}" fill="url(#revenueAreaGradient)"></path>
+        <path d="${line}" fill="none" stroke="#1685e8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${points.map((p, i) => `
+            <circle class="chart-point" cx="${p.x}" cy="${p.y}" r="5" fill="#fff" stroke="#1685e8" stroke-width="3">
+                <title>${formatDate(data[i].date)}: ${money(data[i].revenue)}</title>
+            </circle>`).join("")}
+    `;
+
+    const steps = 4;
+    yAxis.innerHTML = Array.from({ length: steps + 1 }, (_, i) => {
+        const value = max - (max / steps) * i;
+        return `<span>${money(value).replace(" đ", "")}</span>`;
     }).join("");
 
+    grid.innerHTML = Array.from({ length: steps + 1 }, () => `<span></span>`).join("");
+
     axis.innerHTML = data.map((item, index) => {
-        const show = data.length <= 12 || index % Math.ceil(data.length / 8) === 0 || index === data.length - 1;
+        const show = data.length <= 10 || index === 0 || index === data.length - 1 || index % Math.ceil(data.length / 7) === 0;
         return `<span>${show ? item.date.slice(8, 10) + "/" + item.date.slice(5, 7) : ""}</span>`;
     }).join("");
 }
@@ -114,7 +169,13 @@ function renderChart(data) {
 function renderByRoute(data) {
     const el = $("routeRevenueList");
     if (!data.length) {
-        el.innerHTML = '<div class="empty-state">Chưa có doanh thu theo tuyến.</div>';
+        el.innerHTML = `
+            <div class="data-empty">
+                <div class="empty-icon">⇄</div>
+                <strong>Chưa có doanh thu theo tuyến</strong>
+                <span>Không tìm thấy tuyến có giao dịch trong điều kiện hiện tại.</span>
+                <button type="button" data-empty-action="reset">Đặt lại bộ lọc</button>
+            </div>`;
         return;
     }
 
@@ -127,6 +188,16 @@ function renderByRoute(data) {
             <div class="route-value">${money(item.revenue)}</div>
         </div>`;
     }).join("");
+}
+
+function bindEmptyActions() {
+    document.querySelectorAll("[data-empty-action='reset']").forEach(button => {
+        button.addEventListener("click", () => {
+            setDefaultDates(30);
+            $("routeFilter").value = "";
+            loadReport();
+        });
+    });
 }
 
 async function loadReport() {
@@ -172,9 +243,12 @@ async function loadReport() {
         $("refundBadge").textContent = `Hoàn tiền: ${money(data.refundAmount)}`;
         $("reportPeriod").textContent = `Từ ${formatDate(data.from)} đến ${formatDate(data.to)}`;
 
-        renderChart(data.daily || []);
-        renderByRoute(data.byRoute || []);
-        renderDaily(data.daily || []);
+        const daily = data.daily || [];
+        const byRoute = data.byRoute || [];
+        renderChart(daily);
+        renderByRoute(byRoute);
+        renderDaily(daily);
+        bindEmptyActions();
     } catch (error) {
         console.error(error);
         toast("❌ " + error.message);
@@ -189,6 +263,8 @@ function bindEvents() {
     $("resetFilterBtn").addEventListener("click", () => {
         setDefaultDates(30);
         $("routeFilter").value = "";
+        document.querySelectorAll("[data-range]").forEach(x => x.classList.remove("selected"));
+        document.querySelector("[data-range='30']")?.classList.add("selected");
         loadReport();
     });
 
