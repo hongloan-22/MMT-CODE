@@ -253,5 +253,80 @@ namespace SmartBusTicketing.Services
 
             return result;
         }
+
+        // =====================================================
+        // THỐNG KÊ TỶ LỆ LẤP ĐẦY CHUYẾN XE (US-160)
+        // GET: /api/Statistics/trip/{tripId}/occupancy
+        // =====================================================
+        public async Task<TripOccupancyDto>
+            GetTripOccupancyAsync(int tripId)
+        {
+            // 1. Lấy thông tin chuyến xe (kèm Bus để lấy SeatCount dự phòng)
+            var trip = await _context.Trips
+                .Include(t => t.Bus)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t =>
+                    t.Id == tripId);
+
+            if (trip == null)
+            {
+                throw new KeyNotFoundException(
+                    $"Không tìm thấy chuyến xe với ID {tripId}");
+            }
+
+            // 2. Xác định tổng số ghế
+            int totalSeats =
+                trip.TotalSeats > 0
+                    ? trip.TotalSeats
+                    : (trip.Bus?.SeatCount ?? 0);
+
+            // 3. Đếm số ghế đã đặt (Vé VALID hoặc USED)
+            int bookedSeats = await _context.Tickets
+                .Where(t =>
+                    t.TripId == tripId &&
+                    (t.Status == "VALID" ||
+                     t.Status == "USED"))
+                .CountAsync();
+
+            // 4. Đếm số ghế đang giữ
+            // (HELD chưa hết hạn hoặc CONFIRMED)
+            var now = DateTime.UtcNow;
+
+            int heldSeats = await _context.SeatHolds
+                .Where(sh =>
+                    sh.TripId == tripId &&
+                    (sh.Status == "CONFIRMED" ||
+                    (sh.Status == "HELD" &&
+                     sh.ExpiresAt > now)))
+                .CountAsync();
+
+            // 5. Tính số ghế còn trống
+            int availableSeats =
+                totalSeats - bookedSeats - heldSeats;
+
+            if (availableSeats < 0)
+                availableSeats = 0; // Tránh âm
+
+            // 6. Tính tỷ lệ lấp đầy (%)
+            double occupancyRate =
+                totalSeats > 0
+                    ? ((double)bookedSeats / totalSeats) * 100
+                    : 0;
+
+            occupancyRate =
+                Math.Round(occupancyRate, 2);
+
+            // 7. Trả về DTO
+            return new TripOccupancyDto
+            {
+                TripId = trip.Id,
+                TripCode = trip.TripCode,
+                TotalSeats = totalSeats,
+                BookedSeats = bookedSeats,
+                HeldSeats = heldSeats,
+                AvailableSeats = availableSeats,
+                OccupancyRate = occupancyRate
+            };
+        }
     }
 }
