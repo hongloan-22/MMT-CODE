@@ -145,10 +145,22 @@
                         <div>
                             <div class="eyebrow">XU HƯỚNG</div>
                             <h2>Doanh thu theo ngày</h2>
+                            <p>Biểu đồ trực quan doanh thu trong khoảng thời gian đã chọn.</p>
                         </div>
                         <span class="chart-note" id="chartNote">0 ngày</span>
                     </div>
-                    <div class="chart" id="revenueChart"></div>
+                    <div class="chart-shell">
+                        <div class="chart-y-axis" id="chartYAxis"></div>
+                        <div class="chart-area">
+                            <div class="chart-grid-lines" id="chartGridLines"></div>
+                            <svg class="revenue-line-chart" id="revenueLineChart" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-label="Biểu đồ doanh thu"></svg>
+                            <div class="chart-empty" id="chartEmpty" hidden>
+                                <div class="empty-icon">▥</div>
+                                <strong>Chưa có dữ liệu doanh thu</strong>
+                                <span>Không có giao dịch phù hợp với điều kiện thống kê.</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="chart-axis" id="chartAxis"></div>
                 </div>
 

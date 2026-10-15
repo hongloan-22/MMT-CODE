@@ -9,59 +9,92 @@
     box-sizing: border-box;
 }
 
+
 /* =========================================================
-   CARD BỘ LỌC
+   BỘ LỌC BÁO CÁO
    ========================================================= */
 
 .filter-card {
     width: 100%;
-    margin: 0 auto 20px;
+    margin: 0 auto 18px;
     box-sizing: border-box;
     overflow: hidden;
 }
 
-    /* Phần nội dung bên trong card được thu lại và căn giữa */
-    .filter-card .filter-grid,
-    .filter-card .filter-actions {
-        width: calc(100% - 72px);
-        max-width: 1380px;
-        margin-left: auto;
-        margin-right: auto;
+
+    /* =========================================================
+   HEADER BỘ LỌC
+   ========================================================= */
+
+    .filter-card .card-head {
+        width: calc(100% - 80px);
+        max-width: 1420px;
+        margin: 0 auto;
+        padding: 28px 0 24px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 35px;
         box-sizing: border-box;
     }
 
-/* =========================================================
+        .filter-card .card-head > div {
+            min-width: 0;
+        }
+
+        .filter-card .card-head h1,
+        .filter-card .card-head h2,
+        .filter-card .card-head h3 {
+            margin: 0;
+        }
+
+        .filter-card .card-head p {
+            margin: 7px 0 0;
+        }
+
+        .filter-card .card-head button {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+
+    /* =========================================================
    BỘ LỌC
    ========================================================= */
 
-.filter-grid {
-    display: grid;
-    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(300px, 1.5fr) minmax(330px, 1.35fr);
-    gap: 22px;
-    margin-top: 24px;
-    align-items: end;
-}
+    .filter-card .filter-grid {
+        width: calc(100% - 80px);
+        max-width: 1420px;
+        margin: 0 auto;
+        padding: 27px 0 0;
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(300px, 1.45fr) minmax(340px, 1.35fr);
+        gap: 22px;
+        box-sizing: border-box;
+    }
 
-/* từng ô */
+
+/* =========================================================
+   TRƯỜNG BỘ LỌC
+   ========================================================= */
 
 .filter-field,
 .quick-filter {
     display: flex;
     flex-direction: column;
-    gap: 9px;
+    gap: 8px;
     min-width: 0;
 }
-
-    /* tiêu đề */
 
     .filter-field > span,
     .quick-filter > span {
         display: block;
         font-size: 13px;
+        line-height: 1.4;
         font-weight: 700;
         color: #667786;
-        line-height: 1.4;
     }
+
 
     /* =========================================================
    INPUT + SELECT
@@ -84,7 +117,7 @@
 
         .filter-field input:hover,
         .filter-field select:hover {
-            border-color: #c5d9e7;
+            border-color: #c8dce9;
         }
 
         .filter-field input:focus,
@@ -93,13 +126,14 @@
             box-shadow: 0 0 0 3px rgba(22, 133, 232, .08);
         }
 
+
     /* =========================================================
    KHOẢNG NHANH
    ========================================================= */
 
     .quick-filter > div {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 9px;
         width: 100%;
         height: 46px;
@@ -108,11 +142,12 @@
     .quick-filter button {
         width: 100%;
         height: 46px;
+        box-sizing: border-box;
         border: 1px solid #dbe7f0;
         background: #fff;
         color: #667786;
         border-radius: 10px;
-        padding: 0 12px;
+        padding: 0 10px;
         font-size: 12px;
         font-weight: 700;
         cursor: pointer;
@@ -122,8 +157,8 @@
 
         .quick-filter button:hover {
             background: #f7fbfe;
-            border-color: #bfe3fb;
             color: #1685e8;
+            border-color: #bfe3fb;
         }
 
         .quick-filter button.selected {
@@ -132,43 +167,45 @@
             border-color: #bfe3fb;
         }
 
+
 /* =========================================================
    KHU VỰC DƯỚI BỘ LỌC
    ========================================================= */
 
-.filter-actions {
-    margin-top: 24px;
-    padding-top: 20px;
-    padding-bottom: 4px;
+.filter-card .filter-actions {
+    width: calc(100% - 80px);
+    max-width: 1420px;
+    margin: 27px auto 0;
+    padding: 19px 0 24px;
     border-top: 1px solid #edf2f5;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 25px;
+    gap: 24px;
+    box-sizing: border-box;
     color: #8393a0;
     font-size: 13px;
 }
 
-    /* dòng mô tả */
-
-    .filter-actions > span,
-    .filter-actions .filter-summary {
+    .filter-card .filter-actions > span,
+    .filter-card .filter-actions .filter-summary {
         flex: 1;
         min-width: 0;
     }
+
 
     /* =========================================================
    NÚT XEM BÁO CÁO
    ========================================================= */
 
-    .filter-actions button,
-    .btn-report,
-    .filter-actions .btn-primary {
+    .filter-card .filter-actions button,
+    .filter-card .btn-report,
+    .filter-card .filter-actions .btn-primary {
         flex-shrink: 0;
-        min-width: 180px;
+        min-width: 185px;
         height: 46px;
-        padding: 0 25px;
-        border: none;
+        padding: 0 24px;
+        border: 0;
         border-radius: 10px;
         background: #1685e8;
         color: #fff;
@@ -179,31 +216,33 @@
         transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
     }
 
-        .filter-actions button:hover,
-        .btn-report:hover,
-        .filter-actions .btn-primary:hover {
+        .filter-card .filter-actions button:hover,
+        .filter-card .btn-report:hover,
+        .filter-card .filter-actions .btn-primary:hover {
             background: #0878da;
             transform: translateY(-1px);
             box-shadow: 0 7px 18px rgba(22, 133, 232, .22);
         }
+
 
 /* =========================================================
    THỐNG KÊ DOANH THU
    ========================================================= */
 
 .revenue-stats {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
+
 /* =========================================================
-   BIỂU ĐỒ + TUYẾN XE
+   BIỂU ĐỒ + TUYẾN
    ========================================================= */
 
 .report-grid {
     display: grid;
     grid-template-columns: 1.55fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 18px;
+    margin-bottom: 18px;
 }
 
 .chart-card,
@@ -215,54 +254,145 @@
     padding-bottom: 12px;
 }
 
+    .card-head.compact p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #8a99a5;
+    }
+
 .chart-note {
     font-size: 12px;
     color: #8494a1;
+    white-space: nowrap;
 }
+
 
 /* =========================================================
-   BIỂU ĐỒ
+   BIỂU ĐỒ DOANH THU
    ========================================================= */
 
-.chart {
-    height: 230px;
-    display: flex;
-    align-items: flex-end;
-    gap: 7px;
-    padding: 18px 8px 0;
-    border-bottom: 1px solid #e8eef3;
-    box-sizing: border-box;
+.chart-shell {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    height: 240px;
+    margin-top: 4px;
 }
 
-.chart-bar-wrap {
-    flex: 1;
-    min-width: 8px;
-    height: 100%;
+.chart-y-axis {
     display: flex;
-    align-items: flex-end;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px 0 18px;
+    color: #9aa8b3;
+    font-size: 10px;
+    text-align: right;
+}
+
+.chart-area {
     position: relative;
+    min-width: 0;
+    height: 100%;
+    border-bottom: 1px solid #dfe9f0;
+    overflow: hidden;
 }
 
-.chart-bar {
-    width: 100%;
-    max-width: 28px;
-    min-height: 3px;
-    border-radius: 6px 6px 0 0;
-    background: linear-gradient( 180deg, #1685e8, #67baf2 );
-    transition: height .25s ease;
+.chart-grid-lines {
+    position: absolute;
+    inset: 0 0 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
 }
 
-    .chart-bar:hover {
-        opacity: .8;
+    .chart-grid-lines span {
+        display: block;
+        border-top: 1px dashed #e8eef3;
     }
+
+.revenue-line-chart {
+    position: absolute;
+    inset: 0 0 18px;
+    width: 100%;
+    height: calc(100% - 18px);
+    overflow: visible;
+}
+
+.chart-area::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    border-bottom: 1px solid #e8eef3;
+    pointer-events: none;
+}
+
+.chart-point {
+    cursor: pointer;
+}
+
+    .chart-point:hover {
+        filter: brightness(.92);
+    }
+
+
+/* =========================================================
+   TRẠNG THÁI BIỂU ĐỒ KHÔNG CÓ DỮ LIỆU
+   ========================================================= */
+
+.chart-empty {
+    position: absolute;
+    inset: 0 0 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    background: linear-gradient( 180deg, rgba(255,255,255,.94), rgba(248,251,253,.96) );
+    color: #8293a0;
+    text-align: center;
+}
+
+    .chart-empty[hidden] {
+        display: none;
+    }
+
+    .chart-empty strong {
+        color: #607789;
+        font-size: 13px;
+    }
+
+    .chart-empty span {
+        max-width: 270px;
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+.empty-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #eef6fc;
+    color: #1685e8;
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   TRỤC X CỦA BIỂU ĐỒ
+   ========================================================= */
 
 .chart-axis {
     display: flex;
     gap: 7px;
-    padding: 7px 8px 0;
+    padding: 7px 8px 0 58px;
     color: #9aa8b3;
     font-size: 10px;
+    min-height: 18px;
 }
 
     .chart-axis span {
@@ -271,6 +401,7 @@
         overflow: hidden;
         white-space: nowrap;
     }
+
 
 /* =========================================================
    DOANH THU THEO TUYẾN
@@ -325,6 +456,60 @@
     text-align: right;
 }
 
+
+/* =========================================================
+   TRẠNG THÁI KHÔNG CÓ DỮ LIỆU
+   ========================================================= */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px !important;
+    color: #8b9aa7 !important;
+}
+
+.data-empty {
+    min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: #8b9aa7;
+    text-align: center;
+}
+
+    .data-empty .empty-icon {
+        margin-bottom: 3px;
+    }
+
+    .data-empty strong {
+        color: #607789;
+        font-size: 13px;
+    }
+
+    .data-empty span {
+        max-width: 320px;
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .data-empty button {
+        margin-top: 6px;
+        border: 1px solid #cfe4f5;
+        background: #f4faff;
+        color: #1685e8;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+        .data-empty button:hover {
+            background: #eaf6ff;
+        }
+
+
 /* =========================================================
    BADGE
    ========================================================= */
@@ -339,8 +524,9 @@
     font-weight: 700;
 }
 
+
 /* =========================================================
-   BẢNG
+   BẢNG DOANH THU
    ========================================================= */
 
 .table-wrap {
@@ -375,11 +561,6 @@
         background: #fbfdff;
     }
 
-.empty-state {
-    text-align: center;
-    padding: 40px 20px !important;
-    color: #8b9aa7 !important;
-}
 
 /* =========================================================
    TOAST
@@ -393,7 +574,7 @@
     color: #fff;
     padding: 11px 15px;
     border-radius: 9px;
-    box-shadow: 0 8px 25px rgba(23, 50, 71, .18);
+    box-shadow: 0 8px 25px rgba(23,50,71,.18);
     transform: translateY(20px);
     opacity: 0;
     pointer-events: none;
@@ -407,34 +588,52 @@
         opacity: 1;
     }
 
+
 /* =========================================================
-   RESPONSIVE
+   RESPONSIVE - TABLET
    ========================================================= */
 
 @media (max-width: 1250px) {
 
+    .filter-card .card-head,
     .filter-card .filter-grid,
     .filter-card .filter-actions {
         width: calc(100% - 60px);
     }
 
-    .filter-grid {
+    .filter-card .filter-grid {
         grid-template-columns: 1fr 1fr;
     }
 
-    .quick-filter {
+    .filter-card .quick-filter {
         grid-column: span 2;
     }
 
-        .quick-filter > div {
-            max-width: 450px;
+        .filter-card .quick-filter > div {
+            max-width: 500px;
         }
 }
 
+
+/* =========================================================
+   RESPONSIVE - 1100PX
+   ========================================================= */
+
 @media (max-width: 1100px) {
 
-    .revenue-content {
-        max-width: calc(100% - 30px);
+    .filter-card .card-head,
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 50px);
+    }
+
+    .filter-card .filter-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+
+    .filter-card .quick-filter {
+        grid-column: span 2;
     }
 
     .report-grid {
@@ -442,94 +641,99 @@
     }
 }
 
-@media (max-width: 800px) {
 
-    .filter-card .filter-grid,
-    .filter-card .filter-actions {
-        width: calc(100% - 40px);
+/* =========================================================
+   RESPONSIVE - MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .sidebar {
+        width: 210px;
     }
 
-    .filter-grid {
+    .main {
+        margin-left: 210px;
+        width: calc(100% - 210px);
+    }
+
+    .content {
+        padding: 20px;
+    }
+
+    .filter-card .card-head,
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 36px);
+    }
+
+    .filter-card .card-head {
+        gap: 20px;
+    }
+
+    .filter-card .filter-grid {
         grid-template-columns: 1fr;
         gap: 16px;
     }
 
-    .quick-filter {
+    .filter-card .quick-filter {
         grid-column: auto;
     }
 
-        .quick-filter > div {
+        .filter-card .quick-filter > div {
             max-width: none;
         }
-}
 
-@media (max-width: 700px) {
-
-    .revenue-content {
-        width: calc(100% - 24px);
-        max-width: none;
-    }
-
-    .filter-card .filter-grid,
     .filter-card .filter-actions {
-        width: calc(100% - 30px);
-    }
-
-    .filter-grid {
-        gap: 14px;
-    }
-
-    .filter-actions {
         align-items: stretch;
         flex-direction: column;
         gap: 15px;
     }
 
-        .filter-actions button,
-        .btn-report,
-        .filter-actions .btn-primary {
+        .filter-card .filter-actions button,
+        .filter-card .btn-report,
+        .filter-card .filter-actions .btn-primary {
             width: 100%;
             min-width: 0;
         }
 
-    .chart {
-        gap: 3px;
-    }
-}
-
-@media (max-width: 500px) {
-
-    .revenue-content {
-        width: calc(100% - 16px);
-    }
-
-    .filter-card .filter-grid,
-    .filter-card .filter-actions {
-        width: calc(100% - 24px);
-    }
-
-    .quick-filter > div {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 5px;
-    }
-
-    .quick-filter button {
-        padding: 0 5px;
-        font-size: 11px;
-    }
-
-    .chart {
-        height: 200px;
-        padding-left: 4px;
-        padding-right: 4px;
+    .chart-shell {
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 6px;
     }
 
     .chart-axis {
-        padding-left: 4px;
-        padding-right: 4px;
+        padding-left: 46px;
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVE - ĐIỆN THOẠI NHỎ
+   ========================================================= */
+
+@media (max-width: 500px) {
+
+    .filter-card .card-head,
+    .filter-card .filter-grid,
+    .filter-card .filter-actions {
+        width: calc(100% - 28px);
     }
 
-    .table-wrap table {
-        min-width: 650px;
+    .filter-card .card-head {
+        flex-direction: column;
+    }
+
+        .filter-card .card-head button {
+            align-self: flex-start;
+        }
+
+    .filter-card .quick-filter > div {
+        gap: 6px;
+    }
+
+    .filter-card .quick-filter button {
+        padding: 0 6px;
+        font-size: 11px;
     }
 }
