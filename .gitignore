@@ -21,3 +21,16 @@
 ## Database SQLite tạm (nếu có sinh ra)
 *.db-shm
 *.db-wal
+
+# ========== Tài liệu Word/Excel — không commit ==========
+*.docx
+*.xlsx
+*.doc
+*.xls
+*.pptx
+*.ppt
+
+# ========== AI agent context — local only ==========
+SPEC_US148_154_155.md
+BACKLOG_US148_154_155.md
+PROJECT_MEMORY.md
