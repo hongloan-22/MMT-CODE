@@ -1,5 +1,8 @@
 ﻿using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using SmartBusTicketing.DTOs;
 using Ticket.Data;
 
@@ -16,6 +19,28 @@ namespace SmartBusTicketing.Services
         private const int DefaultRangeDays = 30;
 
         private readonly ApplicationDbContext _context;
+
+        // =====================================================
+        // US-155: Cấu hình QuestPDF (chạy một lần cho mọi request)
+        // =====================================================
+
+        static ReportService()
+        {
+            // QuestPDF yêu cầu khai báo license trước khi tạo file.
+            QuestPDF.Settings.License =
+                QuestPDF.Infrastructure.LicenseType.Community;
+
+            // Dùng thêm font cài sẵn của hệ điều hành để tiếng Việt
+            // luôn hiển thị đúng nếu font mặc định thiếu ký tự.
+            QuestPDF.Settings.UseSystemFonts = true;
+
+            // Từ 2026.9.0 QuestPDF ném lỗi khi một font trong danh
+            // sách dự phòng không tồn tại trên máy chủ (mặc định
+            // bật). Tắt để PDF vẫn xuất được bằng các font còn lại
+            // (VD máy chủ Linux/Docker không có Arial/Tahoma) thay
+            // vì trả về lỗi 500.
+            QuestPDF.Settings.ThrowOnMissingFontFamilies = false;
+        }
 
         public ReportService(
             ApplicationDbContext context)
@@ -303,6 +328,383 @@ namespace SmartBusTicketing.Services
 
             return stream.ToArray();
         }
+
+        // =====================================================
+        // US-155: XUẤT BÁO CÁO DOANH THU RA PDF (.pdf)
+        //
+        // BR-26: file PDF phải dùng đúng bộ lọc và đúng logic
+        // tổng hợp như trên màn hình, nên luôn lấy dữ liệu qua
+        // GetRevenueReportAsync(filter) thay vì tự truy vấn lại.
+        //
+        // File rỗng (không có giao dịch thành công trong kỳ) vẫn
+        // xuất được: có tiêu đề, có bộ lọc, có bảng header và
+        // dòng TỔNG = 0 (không lỗi).
+        // =====================================================
+
+        public async Task<byte[]> ExportRevenueToPdfAsync(
+            RevenueReportFilterDto filter)
+        {
+            filter ??= new RevenueReportFilterDto();
+
+            // Cùng một nguồn dữ liệu với màn hình báo cáo (BR-26)
+            var report = await GetRevenueReportAsync(filter);
+
+            var details = report.Details ??
+                          new List<RevenueItemDto>();
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    // Bảng nhiều cột số liệu nên dùng khổ ngang
+                    // cho dễ đọc.
+                    page.Size(PageSizes.A4.Landscape());
+                    page.Margin(1.2f, Unit.Centimetre);
+
+                    page.DefaultTextStyle(x => x
+                        .FontSize(10)
+                        .FontFamily(
+                            "Lato",
+                            "Arial",
+                            "Tahoma",
+                            "Times New Roman"));
+
+                    page.Header()
+                        .Element(x => ComposePdfHeader(x, report));
+
+                    page.Content()
+                        .Element(x => ComposePdfContent(
+                            x,
+                            report,
+                            details));
+
+                    page.Footer().Element(ComposePdfFooter);
+                });
+            });
+
+            // Ghi ra bộ nhớ, không tạo file tạm trên đĩa.
+            return document.GeneratePdf();
+        }
+
+        // =====================================================
+        // Header PDF: tiêu đề + khoảng thời gian + bộ lọc đã áp dụng
+        // =====================================================
+
+        private static void ComposePdfHeader(
+            IContainer container,
+            RevenueReportDto report)
+        {
+            var routeLabel =
+                string.IsNullOrWhiteSpace(report.RouteCode)
+                    ? "Tất cả tuyến"
+                    : $"{report.RouteCode} - {report.RouteName}";
+
+            container.Column(column =>
+            {
+                column.Item()
+                    .AlignCenter()
+                    .Text("BÁO CÁO DOANH THU")
+                    .FontSize(16)
+                    .Bold();
+
+                column.Item()
+                    .PaddingTop(3)
+                    .AlignCenter()
+                    .Text(
+                        $"Khoảng thời gian: {report.From} " +
+                        $"đến {report.To}")
+                    .FontSize(11);
+
+                column.Item()
+                    .PaddingTop(2)
+                    .AlignCenter()
+                    .Text(
+                        $"Tuyến: {routeLabel}   |   " +
+                        $"Nhóm theo: {GetGroupByLabel(report.GroupBy)}   |   " +
+                        $"Đơn vị tiền tệ: {report.Currency}")
+                    .FontSize(10);
+
+                column.Item()
+                    .PaddingTop(2)
+                    .AlignCenter()
+                    .Text(
+                        "Ngày tạo báo cáo: " +
+                        report.GeneratedAt.ToString(
+                            "yyyy-MM-dd HH:mm",
+                            System.Globalization.CultureInfo
+                                .InvariantCulture) +
+                        " (UTC)")
+                    .FontSize(9)
+                    .FontColor(Colors.Grey.Darken1);
+
+                // Đường kẻ phân cách header với phần nội dung
+                column.Item()
+                    .PaddingTop(6)
+                    .Height(1)
+                    .Background(Colors.Grey.Darken2);
+            });
+        }
+
+        // =====================================================
+        // Nội dung PDF: bảng chi tiết theo kỳ + dòng TỔNG (bold)
+        // =====================================================
+
+        private static void ComposePdfContent(
+            IContainer container,
+            RevenueReportDto report,
+            List<RevenueItemDto> details)
+        {
+            container.Column(column =>
+            {
+                column.Spacing(6);
+
+                // File rỗng vẫn phản ánh đúng trạng thái không có
+                // dữ liệu: thiếu các dòng dữ liệu nhưng vẫn có
+                // dòng TỔNG = 0.
+                if (!report.HasData)
+                {
+                    column.Item()
+                        .Text(
+                            report.Message ??
+                            "Không có giao dịch thành công trong kỳ báo cáo.")
+                        .Italic()
+                        .FontColor(Colors.Red.Medium);
+                }
+
+                column.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.ConstantColumn(30);   // STT
+                        columns.ConstantColumn(70);   // Kỳ
+                        columns.ConstantColumn(60);   // Mã tuyến
+                        columns.RelativeColumn(3);    // Tên tuyến
+                        columns.RelativeColumn(2);    // Doanh thu
+                        columns.RelativeColumn(2);    // Hoàn tiền
+                        columns.RelativeColumn(2);    // Thuần
+                        columns.ConstantColumn(40);   // GD
+                    });
+
+                    table.Header(header =>
+                    {
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignCenter()
+                            .Text("STT");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignCenter()
+                            .Text("Kỳ");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignCenter()
+                            .Text("Mã tuyến");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .Text("Tên tuyến");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignRight()
+                            .Text("Doanh thu");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignRight()
+                            .Text("Hoàn tiền");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignRight()
+                            .Text("Thuần");
+
+                        header.Cell()
+                            .Element(PdfHeaderCell)
+                            .AlignRight()
+                            .Text("GD");
+                    });
+
+                    // Mỗi dòng là một kỳ của một tuyến nên cột
+                    // Mã tuyến / Tên tuyến luôn có giá trị.
+                    var order = 1;
+
+                    foreach (var item in details)
+                    {
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .Text(order.ToString());
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .AlignCenter()
+                            .Text(item.Period ?? string.Empty);
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .AlignCenter()
+                            .Text(item.RouteCode ?? string.Empty);
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .Text(item.RouteName ?? string.Empty);
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .AlignRight()
+                            .Text(FormatMoney(item.Payment));
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .AlignRight()
+                            .Text(FormatMoney(item.Refund));
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .AlignRight()
+                            .Text(FormatMoney(item.Net));
+
+                        table.Cell()
+                            .Element(PdfBodyCell)
+                            .AlignRight()
+                            .Text(item.Transactions.ToString());
+
+                        order++;
+                    }
+
+                    // ===== Hàng TỔNG cuối bảng (bold) =====
+                    table.Cell()
+                        .ColumnSpan(4)
+                        .Element(PdfTotalCell)
+                        .Text("TỔNG")
+                        .Bold();
+
+                    table.Cell()
+                        .Element(PdfTotalCell)
+                        .AlignRight()
+                        .Text(FormatMoney(report.GrossRevenue))
+                        .Bold();
+
+                    table.Cell()
+                        .Element(PdfTotalCell)
+                        .AlignRight()
+                        .Text(FormatMoney(report.RefundAmount))
+                        .Bold();
+
+                    table.Cell()
+                        .Element(PdfTotalCell)
+                        .AlignRight()
+                        .Text(FormatMoney(report.NetRevenue))
+                        .Bold();
+
+                    table.Cell()
+                        .Element(PdfTotalCell)
+                        .AlignRight()
+                        .Text(report.TransactionCount.ToString())
+                        .Bold();
+                });
+
+                // Số liệu tổng hợp, khớp với màn hình báo cáo
+                column.Item().PaddingTop(4).Text(text =>
+                {
+                    text.Span("Doanh thu thuần: ").SemiBold();
+                    text.Span(
+                        $"{FormatMoney(report.NetRevenue)} " +
+                        $"{report.Currency}");
+
+                    text.Span("   |   Số GD thanh toán: ").SemiBold();
+                    text.Span(report.TransactionCount.ToString());
+
+                    text.Span("   |   Số GD hoàn tiền: ").SemiBold();
+                    text.Span(report.RefundCount.ToString());
+
+                    text.Span("   |   Số vé phát hành: ").SemiBold();
+                    text.Span(report.TicketCount.ToString());
+
+                    text.Span("   |   GD trung bình: ").SemiBold();
+                    text.Span(
+                        $"{FormatMoney(report.AverageTransaction)} " +
+                        $"{report.Currency}");
+                });
+            });
+        }
+
+        // =====================================================
+        // Footer PDF: số trang (Trang X / Y)
+        // =====================================================
+
+        private static void ComposePdfFooter(IContainer container)
+        {
+            container
+                .PaddingTop(8)
+                .AlignCenter()
+                .DefaultTextStyle(x => x
+                    .FontSize(9)
+                    .FontColor(Colors.Grey.Darken1))
+                .Text(text =>
+                {
+                    text.Span("Trang ");
+                    text.CurrentPageNumber();
+                    text.Span(" / ");
+                    text.TotalPages();
+                });
+        }
+
+        // Kiểu ô tiêu đề bảng
+        private static IContainer PdfHeaderCell(IContainer container)
+        {
+            return container
+                .Background(Colors.Grey.Lighten2)
+                .BorderBottom(1)
+                .BorderColor(Colors.Grey.Darken2)
+                .Padding(4);
+        }
+
+        // Kiểu ô dữ liệu
+        private static IContainer PdfBodyCell(IContainer container)
+        {
+            return container
+                .BorderBottom(1)
+                .BorderColor(Colors.Grey.Lighten2)
+                .PaddingHorizontal(4)
+                .PaddingVertical(3);
+        }
+
+        // Kiểu ô dòng TỔNG
+        private static IContainer PdfTotalCell(IContainer container)
+        {
+            return container
+                .Background(Colors.Grey.Lighten3)
+                .BorderTop(1)
+                .BorderBottom(1)
+                .BorderColor(Colors.Grey.Darken2)
+                .PaddingHorizontal(4)
+                .PaddingVertical(4);
+        }
+
+        // Định dạng tiền: N0 (VD: 150,000) - không phần thập phân
+        private static string FormatMoney(decimal value)
+        {
+            return value.ToString(
+                "N0",
+                System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        // Nhãn nhóm dữ liệu hiển thị trên file PDF.
+        // report.GroupBy đã được chuẩn hóa trước đó nên chỉ cần
+        // ánh xạ sang nhãn tiếng Việt.
+        private static string GetGroupByLabel(string? groupBy)
+        {
+            return groupBy switch
+            {
+                WeekGroupBy => "tuần",
+                MonthGroupBy => "tháng",
+                _ => "ngày"
+            };
+        }
+
 
         // =====================================================
         // DANH SÁCH TUYẾN CHO BỘ LỌC

@@ -21,5 +21,21 @@ namespace SmartBusTicketing.Services
         // trả file cho client (không ghi file tạm trên server).
         Task<byte[]> ExportRevenueToExcelAsync(
             RevenueReportFilterDto filter);
+
+        // US-155: Xuất báo cáo doanh thu ra file PDF (.pdf).
+        //
+        // Cùng nguyên tắc với US-154 (BR-26):
+        //   - Luôn gọi lại GetRevenueReportAsync(filter) bên trong
+        //     để file PDF dùng ĐÚNG bộ lọc và ĐÚNG logic tổng hợp
+        //     như báo cáo trên màn hình.
+        //   - Trả về mảng byte để controller tự quyết định cách
+        //     trả file cho client (không ghi file tạm trên server).
+        //
+        // File rỗng (không có giao dịch thành công trong kỳ) vẫn
+        // phải tạo được PDF: có tiêu đề, có bộ lọc, có dòng TỔNG = 0.
+        Task<byte[]> ExportRevenueToPdfAsync(
+            RevenueReportFilterDto filter);
+
+
     }
 }
