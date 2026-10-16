@@ -499,5 +499,137 @@ namespace SmartBusTicketing.Services
                 Items = items
             };
         }
+
+        // =====================================================
+        // US-159: KIỂM TRA TÍNH HỢP LỆ DỮ LIỆU
+        // GET: /api/Statistics/data-integrity-check
+        // =====================================================
+        public async Task<DataIntegrityReportDto> CheckDataIntegrityAsync()
+        {
+            var report = new DataIntegrityReportDto
+            {
+                CheckedAt = DateTime.UtcNow
+            };
+
+            var now = DateTime.UtcNow;
+
+            // 1. LẤY DỮ LIỆU CẦN KIỂM TRA
+            var trips = await _context.Trips
+                .AsNoTracking()
+                .Include(t => t.Bus)
+                .Where(t => t.IsActive)
+                .ToListAsync();
+
+            report.TotalTripsChecked = trips.Count;
+
+            // Đếm vé VALID/USED theo từng trip (1 query duy nhất)
+            var bookedCountByTrip = await _context.Tickets
+                .AsNoTracking()
+                .Where(t => t.Status == "VALID" || t.Status == "USED")
+                .GroupBy(t => t.TripId)
+                .Select(g => new { TripId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.TripId, x => x.Count);
+
+            // Đếm ghế đang giữ (HELD chưa hết hạn + CONFIRMED)
+            var heldCountByTrip = await _context.SeatHolds
+                .AsNoTracking()
+                .Where(sh =>
+                    sh.Status == "CONFIRMED" ||
+                    (sh.Status == "HELD" && sh.ExpiresAt > now))
+                .GroupBy(sh => sh.TripId)
+                .Select(g => new { TripId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.TripId, x => x.Count);
+
+            // 2. KIỂM TRA TỪNG TRIP
+            foreach (var trip in trips)
+            {
+                // ----- Check 1: SeatCount mismatch -----
+                if (trip.Bus != null && trip.Bus.SeatCount > 0)
+                {
+                    if (trip.TotalSeats != trip.Bus.SeatCount)
+                    {
+                        report.Summary.SeatCountMismatch++;
+                        report.Issues.Add(new DataIntegrityIssueDto
+                        {
+                            IssueType = "SEAT_COUNT_MISMATCH",
+                            Severity = "HIGH",
+                            TripId = trip.Id,
+                            TripCode = trip.TripCode,
+                            Description = "Trip.TotalSeats khác với Bus.SeatCount",
+                            ExpectedValue = trip.Bus.SeatCount.ToString(),
+                            ActualValue = trip.TotalSeats.ToString()
+                        });
+                    }
+                }
+
+                // ----- Check 2: BookedSeats mismatch -----
+                var actualBooked = bookedCountByTrip.TryGetValue(trip.Id, out var bc) ? bc : 0;
+                if (trip.BookedSeats != actualBooked)
+                {
+                    report.Summary.BookedSeatsMismatch++;
+                    report.Issues.Add(new DataIntegrityIssueDto
+                    {
+                        IssueType = "BOOKED_SEATS_MISMATCH",
+                        Severity = "MEDIUM",
+                        TripId = trip.Id,
+                        TripCode = trip.TripCode,
+                        Description = "Trip.BookedSeats khác với số vé VALID/USED thực tế",
+                        ExpectedValue = actualBooked.ToString(),
+                        ActualValue = trip.BookedSeats.ToString()
+                    });
+                }
+
+                // ----- Check 3: AvailableSeats mismatch -----
+                var actualHeld = heldCountByTrip.TryGetValue(trip.Id, out var hc) ? hc : 0;
+                var expectedAvailable = trip.TotalSeats - actualBooked - actualHeld;
+                if (expectedAvailable < 0) expectedAvailable = 0;
+
+                if (trip.AvailableSeats != expectedAvailable)
+                {
+                    report.Summary.AvailableSeatsMismatch++;
+                    report.Issues.Add(new DataIntegrityIssueDto
+                    {
+                        IssueType = "AVAILABLE_SEATS_MISMATCH",
+                        Severity = "MEDIUM",
+                        TripId = trip.Id,
+                        TripCode = trip.TripCode,
+                        Description = "Trip.AvailableSeats khác với công thức TotalSeats - Booked - Held",
+                        ExpectedValue = expectedAvailable.ToString(),
+                        ActualValue = trip.AvailableSeats.ToString()
+                    });
+                }
+            }
+
+            // 3. KIỂM TRA SEAT HOLD QUÁ HẠN CHƯA RELEASE
+            var expiredHolds = await _context.SeatHolds
+                .AsNoTracking()
+                .Include(sh => sh.Trip)
+                .Where(sh =>
+                    sh.Status == "HELD" &&
+                    sh.ExpiresAt <= now)
+                .ToListAsync();
+
+            foreach (var hold in expiredHolds)
+            {
+                report.Summary.ExpiredSeatHolds++;
+                report.Issues.Add(new DataIntegrityIssueDto
+                {
+                    IssueType = "EXPIRED_SEAT_HOLDS",
+                    Severity = "LOW",
+                    TripId = hold.TripId,
+                    TripCode = hold.Trip?.TripCode,
+                    SeatHoldId = hold.Id,
+                    SeatCode = hold.SeatCode,
+                    Description = "Ghế đang giữ (HELD) đã quá hạn nhưng chưa được release",
+                    ExpectedValue = "RELEASED hoặc EXPIRED",
+                    ActualValue = $"{hold.Status} (hết hạn lúc {hold.ExpiresAt:u})"
+                });
+            }
+
+            // 4. TỔNG KẾT
+            report.TotalIssuesFound = report.Issues.Count;
+
+            return report;
+        }
     }
 }
