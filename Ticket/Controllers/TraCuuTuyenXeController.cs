@@ -101,7 +101,7 @@ namespace TuyenXe.Controllers
         }
 
         // =====================================================
-        // US-165: DANH SÁCH CHUYẾN ĐÃ LÊN LỊCH (PHÂN TRANG)
+        // US-165 + US-166: DANH SÁCH CHUYẾN ĐÃ LÊN LỊCH
         //
         // Ví dụ:
         // /api/TraCuuTuyenXe/danh-sach
@@ -113,6 +113,7 @@ namespace TuyenXe.Controllers
         // &giaMax=200000
         // &sortBy=price
         // &sortOrder=asc
+        // &onlyAvailable=true
         // &page=1
         // &pageSize=20
         // =====================================================
@@ -126,6 +127,7 @@ namespace TuyenXe.Controllers
             [FromQuery] decimal? giaMax,
             [FromQuery] string? sortBy,
             [FromQuery] string? sortOrder,
+            [FromQuery] bool? onlyAvailable,   // ✨ US-166
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
@@ -179,6 +181,7 @@ namespace TuyenXe.Controllers
                 MaxFare = giaMax,
                 SortBy = sortBy,
                 SortOrder = sortOrder,
+                OnlyAvailable = onlyAvailable,   // ✨ US-166
                 Page = page,
                 PageSize = pageSize
             };

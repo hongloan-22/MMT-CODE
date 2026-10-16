@@ -55,5 +55,43 @@ namespace Ticket.Controllers
                 });
             }
         }
+
+        // =====================================================
+        // US-159: KIỂM TRA TÍNH HỢP LỆ DỮ LIỆU
+        // GET: /api/Statistics/data-integrity-check
+        // =====================================================
+        [HttpGet("data-integrity-check")]
+        public async Task<IActionResult> CheckDataIntegrity(
+            [FromHeader(Name = "X-User-Id")] string? userId)
+        {
+            // Chỉ MANAGER hoặc ADMIN mới được xem báo cáo
+            if (!await _authorization.HasAnyRoleAsync(
+                    Request,
+                    "MANAGER",
+                    "ADMIN"))
+            {
+                return StatusCode(403, new
+                {
+                    message = "Bạn không có quyền kiểm tra dữ liệu."
+                });
+            }
+
+            try
+            {
+                var result =
+                    await _tripService
+                        .CheckDataIntegrityAsync();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Lỗi khi kiểm tra dữ liệu.",
+                    detail = ex.Message
+                });
+            }
+        }
     }
 }

@@ -1,0 +1,1151 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Smartbus - Chi tiết chuyến xe</title>
+
+    <link rel="stylesheet"
+          href="../css/admin-common.css">
+
+    <link rel="stylesheet"
+          href="style.css">
+
+    <script src="../js/admin-manager-layout.js"></script>
+
+    <script>
+        (function () {
+
+            const raw =
+                localStorage.getItem("userSession");
+
+            if (!raw) {
+
+                window.location.replace(
+                    "../auth/dangnhap.html"
+                );
+
+                return;
+            }
+
+            try {
+
+                const user =
+                    JSON.parse(raw);
+
+                const role =
+                    String(
+                        user.role ||
+                        user.roleCode ||
+                        ""
+                    )
+                        .trim()
+                        .toUpperCase();
+
+                if (
+                    role !== "ADMIN" &&
+                    role !== "MANAGER"
+                ) {
+
+                    window.location.replace(
+                        "../index.html"
+                    );
+
+                    return;
+                }
+
+            }
+            catch (error) {
+
+                console.error(error);
+
+                localStorage.removeItem(
+                    "userSession"
+                );
+
+                window.location.replace(
+                    "../auth/dangnhap.html"
+                );
+            }
+
+        })();
+    </script>
+
+</head>
+
+
+<body>
+
+    <div class="app-shell">
+
+
+        <!-- =====================================================
+             SIDEBAR
+             ===================================================== -->
+
+        <aside class="sidebar">
+
+            <a class="brand"
+               href="../index.html">
+
+                <span class="brand-icon">
+                    🚌
+                </span>
+
+                <span class="brand-name">
+                    Smart<span>bus</span>
+                </span>
+
+            </a>
+
+
+            <div class="sidebar-label">
+                QUẢN LÝ VẬN HÀNH
+            </div>
+
+
+            <nav class="side-nav">
+
+                <a href="../index.html"
+                   class="side-link">
+
+                    <span>▦</span>
+                    <span>Tổng quan</span>
+
+                </a>
+
+
+                <a href="../quan-ly-tuyen-tram/index.html"
+                   class="side-link">
+
+                    <span>⇄</span>
+                    <span>Tuyến & trạm</span>
+
+                </a>
+
+
+                <a href="../lap-lich-trinh/index.html"
+                   class="side-link active">
+
+                    <span>◷</span>
+                    <span>Lịch trình</span>
+
+                </a>
+
+
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen"
+                   style="display:none;">
+
+                    <span>👤</span>
+                    <span>Phân quyền</span>
+
+                </a>
+
+
+                <a href="../doi-xe/index.html"
+                   class="side-link">
+
+                    <span>🚌</span>
+                    <span>Đội xe</span>
+
+                </a>
+
+
+                <a href="../doi-xe/index.html#staff"
+                   class="side-link">
+
+                    <span>👤</span>
+                    <span>Tài xế / phụ xe</span>
+
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-label">
+                BÁO CÁO
+            </div>
+
+
+            <nav class="side-nav">
+
+                <a href="../doanh-thu/index.html"
+                   class="side-link">
+
+                    <span>▥</span>
+                    <span>Doanh thu</span>
+
+                </a>
+
+
+                <a href="#"
+                   class="side-link">
+
+                    <span>◔</span>
+                    <span>Tỷ lệ lấp đầy</span>
+
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-bottom">
+
+                <div class="account-mini">
+
+                    <div class="avatar">
+                        QL
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Quản lý
+                        </strong>
+
+                        <small>
+                            Quản lý vận hành
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <button class="logout-btn"
+                        type="button">
+
+                    ↪ Đăng xuất
+
+                </button>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =====================================================
+             MAIN
+             ===================================================== -->
+
+        <main class="main">
+
+
+            <!-- TOPBAR -->
+
+            <header class="topbar">
+
+                <div>
+
+                    <div class="breadcrumb">
+
+                        Quản lý vận hành
+
+                        <span>/</span>
+
+                        Lịch trình
+
+                        <span>/</span>
+
+                        Chi tiết chuyến
+
+                    </div>
+
+
+                    <h1>
+                        Chi tiết chuyến xe
+                    </h1>
+
+
+                    <p>
+                        Theo dõi thông tin chuyến, vé đã đặt
+                        và tình trạng ghế.
+                    </p>
+
+                </div>
+
+
+                <div class="top-actions">
+
+                    <button class="secondary-btn"
+                            type="button"
+                            id="backBtn">
+
+                        ← Quay lại
+
+                    </button>
+
+
+                    <button class="user-btn"
+                            type="button">
+
+                        <span class="avatar small">
+                            QL
+                        </span>
+
+                        Quản lý ▾
+
+                    </button>
+
+                </div>
+
+            </header>
+
+
+
+            <!-- =================================================
+                 CONTENT
+                 ================================================= -->
+
+            <section class="content">
+
+
+                <!-- =================================================
+                     TRIP HEADER
+                     ================================================= -->
+
+                <section class="trip-detail-header">
+
+
+                    <div class="trip-header-main">
+
+                        <div class="trip-route-code">
+
+                            <span class="route-code">
+                                HN-TN
+                            </span>
+
+                            <span class="trip-status active">
+                                ● Đang hoạt động
+                            </span>
+
+                        </div>
+
+
+                        <h2>
+                            Bến xe Mỹ Đình
+                            <span>→</span>
+                            Bến xe Thái Nguyên
+                        </h2>
+
+
+                        <p>
+                            Chuyến xe #SB-HNTN-161026-01
+                        </p>
+
+                    </div>
+
+
+                    <div class="trip-header-date">
+
+                        <span>
+                            NGÀY KHỞI HÀNH
+                        </span>
+
+                        <strong>
+                            16/10/2026
+                        </strong>
+
+                        <small>
+                            Thứ Sáu
+                        </small>
+
+                    </div>
+
+
+                    <div class="trip-header-time">
+
+                        <span>
+                            GIỜ KHỞI HÀNH
+                        </span>
+
+                        <strong>
+                            07:30
+                        </strong>
+
+                        <small>
+                            Dự kiến đến 09:00
+                        </small>
+
+                    </div>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     STATS
+                     ================================================= -->
+
+                <section class="detail-stats">
+
+
+                    <div class="detail-stat-card">
+
+                        <div class="detail-stat-icon blue">
+                            🎫
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Vé đã đặt
+                            </span>
+
+                            <strong id="bookedTickets">
+                                28
+                            </strong>
+
+                            <small>
+                                vé đã xác nhận
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="detail-stat-card">
+
+                        <div class="detail-stat-icon green">
+                            💺
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Ghế còn trống
+                            </span>
+
+                            <strong id="availableSeats">
+                                12
+                            </strong>
+
+                            <small>
+                                ghế có thể đặt
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="detail-stat-card">
+
+                        <div class="detail-stat-icon orange">
+                            ◔
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Tỷ lệ lấp đầy
+                            </span>
+
+                            <strong id="occupancyRate">
+                                70%
+                            </strong>
+
+                            <small>
+                                trên tổng số ghế
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="detail-stat-card">
+
+                        <div class="detail-stat-icon purple">
+                            💰
+                        </div>
+
+                        <div>
+
+                            <span>
+                                Doanh thu
+                            </span>
+
+                            <strong id="tripRevenue">
+                                4,2 triệu
+                            </strong>
+
+                            <small>
+                                từ vé đã bán
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     MAIN DETAIL GRID
+                     ================================================= -->
+
+                <div class="detail-grid">
+
+
+                    <!-- =============================================
+                         LEFT
+                         ============================================= -->
+
+                    <div class="detail-main">
+
+
+                        <!-- THÔNG TIN CHUYẾN -->
+
+                        <section class="admin-card trip-info-card">
+
+                            <div class="card-head">
+
+                                <div>
+
+                                    <div class="eyebrow">
+                                        THÔNG TIN CHUYẾN
+                                    </div>
+
+                                    <h2>
+                                        Thông tin chuyến xe
+                                    </h2>
+
+                                </div>
+
+
+                                <span class="status active">
+                                    Đang chạy
+                                </span>
+
+                            </div>
+
+
+                            <div class="info-grid">
+
+
+                                <div class="info-box">
+
+                                    <span>
+                                        Mã chuyến
+                                    </span>
+
+                                    <strong>
+                                        SB-HNTN-161026-01
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="info-box">
+
+                                    <span>
+                                        Tuyến xe
+                                    </span>
+
+                                    <strong>
+                                        HN-TN
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="info-box">
+
+                                    <span>
+                                        Điểm đi
+                                    </span>
+
+                                    <strong>
+                                        Bến xe Mỹ Đình
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="info-box">
+
+                                    <span>
+                                        Điểm đến
+                                    </span>
+
+                                    <strong>
+                                        Bến xe Thái Nguyên
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="info-box">
+
+                                    <span>
+                                        Ngày chạy
+                                    </span>
+
+                                    <strong>
+                                        16/10/2026
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="info-box">
+
+                                    <span>
+                                        Thời gian
+                                    </span>
+
+                                    <strong>
+                                        07:30 - 09:00
+                                    </strong>
+
+                                </div>
+
+
+                            </div>
+
+                        </section>
+
+
+
+                        <!-- THÔNG TIN XE -->
+
+                        <section class="admin-card vehicle-card">
+
+                            <div class="card-head">
+
+                                <div>
+
+                                    <div class="eyebrow">
+                                        PHƯƠNG TIỆN
+                                    </div>
+
+                                    <h2>
+                                        Xe được phân công
+                                    </h2>
+
+                                </div>
+
+
+                                <button class="secondary-btn"
+                                        id="vehicleBtn"
+                                        type="button">
+
+                                    Xem đội xe
+
+                                </button>
+
+                            </div>
+
+
+                            <div class="vehicle-detail">
+
+
+                                <div class="vehicle-icon">
+                                    🚌
+                                </div>
+
+
+                                <div class="vehicle-main">
+
+                                    <strong>
+                                        Hyundai Universe
+                                    </strong>
+
+                                    <span>
+                                        45 chỗ · Giường nằm
+                                    </span>
+
+                                    <small>
+                                        Biển số: 29B-123.45
+                                    </small>
+
+                                </div>
+
+
+                                <div class="vehicle-staff">
+
+                                    <div>
+
+                                        <span>
+                                            Tài xế
+                                        </span>
+
+                                        <strong>
+                                            Nguyễn Văn An
+                                        </strong>
+
+                                    </div>
+
+
+                                    <div>
+
+                                        <span>
+                                            Phụ xe
+                                        </span>
+
+                                        <strong>
+                                            Trần Văn Bình
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+
+                            </div>
+
+                        </section>
+
+
+
+                        <!-- DANH SÁCH VÉ -->
+
+                        <section class="admin-card ticket-card">
+
+                            <div class="card-head">
+
+                                <div>
+
+                                    <div class="eyebrow">
+                                        DANH SÁCH VÉ
+                                    </div>
+
+                                    <h2>
+                                        Vé đã đặt
+                                    </h2>
+
+                                </div>
+
+
+                                <div class="card-head-actions">
+
+                                    <span class="report-badge">
+                                        28 vé
+                                    </span>
+
+                                    <button class="secondary-btn"
+                                            type="button"
+                                            id="exportBtn">
+
+                                        Xuất danh sách
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="ticket-toolbar">
+
+                                <div class="search-box">
+
+                                    <span>
+                                        ⌕
+                                    </span>
+
+                                    <input type="text"
+                                           id="ticketSearch"
+                                           placeholder="Tìm mã vé, hành khách...">
+
+                                </div>
+
+
+                                <select id="ticketStatus">
+
+                                    <option value="all">
+                                        Tất cả trạng thái
+                                    </option>
+
+                                    <option value="confirmed">
+                                        Đã xác nhận
+                                    </option>
+
+                                    <option value="pending">
+                                        Chờ thanh toán
+                                    </option>
+
+                                    <option value="cancelled">
+                                        Đã hủy
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="table-wrap">
+
+                                <table>
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                Mã vé
+                                            </th>
+
+                                            <th>
+                                                Hành khách
+                                            </th>
+
+                                            <th>
+                                                Ghế
+                                            </th>
+
+                                            <th>
+                                                Giá vé
+                                            </th>
+
+                                            <th>
+                                                Trạng thái
+                                            </th>
+
+                                            <th>
+                                                Thao tác
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+
+                                    <tbody id="ticketTableBody">
+                                    </tbody>
+
+                                </table>
+
+
+                                <div class="table-empty"
+                                     id="tableEmpty"
+                                     style="display:none;">
+
+                                    <div>
+                                        🎫
+                                    </div>
+
+                                    <strong>
+                                        Không tìm thấy vé
+                                    </strong>
+
+                                    <span>
+                                        Thử thay đổi từ khóa hoặc bộ lọc.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        </section>
+
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         RIGHT
+                         ============================================= -->
+
+                    <aside class="detail-sidebar">
+
+
+                        <!-- THỐNG KÊ GHẾ -->
+
+                        <section class="admin-card seat-stat-card">
+
+                            <div class="card-head compact">
+
+                                <div>
+
+                                    <div class="eyebrow">
+                                        TÌNH TRẠNG GHẾ
+                                    </div>
+
+                                    <h2>
+                                        Thống kê ghế
+                                    </h2>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="seat-summary">
+
+                                <div class="seat-circle">
+
+                                    <div>
+
+                                        <strong id="seatPercent">
+                                            70%
+                                        </strong>
+
+                                        <span>
+                                            lấp đầy
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="seat-progress">
+
+                                <div class="progress-head">
+
+                                    <span>
+                                        Tỷ lệ sử dụng
+                                    </span>
+
+                                    <strong>
+                                        28 / 40
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="progress-track">
+
+                                    <span style="width:70%;"></span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="seat-breakdown">
+
+
+                                <div class="seat-row">
+
+                                    <div>
+
+                                        <span class="seat-dot booked">
+                                        </span>
+
+                                        Đã đặt
+
+                                    </div>
+
+                                    <strong>
+                                        28
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="seat-row">
+
+                                    <div>
+
+                                        <span class="seat-dot available">
+                                        </span>
+
+                                        Còn trống
+
+                                    </div>
+
+                                    <strong>
+                                        12
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="seat-row">
+
+                                    <div>
+
+                                        <span class="seat-dot pending">
+                                        </span>
+
+                                        Đang giữ
+
+                                    </div>
+
+                                    <strong>
+                                        3
+                                    </strong>
+
+                                </div>
+
+
+                            </div>
+
+                        </section>
+
+
+
+                        <!-- THỐNG KÊ VÉ -->
+
+                        <section class="admin-card ticket-stat-card">
+
+                            <div class="card-head compact">
+
+                                <div>
+
+                                    <div class="eyebrow">
+                                        TRẠNG THÁI VÉ
+                                    </div>
+
+                                    <h2>
+                                        Thống kê vé
+                                    </h2>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="ticket-stat-list">
+
+
+                                <div class="ticket-stat-row">
+
+                                    <div class="ticket-stat-label">
+
+                                        <span class="stat-dot confirmed">
+                                        </span>
+
+                                        <span>
+                                            Đã xác nhận
+                                        </span>
+
+                                    </div>
+
+                                    <strong>
+                                        25
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="ticket-stat-row">
+
+                                    <div class="ticket-stat-label">
+
+                                        <span class="stat-dot pending">
+                                        </span>
+
+                                        <span>
+                                            Chờ thanh toán
+                                        </span>
+
+                                    </div>
+
+                                    <strong>
+                                        3
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="ticket-stat-row">
+
+                                    <div class="ticket-stat-label">
+
+                                        <span class="stat-dot cancelled">
+                                        </span>
+
+                                        <span>
+                                            Đã hủy
+                                        </span>
+
+                                    </div>
+
+                                    <strong>
+                                        2
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="ticket-total">
+
+                                <span>
+                                    Tổng vé phát sinh
+                                </span>
+
+                                <strong>
+                                    30
+                                </strong>
+
+                            </div>
+
+                        </section>
+
+
+
+                        <!-- GHI CHÚ -->
+
+                        <section class="admin-card note-card">
+
+                            <div class="note-icon">
+                                ℹ
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Lưu ý vận hành
+                                </strong>
+
+                                <p>
+                                    Số ghế còn trống được tính từ tổng số
+                                    ghế của xe trừ đi số ghế đã được xác nhận
+                                    hoặc đang giữ chỗ.
+                                </p>
+
+                            </div>
+
+                        </section>
+
+
+                    </aside>
+
+
+                </div>
+
+
+            </section>
+
+
+        </main>
+
+    </div>
+
+
+    <div class="toast"
+         id="toast">
+
+        Thao tác đã được thực hiện.
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
