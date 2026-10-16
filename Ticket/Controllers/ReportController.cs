@@ -80,6 +80,97 @@ namespace Ticket.Controllers
         }
 
         // =====================================================
+        // GET: /api/reports/revenue/export/excel
+        //
+        // US-154: Xuất báo cáo doanh thu ra file Excel (.xlsx).
+        //
+        // Dùng CHÍNH bộ lọc của màn hình báo cáo (BR-26):
+        //   - Cùng quy tắc kiểm tra quyền với GetRevenue
+        //   - Cùng khoảng ngày mặc định (30 ngày gần nhất)
+        //   - fromDate > toDate -> 400 (BR-28)
+        // =====================================================
+
+        [HttpGet("revenue/export/excel")]
+        public async Task<IActionResult> ExportExcel(
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate,
+            [FromQuery] int? routeId,
+            [FromQuery] string groupBy = "day")
+        {
+            // BR-26: file xuất cũng chỉ dành cho MANAGER / ADMIN
+            if (!await _authorization.HasAnyRoleAsync(
+                    Request,
+                    "MANAGER",
+                    "ADMIN"))
+            {
+                return StatusCode(403, new
+                {
+                    message =
+                        "Bạn không có quyền xuất báo cáo doanh thu."
+                });
+            }
+
+            var from = (fromDate ??
+                        DateTime.UtcNow.Date
+                            .AddDays(-DefaultRangeDays))
+                .Date;
+
+            var to = (toDate ??
+                      DateTime.UtcNow.Date)
+                .Date;
+
+            // Không tự ý đổi bộ lọc: khoảng ngày sai
+            // thì báo lỗi dễ hiểu (BR-28).
+            if (from > to)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "Khoảng thời gian không hợp lệ: " +
+                        "fromDate phải nhỏ hơn hoặc bằng toDate."
+                });
+            }
+
+            var filter = new RevenueReportFilterDto
+            {
+                FromDate = from,
+                ToDate = to,
+                RouteId = routeId,
+                GroupBy = string.IsNullOrWhiteSpace(groupBy)
+                    ? "day"
+                    : groupBy,
+                // File Excel chỉ xuất phần tổng hợp theo kỳ,
+                // không cần kèm danh sách giao dịch gốc.
+                IncludeTransactions = false
+            };
+
+            try
+            {
+                var bytes = await _reportService
+                    .ExportRevenueToExcelAsync(filter);
+
+                return File(
+                    bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"bao-cao-doanh-thu-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                // BR-28: lỗi dễ hiểu, không phơi bày stack trace
+                _logger.LogError(
+                    ex,
+                    "Lỗi khi xuất báo cáo doanh thu ra Excel.");
+
+                return StatusCode(500, new
+                {
+                    message =
+                        "Không xuất được báo cáo doanh thu. " +
+                        "Vui lòng thử lại."
+                });
+            }
+        }
+
+        // =====================================================
         // XỬ LÝ CHUNG CHO CÁC ENDPOINT TRÊN
         // =====================================================
 

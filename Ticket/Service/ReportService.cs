@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ClosedXML.Excel;
+using Microsoft.EntityFrameworkCore;
 using SmartBusTicketing.DTOs;
 using Ticket.Data;
 
@@ -168,6 +169,136 @@ namespace SmartBusTicketing.Services
             }
 
             return report;
+        }
+
+        // =====================================================
+        // US-154: XUẤT BÁO CÁO DOANH THU RA EXCEL (.xlsx)
+        //
+        // BR-26: file xuất phải dùng đúng bộ lọc và đúng logic
+        // tổng hợp như trên màn hình, nên luôn lấy dữ liệu qua
+        // GetRevenueReportAsync(filter) thay vì tự truy vấn lại.
+        // =====================================================
+
+        public async Task<byte[]> ExportRevenueToExcelAsync(
+            RevenueReportFilterDto filter)
+        {
+            filter ??= new RevenueReportFilterDto();
+
+            // Cùng một nguồn dữ liệu với màn hình báo cáo (BR-26)
+            var report = await GetRevenueReportAsync(filter);
+
+            var details = report.Details ??
+                          new List<RevenueItemDto>();
+
+            using var workbook = new XLWorkbook();
+
+            var sheet = workbook.Worksheets.Add("Doanh thu");
+
+            // ===== Dòng tiêu đề =====
+            var headers = new[]
+            {
+                "STT",
+                "Kỳ",
+                "Mã tuyến",
+                "Tên tuyến",
+                "Doanh thu",
+                "Hoàn tiền",
+                "Doanh thu thuần",
+                "Số GD"
+            };
+
+            for (var column = 0;
+                 column < headers.Length;
+                 column++)
+            {
+                sheet.Cell(1, column + 1).Value =
+                    headers[column];
+            }
+
+            var headerRange = sheet.Range(
+                1,
+                1,
+                1,
+                headers.Length);
+
+            headerRange.Style.Font.Bold = true;
+
+            headerRange.Style.Fill.BackgroundColor =
+                XLColor.LightBlue;
+
+            headerRange.Style.Border.BottomBorder =
+                XLBorderStyleValues.Thin;
+
+            headerRange.Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
+
+            // ===== Dữ liệu theo kỳ (đúng bộ lọc đang xem) =====
+            //
+            // Dữ liệu rỗng: file chỉ có dòng tiêu đề và dòng
+            // TỔNG (bằng 0), vẫn mở được bình thường.
+            var row = 2;
+            var order = 1;
+
+            foreach (var item in details)
+            {
+                // Excel lưu số dạng double nên ghi bằng (double)
+                // để không phụ thuộc overload decimal.
+                sheet.Cell(row, 1).Value = (double)order;
+
+                WritePeriodCell(
+                    sheet.Cell(row, 2),
+                    item.Period);
+
+                sheet.Cell(row, 3).Value =
+                    item.RouteCode ?? string.Empty;
+
+                sheet.Cell(row, 4).Value =
+                    item.RouteName ?? string.Empty;
+
+                sheet.Cell(row, 5).Value = (double)item.Payment;
+                sheet.Cell(row, 6).Value = (double)item.Refund;
+                sheet.Cell(row, 7).Value = (double)item.Net;
+                sheet.Cell(row, 8).Value =
+                    (double)item.Transactions;
+
+                row++;
+                order++;
+            }
+
+            // ===== Dòng tổng cộng =====
+            sheet.Cell(row, 1).Value = "TỔNG";
+            sheet.Cell(row, 5).Value =
+                (double)report.GrossRevenue;
+            sheet.Cell(row, 6).Value =
+                (double)report.RefundAmount;
+            sheet.Cell(row, 7).Value =
+                (double)report.NetRevenue;
+            sheet.Cell(row, 8).Value =
+                (double)report.TransactionCount;
+
+            var totalRange = sheet.Range(
+                row,
+                1,
+                row,
+                headers.Length);
+
+            totalRange.Style.Font.Bold = true;
+
+            totalRange.Style.Border.TopBorder =
+                XLBorderStyleValues.Thin;
+
+            // Định dạng tiền VND: #,##0 (không phần thập phân)
+            sheet.Range(2, 5, row, 7).Style
+                .NumberFormat.Format = "#,##0";
+
+            sheet.Columns().AdjustToContents();
+
+            // Ghi ra bộ nhớ, không tạo file tạm trên đĩa.
+            using var stream = new MemoryStream();
+
+            workbook.SaveAs(stream);
+
+            return stream.ToArray();
         }
 
         // =====================================================
@@ -634,6 +765,37 @@ namespace SmartBusTicketing.Services
 
             // Mặc định: theo ngày
             return (date, date, date.ToString("yyyy-MM-dd"));
+        }
+
+        // Ghi cột "Kỳ" của file Excel:
+        //   - theo ngày  (yyyy-MM-dd): ghi dạng ngày thật để
+        //     Excel nhận đúng kiểu ngày.
+        //   - theo tuần  (yyyy-Www) và theo tháng (yyyy-MM):
+        //     giữ nguyên nhãn dạng chuỗi.
+        private static void WritePeriodCell(
+            IXLCell cell,
+            string? period)
+        {
+            var value = period ?? string.Empty;
+
+            if (DateTime.TryParseExact(
+                    value,
+                    "yyyy-MM-dd",
+                    System.Globalization.CultureInfo
+                        .InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out var date))
+            {
+                cell.Value = date;
+                cell.Style.DateFormat.Format = "yyyy-MM-dd";
+            }
+            else
+            {
+                cell.Value = value;
+            }
+
+            cell.Style.Alignment.Horizontal =
+                XLAlignmentHorizontalValues.Center;
         }
 
         private static string NormalizeGroupBy(string? groupBy)
