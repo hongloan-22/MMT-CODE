@@ -256,12 +256,10 @@ namespace SmartBusTicketing.Services
 
         // =====================================================
         // THỐNG KÊ TỶ LỆ LẤP ĐẦY CHUYẾN XE (US-160)
-        // GET: /api/Statistics/trip/{tripId}/occupancy
         // =====================================================
         public async Task<TripOccupancyDto>
             GetTripOccupancyAsync(int tripId)
         {
-            // 1. Lấy thông tin chuyến xe (kèm Bus để lấy SeatCount dự phòng)
             var trip = await _context.Trips
                 .Include(t => t.Bus)
                 .AsNoTracking()
@@ -274,13 +272,11 @@ namespace SmartBusTicketing.Services
                     $"Không tìm thấy chuyến xe với ID {tripId}");
             }
 
-            // 2. Xác định tổng số ghế
             int totalSeats =
                 trip.TotalSeats > 0
                     ? trip.TotalSeats
                     : (trip.Bus?.SeatCount ?? 0);
 
-            // 3. Đếm số ghế đã đặt (Vé VALID hoặc USED)
             int bookedSeats = await _context.Tickets
                 .Where(t =>
                     t.TripId == tripId &&
@@ -288,8 +284,6 @@ namespace SmartBusTicketing.Services
                      t.Status == "USED"))
                 .CountAsync();
 
-            // 4. Đếm số ghế đang giữ
-            // (HELD chưa hết hạn hoặc CONFIRMED)
             var now = DateTime.UtcNow;
 
             int heldSeats = await _context.SeatHolds
@@ -300,14 +294,12 @@ namespace SmartBusTicketing.Services
                      sh.ExpiresAt > now)))
                 .CountAsync();
 
-            // 5. Tính số ghế còn trống
             int availableSeats =
                 totalSeats - bookedSeats - heldSeats;
 
             if (availableSeats < 0)
-                availableSeats = 0; // Tránh âm
+                availableSeats = 0;
 
-            // 6. Tính tỷ lệ lấp đầy (%)
             double occupancyRate =
                 totalSeats > 0
                     ? ((double)bookedSeats / totalSeats) * 100
@@ -316,7 +308,6 @@ namespace SmartBusTicketing.Services
             occupancyRate =
                 Math.Round(occupancyRate, 2);
 
-            // 7. Trả về DTO
             return new TripOccupancyDto
             {
                 TripId = trip.Id,
@@ -330,7 +321,8 @@ namespace SmartBusTicketing.Services
         }
 
         // =====================================================
-        // US-165: LẤY DANH SÁCH CHUYẾN CÓ PHÂN TRANG + LỌC + SẮP XẾP
+        // US-165 + US-166: LẤY DANH SÁCH CHUYẾN
+        // (phân trang + lọc + sắp xếp + trạng thái + đếm ngược)
         // GET: /api/TraCuuTuyenXe/danh-sach
         // =====================================================
         public async Task<TripListResponseDto> GetTripListAsync(
@@ -341,7 +333,7 @@ namespace SmartBusTicketing.Services
             var pageSize = request.PageSize < 1 ? 20 : request.PageSize;
             if (pageSize > 100) pageSize = 100;
 
-            // 2. Query cơ bản — chỉ lọc cái gì DB làm được
+            // 2. Query cơ bản
             var query = _context.Trips
                 .AsNoTracking()
                 .Include(t => t.Route)
@@ -357,6 +349,12 @@ namespace SmartBusTicketing.Services
                     t.Route.IsActive &&
                     t.BusId != null)
                 .AsQueryable();
+
+            // ✨ US-166: Chỉ hiển thị chuyến còn chỗ
+            if (request.OnlyAvailable == true)
+            {
+                query = query.Where(t => t.AvailableSeats > 0);
+            }
 
             // Lọc theo ngày
             if (request.DepartureDate.HasValue)
@@ -378,13 +376,14 @@ namespace SmartBusTicketing.Services
                     t.Route!.Fare <= request.MaxFare.Value);
             }
 
-            // 3. Load về memory để xử lý keyword + giờ
+            // 3. Load về memory
             var trips = await query.ToListAsync();
 
-            // 4. Filter keyword + giờ (client-side vì cần match linh hoạt)
+            // 4. Filter keyword + giờ
             var origin = request.OriginKeyword?.Trim().ToLower();
             var destination = request.DestinationKeyword?.Trim().ToLower();
             var minTime = request.MinDepartureTime;
+            var now = DateTime.Now;
 
             var filtered = trips
                 .Where(t => !minTime.HasValue || t.DepartureTime >= minTime.Value)
@@ -428,7 +427,7 @@ namespace SmartBusTicketing.Services
                         durationMinutes = (int)(end.ArrivalTime - start.DepartureTime).TotalMinutes;
                     }
 
-                    // Xử lý chuyến đêm: nếu đến giờ nhỏ hơn giờ đi → +1 ngày
+                    // Xử lý chuyến đêm
                     var departureDateTime = t.TripDate.Date + t.DepartureTime;
                     var arrivalDateTime = t.TripDate.Date + end.ArrivalTime;
                     if (end.ArrivalTime < t.DepartureTime)
@@ -439,6 +438,37 @@ namespace SmartBusTicketing.Services
                     var totalSeats = t.TotalSeats > 0
                         ? t.TotalSeats
                         : (t.Bus?.SeatCount ?? 0);
+
+                    // ✨ US-166: Số phút còn lại đến giờ khởi hành
+                    var minutesUntil = (int)Math.Round(
+                        (departureDateTime - now).TotalMinutes);
+
+                    // ✨ US-166: Trạng thái chuyến
+                    string status;
+                    if (t.AvailableSeats <= 0)
+                    {
+                        status = "SOLD_OUT";
+                    }
+                    else if (minutesUntil >= 0 && minutesUntil <= 30)
+                    {
+                        status = "DEPARTING_SOON";
+                    }
+                    else
+                    {
+                        status = "ACTIVE";
+                    }
+
+                    // ✨ US-166: Số trạm dừng giữa (không tính điểm đi/đến)
+                    int stopCount = 0;
+                    for (int i = 0; i < schedules.Count; i++)
+                    {
+                        var s = schedules[i];
+                        if (s.StopOrder > start.StopOrder &&
+                            s.StopOrder < end.StopOrder)
+                        {
+                            stopCount++;
+                        }
+                    }
 
                     return new TripListItemDto
                     {
@@ -456,7 +486,14 @@ namespace SmartBusTicketing.Services
                         TotalSeats = totalSeats,
                         AvailableSeats = t.AvailableSeats,
                         BusCode = t.Bus?.BusCode ?? string.Empty,
-                        LicensePlate = t.Bus?.LicensePlate ?? string.Empty
+                        LicensePlate = t.Bus?.LicensePlate ?? string.Empty,
+
+                        // ✨ US-166
+                        Status = status,
+                        MinutesUntilDeparture = minutesUntil,
+                        StopCount = stopCount,
+                        OriginAddress = start.BusStop!.Address ?? string.Empty,
+                        DestinationAddress = end.BusStop!.Address ?? string.Empty
                     };
                 })
                 .Where(x => x != null)
@@ -513,7 +550,6 @@ namespace SmartBusTicketing.Services
 
             var now = DateTime.UtcNow;
 
-            // 1. LẤY DỮ LIỆU CẦN KIỂM TRA
             var trips = await _context.Trips
                 .AsNoTracking()
                 .Include(t => t.Bus)
@@ -522,7 +558,6 @@ namespace SmartBusTicketing.Services
 
             report.TotalTripsChecked = trips.Count;
 
-            // Đếm vé VALID/USED theo từng trip (1 query duy nhất)
             var bookedCountByTrip = await _context.Tickets
                 .AsNoTracking()
                 .Where(t => t.Status == "VALID" || t.Status == "USED")
@@ -530,7 +565,6 @@ namespace SmartBusTicketing.Services
                 .Select(g => new { TripId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.TripId, x => x.Count);
 
-            // Đếm ghế đang giữ (HELD chưa hết hạn + CONFIRMED)
             var heldCountByTrip = await _context.SeatHolds
                 .AsNoTracking()
                 .Where(sh =>
@@ -540,10 +574,8 @@ namespace SmartBusTicketing.Services
                 .Select(g => new { TripId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.TripId, x => x.Count);
 
-            // 2. KIỂM TRA TỪNG TRIP
             foreach (var trip in trips)
             {
-                // ----- Check 1: SeatCount mismatch -----
                 if (trip.Bus != null && trip.Bus.SeatCount > 0)
                 {
                     if (trip.TotalSeats != trip.Bus.SeatCount)
@@ -562,7 +594,6 @@ namespace SmartBusTicketing.Services
                     }
                 }
 
-                // ----- Check 2: BookedSeats mismatch -----
                 var actualBooked = bookedCountByTrip.TryGetValue(trip.Id, out var bc) ? bc : 0;
                 if (trip.BookedSeats != actualBooked)
                 {
@@ -579,7 +610,6 @@ namespace SmartBusTicketing.Services
                     });
                 }
 
-                // ----- Check 3: AvailableSeats mismatch -----
                 var actualHeld = heldCountByTrip.TryGetValue(trip.Id, out var hc) ? hc : 0;
                 var expectedAvailable = trip.TotalSeats - actualBooked - actualHeld;
                 if (expectedAvailable < 0) expectedAvailable = 0;
@@ -600,7 +630,6 @@ namespace SmartBusTicketing.Services
                 }
             }
 
-            // 3. KIỂM TRA SEAT HOLD QUÁ HẠN CHƯA RELEASE
             var expiredHolds = await _context.SeatHolds
                 .AsNoTracking()
                 .Include(sh => sh.Trip)
@@ -626,7 +655,6 @@ namespace SmartBusTicketing.Services
                 });
             }
 
-            // 4. TỔNG KẾT
             report.TotalIssuesFound = report.Issues.Count;
 
             return report;
