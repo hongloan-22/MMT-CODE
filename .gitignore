@@ -19,6 +19,7 @@
 *.tar.gz
 
 ## Database SQLite tạm (nếu có sinh ra)
+*.db
 *.db-shm
 *.db-wal
 
