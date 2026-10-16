@@ -1,0 +1,160 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using SmartBusTicketing.DTOs;
+using SmartBusTicketing.Services;
+
+namespace Ticket.Controllers
+{
+    // =====================================================
+    // US-148: API BÁO CÁO DOANH THU
+    //
+    // GET /api/reports/revenue
+    //   fromDate?  (mặc định: hôm nay - 30 ngày)
+    //   toDate?    (mặc định: hôm nay)
+    //   routeId?   (null = tất cả tuyến)
+    //   groupBy?   (day = mặc định / week / month)
+    //   includeTransactions? (true = kèm danh sách giao dịch gốc
+    //                         để đối chiếu số liệu)
+    // =====================================================
+
+    [Route("api/reports")]
+    [ApiController]
+    public class ReportController : ControllerBase
+    {
+        private const int DefaultRangeDays = 30;
+
+        private readonly IReportService _reportService;
+        private readonly BackendAuthorizationService _authorization;
+        private readonly ILogger<ReportController> _logger;
+
+        public ReportController(
+            IReportService reportService,
+            BackendAuthorizationService authorization,
+            ILogger<ReportController> logger)
+        {
+            _reportService = reportService;
+            _authorization = authorization;
+            _logger = logger;
+        }
+
+        // =====================================================
+        // GET: /api/reports/revenue
+        // =====================================================
+
+        [HttpGet("revenue")]
+        public async Task<IActionResult> GetRevenue(
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate,
+            [FromQuery] int? routeId,
+            [FromQuery] string? groupBy,
+            [FromQuery] bool? includeTransactions)
+        {
+            return await BuildRevenueReportAsync(
+                fromDate,
+                toDate,
+                routeId,
+                groupBy,
+                includeTransactions);
+        }
+
+        // =====================================================
+        // GET: /api/Statistics/revenue
+        //
+        // Alias tương thích trang wwwroot/doanh-thu (trang này
+        // gọi tham số from / to và chỉ đọc dữ liệu doanh thu).
+        // =====================================================
+
+        [HttpGet("/api/statistics/revenue")]
+        public async Task<IActionResult> GetRevenueForReportPage(
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
+            [FromQuery] int? routeId,
+            [FromQuery] string? groupBy,
+            [FromQuery] bool? includeTransactions)
+        {
+            return await BuildRevenueReportAsync(
+                from,
+                to,
+                routeId,
+                groupBy,
+                includeTransactions);
+        }
+
+        // =====================================================
+        // XỬ LÝ CHUNG CHO CÁC ENDPOINT TRÊN
+        // =====================================================
+
+        private async Task<IActionResult> BuildRevenueReportAsync(
+            DateTime? fromDate,
+            DateTime? toDate,
+            int? routeId,
+            string? groupBy,
+            bool? includeTransactions)
+        {
+            // BR-26: báo cáo doanh thu chỉ dành cho MANAGER / ADMIN
+            if (!await _authorization.HasAnyRoleAsync(
+                    Request,
+                    "MANAGER",
+                    "ADMIN"))
+            {
+                return StatusCode(403, new
+                {
+                    message =
+                        "Bạn không có quyền xem báo cáo doanh thu."
+                });
+            }
+
+            var from = (fromDate ??
+                        DateTime.UtcNow.Date
+                            .AddDays(-DefaultRangeDays))
+                .Date;
+
+            var to = (toDate ??
+                      DateTime.UtcNow.Date)
+                .Date;
+
+            // Không tự ý đổi bộ lọc: khoảng ngày sai
+            // thì báo lỗi dễ hiểu (BR-28).
+            if (from > to)
+            {
+                return BadRequest(new
+                {
+                    message =
+                        "Khoảng thời gian không hợp lệ: " +
+                        "fromDate phải nhỏ hơn hoặc bằng toDate."
+                });
+            }
+
+            var filter = new RevenueReportFilterDto
+            {
+                FromDate = from,
+                ToDate = to,
+                RouteId = routeId,
+                GroupBy = groupBy ?? "day",
+                IncludeTransactions = includeTransactions == true
+            };
+
+            try
+            {
+                var report =
+                    await _reportService
+                        .GetRevenueReportAsync(filter);
+
+                return Ok(report);
+            }
+            catch (Exception ex)
+            {
+                // BR-28: lỗi dễ hiểu, không phơi bày stack trace
+                _logger.LogError(
+                    ex,
+                    "Lỗi khi tạo báo cáo doanh thu.");
+
+                return StatusCode(500, new
+                {
+                    message =
+                        "Không tạo được báo cáo doanh thu. " +
+                        "Vui lòng thử lại."
+                });
+            }
+        }
+    }
+}
