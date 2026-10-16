@@ -36,6 +36,10 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<AuditLogService>();
 
+// US-148: BÁO CÁO DOANH THU
+builder.Services.AddScoped<
+    IReportService, ReportService>();
+
 builder.Services.AddHostedService<
     SeatHoldExpirationService>();
 
