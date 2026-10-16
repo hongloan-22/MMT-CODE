@@ -141,13 +141,14 @@ namespace SmartBusTicketing.Services
                 refunds,
                 allRoutes);
 
+            // Chi tiết theo kỳ VÀ theo tuyến: mỗi dòng luôn có
+            // RouteId/RouteCode/RouteName tra từ bảng BusRoutes,
+            // kể cả khi báo cáo xem tất cả tuyến (routeId = null).
             report.Details = BuildDetails(
                 payments,
                 refunds,
                 groupBy,
-                routeId,
-                report.RouteCode,
-                report.RouteName);
+                allRoutes);
 
             // Đối chiếu với giao dịch gốc (AC US-148 — mục 1.7)
             if (filter.IncludeTransactions)
@@ -232,8 +233,10 @@ namespace SmartBusTicketing.Services
             headerRange.Style.Alignment.Horizontal =
                 XLAlignmentHorizontalValues.Center;
 
-            // ===== Dữ liệu theo kỳ (đúng bộ lọc đang xem) =====
+            // ===== Dữ liệu theo kỳ + tuyến (đúng bộ lọc) =====
             //
+            // Mỗi dòng là một kỳ của một tuyến nên cột Mã tuyến /
+            // Tên tuyến luôn có giá trị.
             // Dữ liệu rỗng: file chỉ có dòng tiêu đề và dòng
             // TỔNG (bằng 0), vẫn mở được bình thường.
             var row = 2;
@@ -639,53 +642,86 @@ namespace SmartBusTicketing.Services
         }
 
         // =====================================================
-        // TỔNG HỢP THEO KỲ (ngày / tuần / tháng)
+        // TỔNG HỢP THEO KỲ + TUYẾN (ngày / tuần / tháng)
+        //
+        // Mỗi dòng = một kỳ của MỘT tuyến, nên RouteId kèm
+        // RouteCode/RouteName luôn có giá trị thật lấy từ
+        // BusRoutes — kể cả khi không lọc theo tuyến.
         // =====================================================
 
         private static List<RevenueItemDto> BuildDetails(
             List<RevenueRow> payments,
             List<RevenueRow> refunds,
             string groupBy,
-            int? routeId,
-            string routeCode,
-            string routeName)
+            List<RevenueRouteOptionDto> allRoutes)
         {
+            // Lookup mã/tên tuyến: đủ mọi tuyến (kể cả ngừng
+            // hoạt động) nên không cần truy vấn lại DB.
+            var routeLookup =
+                new Dictionary<int, RevenueRouteOptionDto>();
+
+            foreach (var route in allRoutes)
+            {
+                routeLookup[route.Id] = route;
+            }
+
             var buckets =
-                new Dictionary<DateTime, RevenueBucket>();
+                new Dictionary<
+                    (DateTime Start, int RouteId),
+                    RevenueBucket>();
 
             foreach (var row in payments)
             {
-                GetBucket(buckets, row.OccurredAt, groupBy)
+                GetBucket(
+                        buckets,
+                        row.OccurredAt,
+                        groupBy,
+                        row.RouteId)
                     .Payments
                     .Add(row);
             }
 
             foreach (var row in refunds)
             {
-                GetBucket(buckets, row.OccurredAt, groupBy)
+                GetBucket(
+                        buckets,
+                        row.OccurredAt,
+                        groupBy,
+                        row.RouteId)
                     .Refunds
                     .Add(row);
             }
 
             var result = new List<RevenueItemDto>();
 
-            foreach (var bucket in buckets.Values
-                         .OrderBy(x => x.StartDate))
+            foreach (var entry in buckets
+                         .OrderBy(x => x.Key.Start)
+                         .ThenBy(x => x.Key.RouteId))
             {
+                var bucket = entry.Value;
+
                 var payment =
                     bucket.Payments.Sum(x => x.Amount);
 
                 var refund =
                     bucket.Refunds.Sum(x => x.Amount);
 
+                // Tra theo tuyến của chính dòng dữ liệu
+                RevenueRouteOptionDto? route =
+                    routeLookup.TryGetValue(
+                            entry.Key.RouteId,
+                            out var foundRoute)
+                        ? foundRoute
+                        : null;
+
                 result.Add(new RevenueItemDto
                 {
                     Period = bucket.Period,
                     StartDate = bucket.StartDate,
                     EndDate = bucket.EndDate,
-                    RouteId = routeId,
-                    RouteCode = routeCode,
-                    RouteName = routeName,
+                    RouteId = entry.Key.RouteId,
+                    RouteCode = route?.Code ?? string.Empty,
+                    RouteName = route?.Name ?? string.Empty,
                     Payment = payment,
                     Refund = refund,
                     Net = payment - refund,
@@ -696,16 +732,22 @@ namespace SmartBusTicketing.Services
             return result;
         }
 
+        // Lấy (hoặc tạo mới) bucket theo kỳ + tuyến
         private static RevenueBucket GetBucket(
-            Dictionary<DateTime, RevenueBucket> buckets,
+            Dictionary<
+                (DateTime Start, int RouteId),
+                RevenueBucket> buckets,
             DateTime occurredAt,
-            string groupBy)
+            string groupBy,
+            int routeId)
         {
             var (start, end, period) = GetPeriod(
                 occurredAt,
                 groupBy);
 
-            if (!buckets.TryGetValue(start, out var bucket))
+            var key = (Start: start, RouteId: routeId);
+
+            if (!buckets.TryGetValue(key, out var bucket))
             {
                 bucket = new RevenueBucket
                 {
@@ -714,7 +756,7 @@ namespace SmartBusTicketing.Services
                     EndDate = end
                 };
 
-                buckets[start] = bucket;
+                buckets[key] = bucket;
             }
 
             return bucket;
