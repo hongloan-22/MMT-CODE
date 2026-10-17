@@ -15,9 +15,8 @@
             </a>
 
             <nav class="nav-menu">
-                <a href="#my-trips">Chuyến đi của tôi</a>
-                <a href="#monthly-ticket">Đăng ký vé tháng</a>
-                <a href="#voucher">Voucher</a>
+                <a href="/tra-cuu/index.html">Tra cứu chuyến</a>
+                <a href="/quan-ly-ve/index.html">Chuyến đi của tôi</a>
             </nav>
 
             <div class="nav-actions">
@@ -117,33 +116,109 @@
                     <div class="result-count" id="resultCount">0 chuyến</div>
                 </div>
 
+
                 <div class="result-layout">
                     <aside class="filter-card">
                         <h3>Bộ lọc</h3>
 
                         <div class="filter-group">
                             <strong>Giờ khởi hành</strong>
-                            <label><input type="radio" name="timeFilter" value="all" checked> Tất cả</label>
-                            <label><input type="radio" name="timeFilter" value="morning"> Buổi sáng</label>
-                            <label><input type="radio" name="timeFilter" value="afternoon"> Buổi chiều</label>
-                            <label><input type="radio" name="timeFilter" value="evening"> Buổi tối</label>
+                            <label>
+                                <input type="radio" name="timeFilter" value="all" checked>
+                                Tất cả
+                            </label>
+                            <label>
+                                <input type="radio" name="timeFilter" value="morning">
+                                Buổi sáng
+                            </label>
+                            <label>
+                                <input type="radio" name="timeFilter" value="afternoon">
+                                Buổi chiều
+                            </label>
+                            <label>
+                                <input type="radio" name="timeFilter" value="evening">
+                                Buổi tối
+                            </label>
                         </div>
 
                         <div class="filter-group">
                             <strong>Mức giá</strong>
-                            <label><input type="radio" name="priceFilter" value="all" checked> Tất cả</label>
-                            <label><input type="radio" name="priceFilter" value="low"> Dưới 100.000đ</label>
-                            <label><input type="radio" name="priceFilter" value="mid"> 100.000đ - 150.000đ</label>
-                            <label><input type="radio" name="priceFilter" value="high"> Trên 150.000đ</label>
+                            <label>
+                                <input type="radio" name="priceFilter" value="all" checked>
+                                Tất cả
+                            </label>
+                            <label>
+                                <input type="radio" name="priceFilter" value="low">
+                                Dưới 100.000đ
+                            </label>
+                            <label>
+                                <input type="radio" name="priceFilter" value="mid">
+                                100.000đ - 150.000đ
+                            </label>
+                            <label>
+                                <input type="radio" name="priceFilter" value="high">
+                                Trên 150.000đ
+                            </label>
+                        </div>
+
+                        <div class="filter-group">
+                            <strong>Trạng thái chuyến</strong>
+                            <label>
+                                <input type="radio" name="statusFilter" value="all" checked>
+                                Tất cả
+                            </label>
+                            <label>
+                                <input type="radio" name="statusFilter" value="ACTIVE">
+                                Còn chỗ
+                            </label>
+                            <label>
+                                <input type="radio" name="statusFilter" value="DEPARTING_SOON">
+                                Sắp khởi hành
+                            </label>
+                            <label>
+                                <input type="radio" name="statusFilter" value="SOLD_OUT">
+                                Hết chỗ
+                            </label>
                         </div>
                     </aside>
 
-                    <div class="trip-list" id="tripList">
-                        <div class="empty-state">
-                            <div class="empty-icon">🚌</div>
-                            <h3>Chưa có kết quả</h3>
-                            <p>Chọn điểm đi, điểm đến và ngày đi rồi nhấn “Tìm chuyến”.</p>
+                    <div class="trip-results-column">
+                        <div class="trip-toolbar">
+                            <label for="sortTrips">
+                                Sắp xếp
+                                <select id="sortTrips">
+                                    <option value="time-asc">Giờ khởi hành: sớm nhất</option>
+                                    <option value="time-desc">Giờ khởi hành: muộn nhất</option>
+                                    <option value="price-asc">Giá vé: thấp đến cao</option>
+                                    <option value="price-desc">Giá vé: cao đến thấp</option>
+                                    <option value="duration-asc">Thời gian chạy: ngắn nhất</option>
+                                </select>
+                            </label>
+
+                            <label for="pageSizeSelect">
+                                Số chuyến/trang
+                                <select id="pageSizeSelect">
+                                    <option value="6" selected>6</option>
+                                    <option value="9">9</option>
+                                    <option value="12">12</option>
+                                </select>
+                            </label>
+
+                            <button type="button" id="resetTripFilters" class="reset-filter-btn">
+                                Xóa bộ lọc
+                            </button>
                         </div>
+
+                        <div class="trip-list" id="tripList">
+                            <div class="empty-state">
+                                <div class="empty-icon">🚌</div>
+                                <h3>Đang tải danh sách chuyến</h3>
+                                <p>Vui lòng chờ trong giây lát.</p>
+                            </div>
+                        </div>
+
+                        <div id="tripPagination" class="trip-pagination"
+                             aria-label="Phân trang kết quả"></div>
                     </div>
                 </div>
             </div>

@@ -761,3 +761,235 @@ footer {
     .trip-meta span { display: block; margin: 4px 0; }
     .footer-inner { flex-direction: column; justify-content: center; padding: 25px 0; text-align: center; }
 }
+
+/* =========================================
+   US15 - TRẠNG THÁI, BỘ LỌC VÀ PHÂN TRANG
+   ========================================= */
+
+.trip-results-column {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.trip-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #e1eaf1;
+    border-radius: 12px;
+}
+
+    .trip-toolbar label {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        color: #60798c;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .trip-toolbar select {
+        max-width: 100%;
+        min-height: 38px;
+        padding: 7px 10px;
+        color: #294c62;
+        background: #fff;
+        border: 1px solid #dce6ef;
+        border-radius: 8px;
+        font: inherit;
+        cursor: pointer;
+    }
+
+        .trip-toolbar select:focus {
+            outline: 2px solid #d6ebff;
+            border-color: #1685e8;
+        }
+
+.reset-filter-btn {
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid #dce6ef;
+    border-radius: 8px;
+    color: #1685e8;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+    .reset-filter-btn:hover {
+        background: #edf7ff;
+    }
+
+/* Trạng thái chuyến */
+.trip-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+    .trip-status::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        flex: 0 0 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .trip-status.status-active {
+        color: #16845b !important;
+        background: #e8f8f0 !important;
+    }
+
+    .trip-status.status-soon {
+        color: #976400 !important;
+        background: #fff5d9 !important;
+    }
+
+    .trip-status.status-sold-out {
+        color: #c03939 !important;
+        background: #fff0f0 !important;
+    }
+
+    .trip-status.status-unavailable {
+        color: #64748b !important;
+        background: #eef2f6 !important;
+    }
+
+/* Không cho bấm nút của chuyến đã hết chỗ */
+.select-trip-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    background: #8898a8;
+    transform: none;
+}
+
+/* Phân trang */
+.trip-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 2px 18px;
+}
+
+    .trip-pagination:empty {
+        display: none;
+    }
+
+.pagination-info {
+    color: #7b8e9f;
+    font-size: 12px;
+}
+
+.pagination-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #dce6ef;
+    border-radius: 8px;
+    color: #456177;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+    .pagination-btn:hover:not(:disabled) {
+        border-color: #1685e8;
+        color: #1685e8;
+    }
+
+    .pagination-btn.active {
+        border-color: #1685e8;
+        color: #fff;
+        background: #1685e8;
+    }
+
+    .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+/* Bộ lọc khi màn hình nhỏ */
+@media (max-width: 800px) {
+    .filter-card {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 18px;
+    }
+
+        .filter-card h3 {
+            grid-column: 1 / -1;
+            padding: 0 0 12px;
+        }
+
+    .filter-group {
+        min-width: 0;
+    }
+
+    .trip-toolbar {
+        align-items: stretch;
+    }
+
+        .trip-toolbar label {
+            justify-content: space-between;
+        }
+
+        .trip-toolbar select {
+            flex: 1;
+        }
+}
+
+@media (max-width: 560px) {
+    .filter-card {
+        display: block;
+    }
+
+    .trip-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+        .trip-toolbar label {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .trip-toolbar select {
+            width: 100%;
+        }
+
+    .reset-filter-btn {
+        width: 100%;
+    }
+
+    .trip-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pagination-buttons {
+        width: 100%;
+    }
+}

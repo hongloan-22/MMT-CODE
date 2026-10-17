@@ -58,6 +58,74 @@ function toast(message) {
     window.__toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
 }
 
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function showReportError(message) {
+    // Không để lại số liệu của lần tải trước khi API lỗi.
+    [
+        "netRevenue",
+        "grossRevenue",
+        "transactionCount",
+        "averageTransaction"
+    ].forEach(id => {
+        const element = $(id);
+        if (element) element.textContent = "—";
+    });
+
+    if ($("refundBadge")) {
+        $("refundBadge").textContent = "Không tải được tiền hoàn";
+    }
+
+    if ($("reportPeriod")) {
+        $("reportPeriod").textContent = "Không tải được báo cáo";
+    }
+
+    // Xóa biểu đồ cũ, hiển thị thông báo lỗi.
+    if ($("revenueLineChart")) $("revenueLineChart").innerHTML = "";
+    if ($("chartAxis")) $("chartAxis").innerHTML = "";
+    if ($("chartYAxis")) $("chartYAxis").innerHTML = "";
+    if ($("chartGridLines")) $("chartGridLines").innerHTML = "";
+    if ($("chartNote")) $("chartNote").textContent = "Lỗi tải dữ liệu";
+
+    if ($("chartEmpty")) {
+        $("chartEmpty").hidden = false;
+
+        const title = $("chartEmpty").querySelector("strong");
+        const detail = $("chartEmpty").querySelector("span");
+
+        if (title) title.textContent = "Không thể tải báo cáo doanh thu";
+        if (detail) detail.textContent = message;
+    }
+
+    if ($("routeRevenueList")) {
+        $("routeRevenueList").innerHTML = `
+            <div class="data-empty">
+                <strong>Không tải được dữ liệu theo tuyến</strong>
+                <span>${escapeHtml(message)}</span>
+            </div>`;
+    }
+
+    if ($("dailyTableBody")) {
+        $("dailyTableBody").innerHTML = `
+            <tr>
+                <td colspan="4">
+                    <div class="data-empty">
+                        <strong>Không thể tải báo cáo</strong>
+                        <span>${escapeHtml(message)}</span>
+                    </div>
+                </td>
+            </tr>`;
+    }
+}
+
 function renderRoutes(routes) {
     const select = $("routeFilter");
     select.innerHTML = '<option value="">Tất cả tuyến</option>';
@@ -183,7 +251,9 @@ function renderByRoute(data) {
     el.innerHTML = data.slice(0, 8).map(item => {
         const width = Math.max(Number(item.revenue) / max * 100, 2);
         return `<div class="route-row">
-            <div><div class="route-code">${item.routeCode}</div><div class="route-name">${item.routeName}</div></div>
+            <div>
+            <div class="route-code">${escapeHtml(item.routeCode)}</div>
+            <div class="route-name">${escapeHtml(item.routeName)}</div></div>
             <div class="route-progress"><span style="width:${width}%"></span></div>
             <div class="route-value">${money(item.revenue)}</div>
         </div>`;
@@ -200,6 +270,7 @@ function bindEmptyActions() {
     });
 }
 
+
 async function loadReport() {
     const from = $("fromDate").value;
     const to = $("toDate").value;
@@ -210,51 +281,152 @@ async function loadReport() {
         return;
     }
 
+    if (!getUserId()) {
+        window.location.href = "../auth/dangnhap.html";
+        return;
+    }
+
     const params = new URLSearchParams({ from, to });
-    if (routeId) params.set("routeId", routeId);
+
+    if (routeId) {
+        params.set("routeId", routeId);
+    }
+
+    const button = $("applyFilterBtn");
 
     try {
-        $("applyFilterBtn").disabled = true;
-        $("applyFilterBtn").textContent = "Đang tải...";
+        button.disabled = true;
+        button.textContent = "Đang tải...";
 
-        const response = await fetch(`/api/Statistics/revenue?${params}`, {
-            headers: headers()
-        });
+        const response = await fetch(
+            `/api/Statistics/revenue?${params.toString()}`,
+            {
+                method: "GET",
+                headers: headers()
+            }
+        );
+
+        if (response.status === 401) {
+            window.location.href = "../auth/dangnhap.html";
+            return;
+        }
+
+        const data = await response.json().catch(() => null);
 
         if (response.status === 403) {
-            toast("❌ Bạn không có quyền xem báo cáo doanh thu.");
+            const message =
+                data?.message ||
+                "Bạn không có quyền xem báo cáo doanh thu.";
+
+            showReportError(message);
+            toast("❌ " + message);
             return;
         }
 
         if (!response.ok) {
-            const error = await response.json().catch(() => null);
-            throw new Error(error?.message || "Không tải được báo cáo.");
+            throw new Error(
+                data?.message ||
+                `Không tải được báo cáo (HTTP ${response.status}).`
+            );
         }
 
-        const data = await response.json();
+        // Xác minh cấu trúc JSON trước khi vẽ giao diện.
+        if (!data || typeof data !== "object") {
+            throw new Error("API không trả về JSON hợp lệ.");
+        }
 
-        renderRoutes(data.routes || []);
-        if (routeId) $("routeFilter").value = routeId;
+        const requiredFields = [
+            "netRevenue",
+            "grossRevenue",
+            "refundAmount",
+            "transactionCount",
+            "averageTransaction"
+        ];
 
+        for (const field of requiredFields) {
+            if (
+                data[field] === undefined ||
+                data[field] === null ||
+                !Number.isFinite(Number(data[field]))
+            ) {
+                throw new Error(
+                    `Dữ liệu API thiếu hoặc không hợp lệ ở trường "${field}".`
+                );
+            }
+        }
+
+        if (
+            !Array.isArray(data.routes) ||
+            !Array.isArray(data.daily) ||
+            !Array.isArray(data.byRoute)
+        ) {
+            throw new Error(
+                "Cấu trúc routes, daily hoặc byRoute của API không hợp lệ."
+            );
+        }
+
+        // Kiểm tra từng dòng thống kê để tránh lỗi khi vẽ biểu đồ.
+        const validDaily = data.daily.every(item =>
+            item &&
+            typeof item.date === "string" &&
+            Number.isFinite(Number(item.revenue)) &&
+            Number.isFinite(Number(item.transactions))
+        );
+
+        const validRoutes = data.byRoute.every(item =>
+            item &&
+            Number.isFinite(Number(item.revenue))
+        );
+
+        if (!validDaily || !validRoutes) {
+            throw new Error(
+                "Một hoặc nhiều dòng thống kê trong API không hợp lệ."
+            );
+        }
+
+        // Cập nhật bộ lọc tuyến, giữ tuyến mà người dùng đang chọn.
+        renderRoutes(data.routes);
+
+        if (routeId) {
+            $("routeFilter").value = routeId;
+        }
+
+        // Cập nhật 4 thẻ tổng quan.
         $("netRevenue").textContent = money(data.netRevenue);
         $("grossRevenue").textContent = money(data.grossRevenue);
-        $("transactionCount").textContent = Number(data.transactionCount || 0).toLocaleString("vi-VN");
-        $("averageTransaction").textContent = money(data.averageTransaction);
-        $("refundBadge").textContent = `Hoàn tiền: ${money(data.refundAmount)}`;
-        $("reportPeriod").textContent = `Từ ${formatDate(data.from)} đến ${formatDate(data.to)}`;
 
-        const daily = data.daily || [];
-        const byRoute = data.byRoute || [];
-        renderChart(daily);
-        renderByRoute(byRoute);
-        renderDaily(daily);
+        $("transactionCount").textContent =
+            Number(data.transactionCount).toLocaleString("vi-VN");
+
+        $("averageTransaction").textContent =
+            money(data.averageTransaction);
+
+        $("refundBadge").textContent =
+            `Hoàn tiền: ${money(data.refundAmount)}`;
+
+        $("reportPeriod").textContent =
+            `Từ ${formatDate(data.from)} đến ${formatDate(data.to)}`;
+
+        // Cập nhật biểu đồ và các bảng.
+        renderChart(data.daily);
+        renderByRoute(data.byRoute);
+        renderDaily(data.daily);
+
+        // Các nút đặt lại bộ lọc chỉ được gắn một lần trên mỗi phần tử.
         bindEmptyActions();
+
     } catch (error) {
-        console.error(error);
-        toast("❌ " + error.message);
+        console.error("Lỗi tải báo cáo doanh thu:", error);
+
+        showReportError(
+            error.message || "Đã xảy ra lỗi khi tải báo cáo doanh thu."
+        );
+
+        toast("❌ " + (error.message || "Không tải được báo cáo."));
+
     } finally {
-        $("applyFilterBtn").disabled = false;
-        $("applyFilterBtn").textContent = "⌕ Xem báo cáo";
+        button.disabled = false;
+        button.textContent = "⌕ Xem báo cáo";
     }
 }
 

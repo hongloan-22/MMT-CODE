@@ -734,9 +734,31 @@
                 )}
                     </span>
                 </td>
+
+                <td>
+                    <button
+                        class="secondary-btn"
+                        type="button"
+                        data-detail="${item.id}">
+                        Chi tiết
+                    </button>
+                </td>
             `;
 
             body.appendChild(row);
+        });
+
+        body.querySelectorAll("[data-detail]").forEach(button => {
+            button.addEventListener("click", () => {
+                const tripId = Number(button.dataset.detail);
+                if (!Number.isInteger(tripId) || tripId <= 0) {
+                    toast("Không xác định được chuyến xe.");
+                    return;
+                }
+
+                window.location.href =
+                    `../chi-tiet-chuyen/index.html?tripId=${encodeURIComponent(tripId)}`;
+            });
         });
     }
 
@@ -1832,4 +1854,76 @@
         }
     );
 
+})();
+(function syncScheduleTopbar() {
+    "use strict";
+
+    try {
+        const raw = localStorage.getItem("userSession");
+        if (!raw) return;
+
+        const user = JSON.parse(raw);
+
+        const fullName =
+            user.fullName ||
+            user.FullName ||
+            user.name ||
+            "Người dùng";
+
+        const role = String(
+            user.role ||
+            user.Role ||
+            user.roleCode ||
+            user.RoleCode ||
+            user.roleName ||
+            user.RoleName ||
+            ""
+        ).trim().toUpperCase();
+
+        const roleId = Number(
+            user.roleId || user.RoleId || 0
+        );
+
+        let roleText = user.roleName || user.RoleName || "";
+
+        if (
+            role.includes("ADMIN") ||
+            role.includes("QUẢN TRỊ") ||
+            roleId === 1
+        ) {
+            roleText = "Quản trị hệ thống";
+        } else if (
+            role.includes("MANAGER") ||
+            role.includes("QUẢN LÝ") ||
+            roleId === 2
+        ) {
+            roleText = "Quản lý vận hành";
+        } else if (role.includes("DRIVER")) {
+            roleText = "Tài xế";
+        } else if (role.includes("PASSENGER")) {
+            roleText = "Hành khách";
+        } else if (!roleText) {
+            roleText = "Người dùng";
+        }
+
+        const parts = fullName.trim().split(/\s+/);
+
+        const initials = parts.length > 1
+            ? (parts[0][0] + parts[parts.length - 1][0])
+                .toUpperCase()
+            : fullName.substring(0, 2).toUpperCase();
+
+        const avatar = document.getElementById("topAvatar");
+        const roleElement = document.getElementById("topUserRole");
+
+        if (avatar) {
+            avatar.textContent = initials;
+        }
+
+        if (roleElement) {
+            roleElement.textContent = roleText;
+        }
+    } catch (error) {
+        console.error("Không thể cập nhật thông tin thanh tiêu đề:", error);
+    }
 })();

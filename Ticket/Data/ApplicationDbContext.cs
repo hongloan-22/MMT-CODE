@@ -34,6 +34,7 @@ namespace Ticket.Data
         public DbSet<Bus> Buses { get; set; } = null!;
         public DbSet<BusSeat> BusSeats { get; set; } = null!;
         public DbSet<BusStaffAssignment> BusStaffAssignments { get; set; } = null!;
+        public DbSet<TripStaffAssignment> TripStaffAssignments { get; set; } = null!;
         public DbSet<Booking> Bookings { get; set; } = null!;
         public DbSet<SeatHold> SeatHolds { get; set; } = null!;
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; } = null!;
@@ -266,6 +267,33 @@ namespace Ticket.Data
                 .WithMany(x => x.Trips)
                 .HasForeignKey(x => x.BusId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // =====================================================
+            // TRIP STAFF ASSIGNMENT
+            // =====================================================
+
+            modelBuilder.Entity<TripStaffAssignment>()
+                .HasOne(x => x.Trip)
+                .WithMany(x => x.StaffAssignments)
+                .HasForeignKey(x => x.TripId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TripStaffAssignment>()
+                .HasOne(x => x.User)
+                .WithMany(x => x.TripStaffAssignments)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Mỗi chuyến chỉ có một nhân sự đang được phân công
+            // cho mỗi vai trò: tài xế hoặc phụ xe.
+            modelBuilder.Entity<TripStaffAssignment>()
+                .HasIndex(x => new
+                {
+                    x.TripId,
+                    x.AssignmentType
+                })
+                .IsUnique()
+                .HasFilter("[IsActive] = 1");
 
             // =====================================================
             // RECURRING SCHEDULE

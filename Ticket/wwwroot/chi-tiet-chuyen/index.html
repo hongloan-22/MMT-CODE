@@ -18,61 +18,61 @@
     <script src="../js/admin-manager-layout.js"></script>
 
     <script>
-        (function () {
+                (function () {
 
-            const raw =
-                localStorage.getItem("userSession");
+                    const raw =
+                        localStorage.getItem("userSession");
 
-            if (!raw) {
+                    if (!raw) {
 
-                window.location.replace(
-                    "../auth/dangnhap.html"
-                );
+                        window.location.replace(
+                            "../auth/dangnhap.html"
+                        );
 
-                return;
-            }
+                        return;
+                    }
 
-            try {
+                    try {
 
-                const user =
-                    JSON.parse(raw);
+                        const user =
+                            JSON.parse(raw);
 
-                const role =
-                    String(
-                        user.role ||
-                        user.roleCode ||
-                        ""
-                    )
-                        .trim()
-                        .toUpperCase();
+                        const role =
+                            String(
+                                user.role ||
+                                user.roleCode ||
+                                ""
+                            )
+                                .trim()
+                                .toUpperCase();
 
-                if (
-                    role !== "ADMIN" &&
-                    role !== "MANAGER"
-                ) {
+                        if (
+                            role !== "ADMIN" &&
+                            role !== "MANAGER"
+                        ) {
 
-                    window.location.replace(
-                        "../index.html"
-                    );
+                            window.location.replace(
+                                "../index.html"
+                            );
 
-                    return;
-                }
+                            return;
+                        }
 
-            }
-            catch (error) {
+                    }
+                    catch (error) {
 
-                console.error(error);
+                        console.error(error);
 
-                localStorage.removeItem(
-                    "userSession"
-                );
+                        localStorage.removeItem(
+                            "userSession"
+                        );
 
-                window.location.replace(
-                    "../auth/dangnhap.html"
-                );
-            }
+                        window.location.replace(
+                            "../auth/dangnhap.html"
+                        );
+                    }
 
-        })();
+                })();
     </script>
 
 </head>
@@ -157,11 +157,11 @@
                 </a>
 
 
-                <a href="../doi-xe/index.html#staff"
+                <a href="../tai-xe-phu-xe/index.html"
                    class="side-link">
 
                     <span>👤</span>
-                    <span>Tài xế / phụ xe</span>
+                    <span>Tài xế / Phụ xe</span>
 
                 </a>
 
@@ -184,7 +184,7 @@
                 </a>
 
 
-                <a href="#"
+                <a href="../ty-le-lap-day/index.html"
                    class="side-link">
 
                     <span>◔</span>
@@ -318,11 +318,11 @@
 
                         <div class="trip-route-code">
 
-                            <span class="route-code">
-                                HN-TN
+                            <span class="route-code" id="routeCodeHeader">
+                                —
                             </span>
 
-                            <span class="trip-status active">
+                            <span class="trip-status active" id="tripStatusHeader">
                                 ● Đang hoạt động
                             </span>
 
@@ -330,14 +330,14 @@
 
 
                         <h2>
-                            Bến xe Mỹ Đình
+                            <span id="originStopHeader">—</span>
                             <span>→</span>
-                            Bến xe Thái Nguyên
+                            <span id="destinationStopHeader">—</span>
                         </h2>
 
 
                         <p>
-                            Chuyến xe #SB-HNTN-161026-01
+                            Chuyến xe #<span id="tripCodeHeader">—</span>
                         </p>
 
                     </div>
@@ -349,12 +349,12 @@
                             NGÀY KHỞI HÀNH
                         </span>
 
-                        <strong>
-                            16/10/2026
+                        <strong id="tripDateHeader">
+                            —
                         </strong>
 
-                        <small>
-                            Thứ Sáu
+                        <small id="tripDayHeader">
+                            —
                         </small>
 
                     </div>
@@ -366,12 +366,12 @@
                             GIỜ KHỞI HÀNH
                         </span>
 
-                        <strong>
-                            07:30
+                        <strong id="departureTimeHeader">
+                            —
                         </strong>
 
                         <small>
-                            Dự kiến đến 09:00
+                            Dự kiến đến <span id="arrivalTimeHeader">—</span>
                         </small>
 
                     </div>
@@ -397,15 +397,15 @@
                         <div>
 
                             <span>
-                                Vé đã đặt
+                                Ghế đã đặt
                             </span>
 
                             <strong id="bookedTickets">
-                                28
+                                —
                             </strong>
 
                             <small>
-                                vé đã xác nhận
+                                số ghế đã xác nhận
                             </small>
 
                         </div>
@@ -427,7 +427,7 @@
                             </span>
 
                             <strong id="availableSeats">
-                                12
+                                —
                             </strong>
 
                             <small>
@@ -453,7 +453,7 @@
                             </span>
 
                             <strong id="occupancyRate">
-                                70%
+                                —
                             </strong>
 
                             <small>
@@ -479,7 +479,7 @@
                             </span>
 
                             <strong id="tripRevenue">
-                                4,2 triệu
+                                —
                             </strong>
 
                             <small>
@@ -528,8 +528,8 @@
                                 </div>
 
 
-                                <span class="status active">
-                                    Đang chạy
+                                <span class="status active" id="tripStatusInfo">
+                                    Đang hoạt động
                                 </span>
 
                             </div>
@@ -544,8 +544,8 @@
                                         Mã chuyến
                                     </span>
 
-                                    <strong>
-                                        SB-HNTN-161026-01
+                                    <strong id="tripCodeInfo">
+                                        —
                                     </strong>
 
                                 </div>
@@ -557,8 +557,8 @@
                                         Tuyến xe
                                     </span>
 
-                                    <strong>
-                                        HN-TN
+                                    <strong id="routeCodeInfo">
+                                        —
                                     </strong>
 
                                 </div>
@@ -570,8 +570,8 @@
                                         Điểm đi
                                     </span>
 
-                                    <strong>
-                                        Bến xe Mỹ Đình
+                                    <strong id="originStopInfo">
+                                        —
                                     </strong>
 
                                 </div>
@@ -583,8 +583,8 @@
                                         Điểm đến
                                     </span>
 
-                                    <strong>
-                                        Bến xe Thái Nguyên
+                                    <strong id="destinationStopInfo">
+                                        —
                                     </strong>
 
                                 </div>
@@ -596,8 +596,8 @@
                                         Ngày chạy
                                     </span>
 
-                                    <strong>
-                                        16/10/2026
+                                    <strong id="tripDateInfo">
+                                        —
                                     </strong>
 
                                 </div>
@@ -609,8 +609,8 @@
                                         Thời gian
                                     </span>
 
-                                    <strong>
-                                        07:30 - 09:00
+                                    <strong id="tripTimeInfo">
+                                        —
                                     </strong>
 
                                 </div>
@@ -662,16 +662,16 @@
 
                                 <div class="vehicle-main">
 
-                                    <strong>
-                                        Hyundai Universe
+                                    <strong id="busCode">
+                                        Chưa phân xe
                                     </strong>
 
                                     <span>
-                                        45 chỗ · Giường nằm
+                                        <span id="busSeatCount">0</span> ghế theo cấu hình chuyến
                                     </span>
 
                                     <small>
-                                        Biển số: 29B-123.45
+                                        Biển số: <span id="licensePlate">—</span>
                                     </small>
 
                                 </div>
@@ -685,8 +685,8 @@
                                             Tài xế
                                         </span>
 
-                                        <strong>
-                                            Nguyễn Văn An
+                                        <strong id="driverName">
+                                            Chưa phân công
                                         </strong>
 
                                     </div>
@@ -698,8 +698,8 @@
                                             Phụ xe
                                         </span>
 
-                                        <strong>
-                                            Trần Văn Bình
+                                        <strong id="attendantName">
+                                            Chưa phân công
                                         </strong>
 
                                     </div>
@@ -734,8 +734,8 @@
 
                                 <div class="card-head-actions">
 
-                                    <span class="report-badge">
-                                        28 vé
+                                    <span class="report-badge" id="ticketCountBadge">
+                                        0 vé
                                     </span>
 
                                     <button class="secondary-btn"
@@ -894,7 +894,7 @@
                                     <div>
 
                                         <strong id="seatPercent">
-                                            70%
+                                            —
                                         </strong>
 
                                         <span>
@@ -916,8 +916,8 @@
                                         Tỷ lệ sử dụng
                                     </span>
 
-                                    <strong>
-                                        28 / 40
+                                    <strong id="seatProgressLabel">
+                                        0 / 0
                                     </strong>
 
                                 </div>
@@ -925,7 +925,7 @@
 
                                 <div class="progress-track">
 
-                                    <span style="width:70%;"></span>
+                                    <span id="seatProgressBar" style="width:0%;"></span>
 
                                 </div>
 
@@ -946,9 +946,7 @@
 
                                     </div>
 
-                                    <strong>
-                                        28
-                                    </strong>
+                                    <strong id="breakdownBooked">0</strong>
 
                                 </div>
 
@@ -964,9 +962,7 @@
 
                                     </div>
 
-                                    <strong>
-                                        12
-                                    </strong>
+                                    <strong id="breakdownAvailable">0</strong>
 
                                 </div>
 
@@ -982,9 +978,7 @@
 
                                     </div>
 
-                                    <strong>
-                                        3
-                                    </strong>
+                                    <strong id="breakdownHeld">0</strong>
 
                                 </div>
 
@@ -1032,9 +1026,7 @@
 
                                     </div>
 
-                                    <strong>
-                                        25
-                                    </strong>
+                                    <strong id="ticketStatConfirmed">0</strong>
 
                                 </div>
 
@@ -1052,9 +1044,7 @@
 
                                     </div>
 
-                                    <strong>
-                                        3
-                                    </strong>
+                                    <strong id="ticketStatPending">0</strong>
 
                                 </div>
 
@@ -1072,9 +1062,7 @@
 
                                     </div>
 
-                                    <strong>
-                                        2
-                                    </strong>
+                                    <strong id="ticketStatCancelled">0</strong>
 
                                 </div>
 
@@ -1087,9 +1075,7 @@
                                     Tổng vé phát sinh
                                 </span>
 
-                                <strong>
-                                    30
-                                </strong>
+                                <strong id="ticketStatTotal">0</strong>
 
                             </div>
 

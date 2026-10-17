@@ -813,3 +813,163 @@ td strong {
             width: 100%;
         }
 }
+
+/* ===== KHU VỰC PHÂN CÔNG NHÂN SỰ ===== */
+
+.assignment-panel {
+    margin-top: 20px;
+    min-height: 210px;
+}
+
+    .assignment-panel .card-head {
+        padding: 26px 30px;
+        border-bottom: 1px solid #edf1f7;
+    }
+
+        .assignment-panel .card-head h2 {
+            margin: 0 0 8px;
+            color: #173f68;
+            font-size: 23px;
+            font-weight: 700;
+        }
+
+        .assignment-panel .card-head p {
+            margin: 0;
+            color: #8192a8;
+            font-size: 14px;
+        }
+
+.assignment-empty {
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+}
+
+    .assignment-empty[hidden],
+    .inline-staff-form[hidden] {
+        display: none !important;
+    }
+
+.assignment-empty-icon {
+    font-size: 34px;
+    margin-bottom: 10px;
+}
+
+.assignment-empty h3 {
+    margin: 0 0 8px;
+    color: #294d70;
+    font-size: 17px;
+}
+
+.assignment-empty p {
+    margin: 0;
+    color: #8797aa;
+    font-size: 14px;
+}
+
+.inline-staff-form {
+    padding: 26px 30px 30px;
+}
+
+.assignment-bus-info {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+    .assignment-bus-info > div {
+        padding: 16px;
+        border: 1px solid #e3edf8;
+        border-radius: 12px;
+        background: #f7fbff;
+    }
+
+.field-caption {
+    display: block;
+    margin-bottom: 8px;
+    color: #8192a8;
+    font-size: 13px;
+}
+
+.assignment-bus-info strong {
+    color: #087fe5;
+    font-size: 17px;
+}
+
+.assignment-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+    .assignment-fields label {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        color: #294d70;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .assignment-fields select {
+        width: 100%;
+        min-height: 46px;
+        padding: 0 12px;
+        border: 1px solid #dce6f1;
+        border-radius: 9px;
+        background: #fff;
+        color: #294d70;
+        font: inherit;
+        outline: none;
+    }
+
+        .assignment-fields select:focus {
+            border-color: #1688f8;
+            box-shadow: 0 0 0 3px rgb(22 136 248 / 10%);
+        }
+
+.assignment-panel .form-note {
+    margin-top: 20px;
+    line-height: 1.7;
+}
+
+.assignment-panel .modal-actions {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #edf1f7;
+}
+
+/* Dòng xe được chọn */
+#busTableBody tr {
+    cursor: pointer;
+    transition: background-color 0.18s ease;
+}
+
+    #busTableBody tr:hover {
+        background: #f5faff;
+    }
+
+    #busTableBody tr.selected {
+        background: #eaf5ff;
+        box-shadow: inset 4px 0 #1688f8;
+    }
+
+@media (max-width: 768px) {
+    .assignment-bus-info,
+    .assignment-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-staff-form {
+        padding: 20px;
+    }
+
+    .assignment-panel .card-head {
+        padding: 20px;
+    }
+}

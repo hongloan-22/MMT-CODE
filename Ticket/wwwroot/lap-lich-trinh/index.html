@@ -2,65 +2,67 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Smartbus - Lịch trình</title>
 
+    <!-- CSS dùng chung với các trang quản trị -->
+    <link rel="stylesheet"
+          href="../quan-ly-tuyen-tram/style.css">
+
+    <!-- CSS riêng của trang Lịch trình -->
     <link rel="stylesheet" href="style.css">
-    <script src="../js/admin-manager-layout.js"></script>
+
+    <!-- Kiểm tra quyền truy cập -->
+    <script>
+                        (function () {
+                            const raw = localStorage.getItem("userSession");
+
+                            if (!raw) {
+                                window.location.replace("../auth/dangnhap.html");
+                                return;
+                            }
+
+                            try {
+                                const user = JSON.parse(raw);
+
+                                const role = String(
+                                    user.role ||
+                                    user.Role ||
+                                    user.roleCode ||
+                                    user.RoleCode ||
+                                    user.roleName ||
+                                    user.RoleName ||
+                                    ""
+                                ).trim().toUpperCase();
+
+                                const roleId = Number(
+                                    user.roleId || user.RoleId || 0
+                                );
+
+                                const isAdmin =
+                                    role.includes("ADMIN") ||
+                                    role.includes("QUẢN TRỊ") ||
+                                    roleId === 1;
+
+                                const isManager =
+                                    role.includes("MANAGER") ||
+                                    role.includes("QUẢN LÝ") ||
+                                    roleId === 2;
+
+                                if (!isAdmin && !isManager) {
+                                    window.location.replace("../index.html");
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                localStorage.removeItem("userSession");
+                                window.location.replace("../auth/dangnhap.html");
+                            }
+                        })();
+    </script>
+
+    <script src="../js/admin-manager-layout.js" defer></script>
 </head>
-<script>
-        (function () {
-
-            const raw =
-                localStorage.getItem("userSession");
-
-            if (!raw) {
-                window.location.replace(
-                    "../auth/dangnhap.html"
-                );
-                return;
-            }
-
-            try {
-
-                const user =
-                    JSON.parse(raw);
-
-                const role =
-                    String(
-                        user.role ||
-                        user.roleCode ||
-                        ""
-                    )
-                        .trim()
-                        .toUpperCase();
-
-                if (role !== "ADMIN" && role !== "MANAGER") {
-                    window.location.replace(
-                        "../index.html"
-                    );
-
-                    return;
-                }
-
-            }
-            catch (error) {
-
-                console.error(error);
-
-                localStorage.removeItem(
-                    "userSession"
-                );
-
-                window.location.replace(
-                    "../auth/dangnhap.html"
-                );
-            }
-
-        })();
-</script>
 
 <body>
 
@@ -127,50 +129,49 @@
 
                 </a>
 
-                <a href="../doi-xe/index.html#staff"
+                <a href="../tai-xe-phu-xe/index.html"
                    class="side-link">
 
                     <span>👤</span>
-                    <span>Tài xế / phụ xe</span>
+                    <span>Tài xế / Phụ xe</span>
 
                 </a>
             </nav>
 
-            <div class="sidebar-label">BÁO CÁO
+            <div class="sidebar-label">
+                BÁO CÁO
             </div>
 
             <nav class="side-nav">
                 <a href="../doanh-thu/index.html" class="side-link"><span>▥</span><span>Doanh thu</span></a>
-                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+                <a href="../ty-le-lap-day/index.html" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
             </nav>
 
             <div class="sidebar-bottom">
 
                 <div class="account-mini">
 
-                    <div class="avatar">
-                        QL
+                    <div class="avatar"
+                         id="sidebarAvatar">
+                        AD
                     </div>
 
                     <div>
-
-                        <strong>
-                            Quản lý
+                        <strong id="sidebarUserName">
+                            Admin
                         </strong>
 
-                        <small>
-                            Quản lý vận hành
+                        <small id="sidebarUserRole">
+                            Quản trị hệ thống
                         </small>
-
                     </div>
 
                 </div>
 
                 <button class="logout-btn"
+                        id="logoutBtn"
                         type="button">
-
                     ↪ Đăng xuất
-
                 </button>
 
             </div>
@@ -181,41 +182,39 @@
         <main class="main">
 
             <header class="topbar">
-
                 <div>
-
                     <div class="breadcrumb">
                         Quản lý vận hành
                         <span>/</span>
                         Lịch trình
                     </div>
 
-                    <h1>
-                        Lịch trình
-                    </h1>
+                    <h1>Lịch trình</h1>
 
                     <p>
-                        Tạo lịch để hệ thống tự sinh
-                        các chuyến xe theo ngày.
+                        Tạo lịch để hệ thống tự sinh các chuyến xe theo ngày.
                     </p>
-
                 </div>
 
                 <div class="top-actions">
-
-                    <button class="user-btn"
-                            type="button">
-
-                        <span class="avatar small">
-                            QL
-                        </span>
-
-                        Quản lý ▾
-
+                    <button class="icon-btn"
+                            type="button"
+                            aria-label="Trợ giúp">
+                        ?
                     </button>
 
-                </div>
+                    <button class="user-btn" type="button">
+                        <span class="avatar small" id="topAvatar">
+                            AD
+                        </span>
 
+                        <span id="topUserRole">
+                            Quản lý vận hành
+                        </span>
+
+                        ▾
+                    </button>
+                </div>
             </header>
 
 
@@ -317,113 +316,9 @@
                             <small>
                                 Các chuyến đã sinh
                             </small>
-
                         </div>
-
                     </div>
-
                 </div>
-
-
-                <!-- =================================================
-                     KHU VỰC THỐNG KÊ + DANH SÁCH CHUYẾN
-                     ================================================= -->
-
-                <section class="trip-overview">
-
-                    <div class="trip-overview-head">
-                        <div>
-                            <div class="eyebrow">TỔNG QUAN CHUYẾN XE</div>
-                            <h2>Danh sách chuyến & thống kê</h2>
-                            <p>Theo dõi nhanh các chuyến đã tạo, tình trạng ghế và trạng thái vận hành.</p>
-                        </div>
-
-                        <div class="overview-date" id="overviewDate">Hôm nay</div>
-                    </div>
-
-                    <div class="trip-overview-grid">
-
-                        <div class="trip-list-panel">
-                            <div class="panel-head">
-                                <div>
-                                    <strong>Chuyến xe gần nhất</strong>
-                                    <span id="tripListCount">0 chuyến</span>
-                                </div>
-                                <button type="button" class="panel-link" id="viewAllTripsBtn">Xem tất cả</button>
-                            </div>
-
-                            <div class="trip-list" id="overviewTripList"></div>
-
-                            <div class="overview-empty hidden" id="overviewTripEmpty">
-                                <div class="overview-empty-icon">◷</div>
-                                <strong>Chưa có chuyến xe</strong>
-                                <span>Danh sách chuyến sẽ hiển thị tại đây.</span>
-                            </div>
-                        </div>
-
-                        <div class="trip-stats-panel">
-                            <div class="panel-head">
-                                <div>
-                                    <strong>Thống kê vận hành</strong>
-                                    <span>Tổng hợp từ danh sách chuyến</span>
-                                </div>
-                            </div>
-
-                            <div class="mini-stat-grid">
-                                <div class="mini-stat blue">
-                                    <span>Tổng chuyến</span>
-                                    <strong id="overviewTotalTrips">0</strong>
-                                </div>
-                                <div class="mini-stat green">
-                                    <span>Đang hoạt động</span>
-                                    <strong id="overviewActiveTrips">0</strong>
-                                </div>
-                                <div class="mini-stat orange">
-                                    <span>Đã lên lịch</span>
-                                    <strong id="overviewScheduledTrips">0</strong>
-                                </div>
-                                <div class="mini-stat red">
-                                    <span>Đã hủy</span>
-                                    <strong id="overviewCancelledTrips">0</strong>
-                                </div>
-                            </div>
-
-                            <div class="occupancy-block">
-                                <div class="occupancy-head">
-                                    <div>
-                                        <strong>Tình trạng ghế</strong>
-                                        <span>Tỷ lệ ghế đã đặt trên các chuyến</span>
-                                    </div>
-                                    <strong id="overviewOccupancy">0%</strong>
-                                </div>
-                                <div class="occupancy-track">
-                                    <span id="overviewOccupancyBar"></span>
-                                </div>
-                                <div class="occupancy-foot">
-                                    <span id="overviewBookedSeats">0 ghế đã đặt</span>
-                                    <span id="overviewAvailableSeats">0 ghế còn trống</span>
-                                </div>
-                            </div>
-
-                            <div class="status-summary">
-                                <div class="status-summary-row">
-                                    <span><i class="dot green"></i>Đang hoạt động</span>
-                                    <strong id="statusActivePercent">0%</strong>
-                                </div>
-                                <div class="status-summary-row">
-                                    <span><i class="dot orange"></i>Đã lên lịch</span>
-                                    <strong id="statusScheduledPercent">0%</strong>
-                                </div>
-                                <div class="status-summary-row">
-                                    <span><i class="dot red"></i>Đã hủy</span>
-                                    <strong id="statusCancelledPercent">0%</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </section>
-
 
                 <!-- =================================================
                      LỊCH CỐ ĐỊNH
@@ -444,7 +339,7 @@
                             </h2>
 
                             <p>
-                              Hệ thống tự sinh chuyến theo lịch.
+                                Hệ thống tự sinh chuyến theo lịch.
                             </p>
 
                         </div>
@@ -654,6 +549,10 @@
 
                                     <th>
                                         Trạng thái
+                                    </th>
+
+                                    <th>
+                                        Thao tác
                                     </th>
 
                                 </tr>

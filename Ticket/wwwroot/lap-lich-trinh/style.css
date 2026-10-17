@@ -1,12 +1,14 @@
+
 /* =========================================================
    wwwroot/lap-lich-trinh/style.css
+   Kế thừa giao diện chung từ Tuyến & trạm
    ========================================================= */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+@import url("../quan-ly-tuyen-tram/style.css");
+
+/* =========================================================
+   BIẾN VÀ THIẾT LẬP RIÊNG
+   ========================================================= */
 
 :root {
     --blue: #1685e8;
@@ -30,7 +32,7 @@
     --danger: #d94b4b;
     --danger-bg: #fff0f0;
     --bg: #f5faff;
-    --shadow: 0 14px 40px rgba(35,52,79,.08);
+    --shadow: 0 14px 40px rgba(35, 52, 79, .08);
 }
 
 html,
@@ -61,241 +63,19 @@ button {
     display: none !important;
 }
 
-.app-shell {
-    min-height: 100vh;
-    display: flex;
-}
-
 /* =========================================================
-   SIDEBAR
-   ========================================================= */
-
-.sidebar {
-    width: 248px;
-    background: #fff;
-    border-right: 1px solid #e5eef5;
-    position: fixed;
-    inset: 0 auto 0 0;
-    padding: 25px 16px;
-    display: flex;
-    flex-direction: column;
-    z-index: 20;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    padding: 0 12px 28px;
-}
-
-.brand-icon {
-    font-size: 31px;
-}
-
-.brand-name {
-    font-size: 27px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: #1785e8;
-}
-
-    .brand-name span {
-        color: #53b6f4;
-    }
-
-.sidebar-label {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1.1px;
-    color: #9aa9b6;
-    padding: 15px 12px 8px;
-}
-
-.side-nav {
-    display: grid;
-    gap: 4px;
-}
-
-.side-link {
-    height: 45px;
-    padding: 0 13px;
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    border-radius: 10px;
-    text-decoration: none;
-    color: #5c6d7b;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-    .side-link span:first-child {
-        width: 22px;
-        text-align: center;
-        font-size: 17px;
-    }
-
-    .side-link:hover {
-        background: #f0f8ff;
-        color: var(--blue);
-    }
-
-    .side-link.active {
-        background: #eaf6ff;
-        color: var(--blue);
-        font-weight: 750;
-    }
-
-.sidebar-bottom {
-    margin-top: auto;
-    border-top: 1px solid #edf1f4;
-    padding: 18px 7px 4px;
-}
-
-.account-mini {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-    .account-mini strong {
-        display: block;
-        font-size: 13px;
-    }
-
-    .account-mini small {
-        display: block;
-        color: #8a9aa7;
-        font-size: 11px;
-        margin-top: 2px;
-    }
-
-.avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: #dff2ff;
-    color: var(--blue);
-    font-weight: 800;
-    font-size: 12px;
-}
-
-    .avatar.small {
-        width: 32px;
-        height: 32px;
-    }
-
-.logout-btn {
-    width: 100%;
-    border: 1px solid #e3ebf1;
-    background: #fff;
-    border-radius: 9px;
-    padding: 9px;
-    color: #667786;
-    font-size: 13px;
-}
-
-    .logout-btn:hover {
-        background: #f8fbfd;
-        color: var(--blue);
-    }
-
-/* =========================================================
-   MAIN
-   ========================================================= */
-
-.main {
-    margin-left: 248px;
-    min-height: 100vh;
-    width: calc(100% - 248px);
-}
-
-.topbar {
-    min-height: 104px;
-    background: #fff;
-    border-bottom: 1px solid #e4edf3;
-    padding: 26px 38px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.breadcrumb {
-    font-size: 12px;
-    color: #8b9aa7;
-    margin-bottom: 8px;
-}
-
-    .breadcrumb span {
-        padding: 0 6px;
-        color: #b6c0c7;
-    }
-
-.topbar h1,
-h1 {
-    margin: 0;
-    font-size: 27px;
-    color: #1b527c;
-    letter-spacing: -.5px;
-}
-
-.topbar p {
-    color: #7b8d9b;
-    font-size: 13px;
-    margin-top: 7px;
-}
-
-.top-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.icon-btn {
-    width: 38px;
-    height: 38px;
-    border: 1px solid #dbe7f0;
-    background: #fff;
-    border-radius: 50%;
-    color: var(--blue);
-    font-weight: 800;
-}
-
-.user-btn {
-    height: 42px;
-    border: 1px solid #e0e9ef;
-    background: #fff;
-    border-radius: 22px;
-    padding: 5px 12px 5px 6px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #526676;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-/* =========================================================
-   CONTENT
+   MAIN CONTENT
    ========================================================= */
 
 .content {
     width: 100%;
-    max-width: none;
+    max-width: 1500px;
     padding: 28px 38px 50px;
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 20px;
 }
@@ -308,7 +88,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 14px;
-    box-shadow: 0 5px 18px rgba(30,99,144,.05);
+    box-shadow: 0 5px 18px rgba(30, 99, 144, .05);
 }
 
 .stat-icon {
@@ -361,7 +141,7 @@ h1 {
 }
 
 /* =========================================================
-   KHU VỰC DANH SÁCH CHUYẾN + THỐNG KÊ
+   DANH SÁCH CHUYẾN VÀ THỐNG KÊ
    ========================================================= */
 
 .trip-overview {
@@ -383,17 +163,17 @@ h1 {
     border-bottom: 1px solid #edf2f5;
 }
 
-.trip-overview-head h2 {
-    margin: 4px 0 5px;
-    font-size: 20px;
-    color: #1b527c;
-}
+    .trip-overview-head h2 {
+        margin: 4px 0 5px;
+        font-size: 20px;
+        color: #1b527c;
+    }
 
-.trip-overview-head p {
-    margin: 0;
-    color: #8493a0;
-    font-size: 12px;
-}
+    .trip-overview-head p {
+        margin: 0;
+        color: #8493a0;
+        font-size: 12px;
+    }
 
 .overview-date {
     flex-shrink: 0;
@@ -431,22 +211,22 @@ h1 {
     border-bottom: 1px solid #edf2f5;
 }
 
-.panel-head > div {
-    min-width: 0;
-}
+    .panel-head > div {
+        min-width: 0;
+    }
 
-.panel-head strong {
-    display: block;
-    color: #315a75;
-    font-size: 14px;
-}
+    .panel-head strong {
+        display: block;
+        color: #315a75;
+        font-size: 14px;
+    }
 
-.panel-head span {
-    display: block;
-    margin-top: 3px;
-    color: #96a3ad;
-    font-size: 11px;
-}
+    .panel-head span {
+        display: block;
+        margin-top: 3px;
+        color: #96a3ad;
+        font-size: 11px;
+    }
 
 .panel-link {
     flex-shrink: 0;
@@ -458,9 +238,9 @@ h1 {
     padding: 6px 4px;
 }
 
-.panel-link:hover {
-    text-decoration: underline;
-}
+    .panel-link:hover {
+        text-decoration: underline;
+    }
 
 .trip-list {
     display: grid;
@@ -479,13 +259,13 @@ h1 {
     transition: background .18s ease;
 }
 
-.trip-list-item:last-child {
-    border-bottom: 0;
-}
+    .trip-list-item:last-child {
+        border-bottom: 0;
+    }
 
-.trip-list-item:hover {
-    background: #f9fcff;
-}
+    .trip-list-item:hover {
+        background: #f9fcff;
+    }
 
 .trip-time-box {
     display: flex;
@@ -493,15 +273,15 @@ h1 {
     gap: 3px;
 }
 
-.trip-time-box strong {
-    color: #1d5c85;
-    font-size: 16px;
-}
+    .trip-time-box strong {
+        color: #1d5c85;
+        font-size: 16px;
+    }
 
-.trip-time-box span {
-    color: #9aa8b3;
-    font-size: 10px;
-}
+    .trip-time-box span {
+        color: #9aa8b3;
+        font-size: 10px;
+    }
 
 .trip-route-info {
     min-width: 0;
@@ -539,18 +319,18 @@ h1 {
     text-align: right;
 }
 
-.trip-seat-box strong {
-    display: block;
-    color: #315a75;
-    font-size: 12px;
-}
+    .trip-seat-box strong {
+        display: block;
+        color: #315a75;
+        font-size: 12px;
+    }
 
-.trip-seat-box span {
-    display: block;
-    margin-top: 3px;
-    color: #97a5af;
-    font-size: 10px;
-}
+    .trip-seat-box span {
+        display: block;
+        margin-top: 3px;
+        color: #97a5af;
+        font-size: 10px;
+    }
 
 .trip-status {
     display: inline-flex;
@@ -563,20 +343,20 @@ h1 {
     font-weight: 800;
 }
 
-.trip-status.active {
-    background: var(--success-bg);
-    color: var(--success);
-}
+    .trip-status.active {
+        background: var(--success-bg);
+        color: var(--success);
+    }
 
-.trip-status.scheduled {
-    background: var(--blue-light);
-    color: var(--blue);
-}
+    .trip-status.scheduled {
+        background: var(--blue-light);
+        color: var(--blue);
+    }
 
-.trip-status.cancelled {
-    background: var(--danger-bg);
-    color: var(--danger);
-}
+    .trip-status.cancelled {
+        background: var(--danger-bg);
+        color: var(--danger);
+    }
 
 /* =========================================================
    THỐNG KÊ NHỎ
@@ -597,35 +377,35 @@ h1 {
     background: #fafcfe;
 }
 
-.mini-stat span {
-    display: block;
-    color: #7f909d;
-    font-size: 10px;
-    font-weight: 700;
-}
+    .mini-stat span {
+        display: block;
+        color: #7f909d;
+        font-size: 10px;
+        font-weight: 700;
+    }
 
-.mini-stat strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 22px;
-    line-height: 1;
-}
+    .mini-stat strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 22px;
+        line-height: 1;
+    }
 
-.mini-stat.blue strong {
-    color: var(--blue);
-}
+    .mini-stat.blue strong {
+        color: var(--blue);
+    }
 
-.mini-stat.green strong {
-    color: var(--success);
-}
+    .mini-stat.green strong {
+        color: var(--success);
+    }
 
-.mini-stat.orange strong {
-    color: #c27a00;
-}
+    .mini-stat.orange strong {
+        color: #c27a00;
+    }
 
-.mini-stat.red strong {
-    color: var(--danger);
-}
+    .mini-stat.red strong {
+        color: var(--danger);
+    }
 
 .occupancy-block {
     margin: 0 15px 15px;
@@ -642,23 +422,23 @@ h1 {
     gap: 12px;
 }
 
-.occupancy-head > div strong {
-    display: block;
-    color: #315a75;
-    font-size: 12px;
-}
+    .occupancy-head > div strong {
+        display: block;
+        color: #315a75;
+        font-size: 12px;
+    }
 
-.occupancy-head > div span {
-    display: block;
-    margin-top: 3px;
-    color: #96a3ad;
-    font-size: 10px;
-}
+    .occupancy-head > div span {
+        display: block;
+        margin-top: 3px;
+        color: #96a3ad;
+        font-size: 10px;
+    }
 
-.occupancy-head > strong {
-    color: var(--blue);
-    font-size: 18px;
-}
+    .occupancy-head > strong {
+        color: var(--blue);
+        font-size: 18px;
+    }
 
 .occupancy-track {
     width: 100%;
@@ -669,14 +449,14 @@ h1 {
     overflow: hidden;
 }
 
-.occupancy-track span {
-    display: block;
-    width: 0;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #1685e8, #58b6ef);
-    transition: width .35s ease;
-}
+    .occupancy-track span {
+        display: block;
+        width: 0;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #1685e8, #58b6ef);
+        transition: width .35s ease;
+    }
 
 .occupancy-foot {
     display: flex;
@@ -703,20 +483,20 @@ h1 {
     font-size: 11px;
 }
 
-.status-summary-row:last-child {
-    border-bottom: 0;
-}
+    .status-summary-row:last-child {
+        border-bottom: 0;
+    }
 
-.status-summary-row > span {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
+    .status-summary-row > span {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
 
-.status-summary-row strong {
-    color: #315a75;
-    font-size: 11px;
-}
+    .status-summary-row strong {
+        color: #315a75;
+        font-size: 11px;
+    }
 
 .dot {
     width: 7px;
@@ -725,17 +505,17 @@ h1 {
     display: inline-block;
 }
 
-.dot.green {
-    background: #19a974;
-}
+    .dot.green {
+        background: #19a974;
+    }
 
-.dot.orange {
-    background: #e7a62d;
-}
+    .dot.orange {
+        background: #e7a62d;
+    }
 
-.dot.red {
-    background: #ef6262;
-}
+    .dot.red {
+        background: #ef6262;
+    }
 
 .overview-empty {
     min-height: 220px;
@@ -748,10 +528,10 @@ h1 {
     font-size: 11px;
 }
 
-.overview-empty strong {
-    color: #526879;
-    font-size: 13px;
-}
+    .overview-empty strong {
+        color: #526879;
+        font-size: 13px;
+    }
 
 .overview-empty-icon {
     width: 42px;
@@ -766,8 +546,14 @@ h1 {
 }
 
 /* =========================================================
-   PAGE CARD
+   CARD RIÊNG CỦA LẬP LỊCH
    ========================================================= */
+
+.trip-overview,
+.trip-list-panel,
+.trip-stats-panel {
+    box-sizing: border-box;
+}
 
 .page-card {
     width: 100%;
@@ -814,7 +600,7 @@ h1 {
 }
 
 /* =========================================================
-   BUTTONS
+   NÚT
    ========================================================= */
 
 .primary-btn,
@@ -830,7 +616,7 @@ h1 {
 .primary-btn {
     background: var(--blue);
     color: #fff;
-    box-shadow: 0 7px 16px rgba(22,133,232,.18);
+    box-shadow: 0 7px 16px rgba(22, 133, 232, .18);
 }
 
     .primary-btn:hover {
@@ -849,7 +635,7 @@ h1 {
     }
 
 /* =========================================================
-   TOOLBAR
+   THANH TÌM KIẾM VÀ BỘ LỌC
    ========================================================= */
 
 .toolbar {
@@ -908,7 +694,7 @@ h1 {
     }
 
 /* =========================================================
-   TABLE
+   BẢNG LỊCH TRÌNH
    ========================================================= */
 
 .table-wrap {
@@ -1023,7 +809,7 @@ h1 {
     }
 
 /* =========================================================
-   STATE
+   TRẠNG THÁI VÀ DỮ LIỆU TRỐNG
    ========================================================= */
 
 .state-box {
@@ -1070,7 +856,7 @@ h1 {
 }
 
 /* =========================================================
-   DETAIL
+   CHI TIẾT CHUYẾN
    ========================================================= */
 
 .detail-card {
@@ -1159,7 +945,7 @@ h1 {
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(18,32,51,.42);
+    background: rgba(18, 32, 51, .42);
     display: grid;
     place-items: center;
     padding: 20px;
@@ -1171,7 +957,7 @@ h1 {
     max-height: calc(100vh - 40px);
     background: #fff;
     border-radius: 15px;
-    box-shadow: 0 25px 80px rgba(0,0,0,.2);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, .2);
     padding: 22px;
     overflow: auto;
 }
@@ -1281,7 +1067,7 @@ h1 {
 }
 
 /* =========================================================
-   CHECKBOX
+   CHECKBOX KÍCH HOẠT
    ========================================================= */
 
 .active-checkbox {
@@ -1316,6 +1102,49 @@ h1 {
     .active-checkbox span {
         display: inline-block;
         line-height: 15px;
+    }
+
+/* =========================================================
+   CHECKBOX CÁC THỨ CHẠY
+   ========================================================= */
+
+.days-of-week {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px 28px;
+    margin-top: 8px;
+}
+
+.day-checkbox {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: flex-start;
+    width: max-content !important;
+    gap: 7px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 14px;
+    font-weight: 600;
+    color: #526277;
+    cursor: pointer;
+}
+
+    .day-checkbox input[type="checkbox"] {
+        appearance: auto !important;
+        width: 15px !important;
+        height: 15px !important;
+        min-width: 15px !important;
+        min-height: 15px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        accent-color: #1683e8;
+        cursor: pointer;
+    }
+
+    .day-checkbox span {
+        line-height: 15px;
+        white-space: nowrap;
     }
 
 /* =========================================================
@@ -1396,7 +1225,7 @@ h1 {
     padding: 12px 16px;
     border-radius: 9px;
     font-size: 13px;
-    box-shadow: 0 12px 30px rgba(0,0,0,.18);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
     opacity: 0;
     transform: translateY(8px);
     pointer-events: none;
@@ -1413,8 +1242,7 @@ h1 {
    RESPONSIVE
    ========================================================= */
 
-@media(max-width:1100px) {
-
+@media (max-width: 1100px) {
     .trip-overview-grid {
         grid-template-columns: 1fr;
     }
@@ -1423,19 +1251,8 @@ h1 {
         max-height: 360px;
     }
 
-
-
-    .sidebar {
-        width: 210px;
-    }
-
-    .main {
-        margin-left: 210px;
-        width: calc(100% - 210px);
-    }
-
     .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .toolbar {
@@ -1449,47 +1266,9 @@ h1 {
     .content {
         padding: 22px;
     }
-
-    .topbar {
-        padding: 22px;
-    }
 }
 
-@media(max-width:800px) {
-
-    .sidebar {
-        width: 72px;
-        padding: 20px 9px;
-    }
-
-    .brand {
-        padding: 0;
-        justify-content: center;
-    }
-
-    .brand-name,
-    .sidebar-label,
-    .side-link span:last-child,
-    .account-mini > div:not(.avatar),
-    .logout-btn {
-        display: none;
-    }
-
-    .side-link {
-        justify-content: center;
-        padding: 11px;
-        height: 45px;
-    }
-
-        .side-link span:first-child {
-            width: auto;
-        }
-
-    .main {
-        margin-left: 72px;
-        width: calc(100% - 72px);
-    }
-
+@media (max-width: 800px) {
     .topbar {
         padding: 20px;
         position: static;
@@ -1502,14 +1281,9 @@ h1 {
     .top-actions {
         display: none;
     }
-
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
 }
 
-@media(max-width:780px) {
-
+@media (max-width: 780px) {
     .trip-overview {
         padding: 16px;
     }
@@ -1523,48 +1297,6 @@ h1 {
         align-self: flex-start;
     }
 
-
-
-    .sidebar {
-        position: static;
-        width: 100%;
-        height: auto;
-        padding: 12px;
-        display: block;
-    }
-
-    .side-nav,
-    .sidebar-label,
-    .sidebar-bottom {
-        display: none;
-    }
-
-    .brand {
-        padding: 5px 8px;
-        justify-content: flex-start;
-    }
-
-    .brand-name {
-        display: block;
-    }
-
-    .app-shell {
-        display: block;
-    }
-
-    .main {
-        margin-left: 0;
-        width: 100%;
-    }
-
-    .topbar {
-        position: static;
-    }
-
-    .top-actions {
-        display: none;
-    }
-
     .stats-grid {
         grid-template-columns: 1fr 1fr;
     }
@@ -1576,10 +1308,32 @@ h1 {
     .active-checkbox {
         grid-column: span 1;
     }
+
+    .card-head {
+        align-items: flex-start;
+        gap: 12px;
+        flex-direction: column;
+    }
+
+    .card-head-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .toolbar {
+        grid-template-columns: 1fr;
+    }
+
+        .toolbar .search-box {
+            grid-column: auto;
+        }
+
+    .search-box {
+        max-width: none;
+    }
 }
 
-@media(max-width:560px) {
-
+@media (max-width: 560px) {
     .trip-list-item {
         grid-template-columns: 66px minmax(0, 1fr);
         gap: 10px;
@@ -1609,8 +1363,6 @@ h1 {
         gap: 4px;
     }
 
-
-
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -1628,14 +1380,7 @@ h1 {
             font-size: 24px;
         }
 
-    .card-head {
-        align-items: flex-start;
-        gap: 12px;
-        flex-direction: column;
-    }
-
     .card-head-actions {
-        width: 100%;
         flex-direction: column;
         align-items: stretch;
     }
@@ -1643,15 +1388,6 @@ h1 {
         .card-head-actions button {
             width: 100%;
         }
-
-    .toolbar {
-        grid-template-columns: 1fr;
-        flex-direction: column;
-    }
-
-    .search-box {
-        max-width: none;
-    }
 
     .form-grid {
         grid-template-columns: 1fr;
@@ -1678,46 +1414,10 @@ h1 {
         .logout-actions button {
             width: 100%;
         }
-}
-/* =========================
-   CHECKBOX CÁC THỨ CHẠY
-   ========================= */
 
-.days-of-week {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px 28px;
-    margin-top: 8px;
-}
-
-.day-checkbox {
-    display: inline-flex !important;
-    flex-direction: row !important;
-    align-items: center;
-    justify-content: flex-start;
-    width: max-content !important;
-    gap: 7px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    font-size: 14px;
-    font-weight: 600;
-    color: #526277;
-    cursor: pointer;
-}
-
-    .day-checkbox input[type="checkbox"] {
-        appearance: auto !important;
-        width: 15px !important;
-        height: 15px !important;
-        min-width: 15px !important;
-        min-height: 15px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        accent-color: #1683e8;
-        cursor: pointer;
+    .days-of-week {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
     }
-
-    .day-checkbox span {
-        line-height: 15px;
-        white-space: nowrap;
-    }
+}
+ 

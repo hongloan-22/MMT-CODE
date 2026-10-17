@@ -1,0 +1,375 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Tỷ lệ lấp đầy</title>
+
+    <script>
+        (function () {
+            try {
+                const raw = localStorage.getItem("userSession");
+
+                if (!raw) {
+                    window.location.replace("../auth/dangnhap.html");
+                    return;
+                }
+
+                const user = JSON.parse(raw);
+                const role = String(
+                    user.role || user.Role ||
+                    user.roleCode || user.RoleCode ||
+                    user.roleName || user.RoleName || ""
+                ).trim().toUpperCase();
+
+                if (role !== "ADMIN" && role !== "MANAGER") {
+                    window.location.replace("../index.html");
+                }
+            } catch (error) {
+                localStorage.removeItem("userSession");
+                window.location.replace("../auth/dangnhap.html");
+            }
+        })();
+    </script>
+
+    <link rel="stylesheet"
+          href="../quan-ly-tuyen-tram/style.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="../js/admin-manager-layout.js"></script>
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <aside class="sidebar">
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+
+            <nav class="side-nav">
+                <a href="../index.html" class="side-link">
+                    <span>▦</span><span>Tổng quan</span>
+                </a>
+                <a href="../quan-ly-tuyen-tram/index.html" class="side-link">
+                    <span>⇄</span><span>Tuyến &amp; trạm</span>
+                </a>
+                <a href="../lap-lich-trinh/index.html" class="side-link">
+                    <span>◷</span><span>Lịch trình</span>
+                </a>
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen"
+                   style="display:none">
+                    <span>👤</span><span>Phân quyền</span>
+                </a>
+                <a href="../doi-xe/index.html" class="side-link">
+                    <span>🚌</span><span>Đội xe</span>
+                </a>
+                <a href="../tai-xe-phu-xe/index.html" class="side-link">
+                    <span>👤</span><span>Tài xế / Phụ xe</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO</div>
+
+            <nav class="side-nav">
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
+                <a href="index.html" class="side-link active">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar" id="sidebarAvatar">QL</div>
+                    <div>
+                        <strong id="sidebarUserName">Quản lý</strong>
+                        <small id="sidebarUserRole">Quản lý vận hành</small>
+                    </div>
+                </div>
+
+                <button class="logout-btn"
+                        id="logoutBtn"
+                        type="button">
+                    ↪ Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">
+                        Báo cáo <span>/</span> Tỷ lệ lấp đầy
+                    </div>
+                    <h1>Thống kê tỷ lệ lấp đầy</h1>
+                    <p>
+                        Theo dõi số ghế đã đặt, ghế giữ tạm
+                        và ghế còn trống theo từng chuyến xe.
+                    </p>
+                </div>
+
+                <div class="top-actions">
+                    <button class="icon-btn"
+                            type="button"
+                            title="Thông tin thống kê">
+                        ?
+                    </button>
+
+                    <button class="user-btn" type="button">
+                        <span class="avatar small" id="topAvatar">QL</span>
+                        <span id="topUserRole">Quản lý</span> ▾
+                    </button>
+                </div>
+            </header>
+
+            <section class="content occupancy-content">
+
+                <!-- BỘ LỌC -->
+                <div class="page-card occupancy-filter-card">
+                    <div class="occupancy-filter-head">
+                        <div>
+                            <div class="eyebrow">BỘ LỌC</div>
+                            <h2>Điều kiện thống kê</h2>
+                            <p>
+                                Danh sách chuyến và số liệu ghế
+                                được lấy trực tiếp từ API.
+                            </p>
+                        </div>
+
+                        <button class="secondary-btn"
+                                id="resetFilterBtn"
+                                type="button">
+                            ↻ Đặt lại
+                        </button>
+                    </div>
+
+                    <div class="occupancy-filter-grid">
+                        <label class="occupancy-field">
+                            <span>Ngày khởi hành</span>
+                            <input id="departureDate" type="date">
+                        </label>
+
+                        <label class="occupancy-field occupancy-search-field">
+                            <span>Tìm chuyến / tuyến / điểm dừng</span>
+                            <input id="searchInput"
+                                   type="search"
+                                   placeholder="VD: TRIP-R01, Gia Lâm...">
+                        </label>
+
+                        <label class="occupancy-field">
+                            <span>Mức lấp đầy</span>
+                            <select id="rateFilter">
+                                <option value="all">Tất cả mức</option>
+                                <option value="low">Thấp (&lt; 40%)</option>
+                                <option value="medium">Trung bình (40–74,99%)</option>
+                                <option value="high">Cao (75–99,99%)</option>
+                                <option value="full">Hết chỗ</option>
+                                <option value="error">Không tải được số liệu</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="occupancy-filter-actions">
+                        <span id="loadSummary" aria-live="polite">
+                            Đang tải dữ liệu...
+                        </span>
+
+                        <div class="occupancy-action-buttons">
+                            <button class="secondary-btn"
+                                    id="refreshBtn"
+                                    type="button">
+                                ⟳ Làm mới
+                            </button>
+                            <button class="primary-btn"
+                                    id="applyFilterBtn"
+                                    type="button">
+                                Xem thống kê
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CÁC THẺ THỐNG KÊ -->
+                <div class="occupancy-kpis stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">▦</div>
+                        <div>
+                            <span>Chuyến đang hiển thị</span>
+                            <strong id="kpiTrips">—</strong>
+                            <small>Trong trang hiện tại sau lọc</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">▥</div>
+                        <div>
+                            <span>Tổng số ghế</span>
+                            <strong id="kpiTotalSeats">—</strong>
+                            <small>Ghế hoạt động của các chuyến</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">✓</div>
+                        <div>
+                            <span>Ghế đã đặt</span>
+                            <strong id="kpiBookedSeats">—</strong>
+                            <small>Vé hợp lệ và đặt đã xác nhận</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">◷</div>
+                        <div>
+                            <span>Ghế giữ tạm</span>
+                            <strong id="kpiHeldSeats">—</strong>
+                            <small>Chưa hết hạn</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon blue">＋</div>
+                        <div>
+                            <span>Ghế còn trống</span>
+                            <strong id="kpiAvailableSeats">—</strong>
+                            <small>Có thể tiếp tục bán</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">％</div>
+                        <div>
+                            <span>Tỷ lệ lấp đầy chung</span>
+                            <strong id="kpiOccupancyRate">—</strong>
+                            <small>Ghế đã đặt / tổng số ghế</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHÂN BỐ MỨC LẤP ĐẦY -->
+                <div class="page-card occupancy-distribution-card">
+                    <div class="card-head compact">
+                        <div>
+                            <div class="eyebrow">PHÂN BỐ CHUYẾN</div>
+                            <h2>Các mức tỷ lệ lấp đầy</h2>
+                            <p>Số chuyến thuộc từng mức trên trang hiện tại.</p>
+                        </div>
+                    </div>
+
+                    <div class="occupancy-distribution">
+                        <div class="distribution-item">
+                            <span class="distribution-dot low"></span>
+                            <div>
+                                <small>Lấp đầy thấp</small>
+                                <strong id="distLow">0 chuyến</strong>
+                            </div>
+                        </div>
+
+                        <div class="distribution-item">
+                            <span class="distribution-dot medium"></span>
+                            <div>
+                                <small>Lấp đầy trung bình</small>
+                                <strong id="distMedium">0 chuyến</strong>
+                            </div>
+                        </div>
+
+                        <div class="distribution-item">
+                            <span class="distribution-dot high"></span>
+                            <div>
+                                <small>Lấp đầy cao</small>
+                                <strong id="distHigh">0 chuyến</strong>
+                            </div>
+                        </div>
+
+                        <div class="distribution-item">
+                            <span class="distribution-dot full"></span>
+                            <div>
+                                <small>Hết chỗ</small>
+                                <strong id="distFull">0 chuyến</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BẢNG CHI TIẾT -->
+                <div class="page-card occupancy-table-card">
+                    <div class="card-head compact occupancy-table-head">
+                        <div>
+                            <div class="eyebrow">CHI TIẾT THEO CHUYẾN</div>
+                            <h2>Danh sách tỷ lệ lấp đầy</h2>
+                            <p id="tableCaption">
+                                Dữ liệu được tải trực tiếp từ API.
+                            </p>
+                        </div>
+
+                        <span class="data-source-pill">
+                            <span></span> Dữ liệu API
+                        </span>
+                    </div>
+
+                    <div id="errorBanner"
+                         class="occupancy-error-banner"
+                         hidden></div>
+
+                    <div class="table-wrap">
+                        <table class="occupancy-table">
+                            <thead>
+                                <tr>
+                                    <th>Chuyến xe</th>
+                                    <th>Hành trình</th>
+                                    <th>Khởi hành</th>
+                                    <th>Tổng ghế</th>
+                                    <th>Đã đặt</th>
+                                    <th>Giữ tạm</th>
+                                    <th>Còn trống</th>
+                                    <th>Tỷ lệ lấp đầy</th>
+                                    <th>Trạng thái</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="occupancyTableBody">
+                                <tr>
+                                    <td colspan="10">
+                                        <div class="table-message">
+                                            Đang tải dữ liệu chuyến xe...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="occupancy-pagination">
+                        <span id="paginationInfo">Trang 1</span>
+                        <div>
+                            <button class="secondary-btn"
+                                    id="prevPageBtn"
+                                    type="button"
+                                    disabled>
+                                ← Trước
+                            </button>
+                            <button class="secondary-btn"
+                                    id="nextPageBtn"
+                                    type="button"
+                                    disabled>
+                                Tiếp →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+</body>
+</html>

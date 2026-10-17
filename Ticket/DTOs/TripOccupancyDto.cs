@@ -9,13 +9,13 @@
         // Tổng số ghế của chuyến
         public int TotalSeats { get; set; }
 
-        // Số ghế đã được đặt (vé VALID hoặc USED)
+        // Số ghế đã xác nhận, đếm theo mã ghế duy nhất.
         public int BookedSeats { get; set; }
 
-        // Số ghế đang được giữ tạm (chưa thanh toán)
+        // Số ghế giữ tạm còn hạn, không trùng ghế đã đặt.
         public int HeldSeats { get; set; }
 
-        // Số ghế còn trống có thể bán
+        // Số ghế còn trống có thể bán.
         public int AvailableSeats { get; set; }
 
         // Tỷ lệ lấp đầy tính theo % (đã làm tròn 2 chữ số)

@@ -39,11 +39,10 @@ const resultCount =
 const loginBtn =
     document.getElementById("loginBtn");
 
-
 let locations = [];
-
 let currentTripsData = [];
-
+let currentPage = 1;
+let lastFilteredTrips = [];
 
 // =========================================================
 // DATE
@@ -246,6 +245,23 @@ function formatDateTime(
                 false
         }
     );
+}
+
+
+function formatTripDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "—";
+    }
+
+    return date.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    });
 }
 
 
@@ -586,326 +602,344 @@ if (
 // RENDER TRIPS
 // =========================================================
 
-function renderTrips(
-    list
-) {
 
-    if (
-        !tripList ||
-        !resultCount
-    ) {
+
+function renderTrips(list) {
+    if (!tripList || !resultCount) return;
+
+    lastFilteredTrips = Array.isArray(list) ? list : [];
+
+    const pageSize = Math.max(
+        1,
+        Number(
+            document.getElementById("pageSizeSelect")?.value || 6
+        )
+    );
+
+    const totalItems = lastFilteredTrips.length;
+    const totalPages = Math.max(
+        1,
+        Math.ceil(totalItems / pageSize)
+    );
+
+    currentPage = Math.min(
+        Math.max(1, currentPage),
+        totalPages
+    );
+
+    resultCount.textContent = `${totalItems} chuyến`;
+
+    if (totalItems === 0) {
+        const hasData = currentTripsData.length > 0;
+
+        tripList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">
+                    ${hasData ? "🔎" : "🚌"}
+                </div>
+
+                <h3>
+                    ${hasData
+                ? "Không có chuyến phù hợp với bộ lọc"
+                : "Hiện chưa có chuyến phù hợp"}
+                </h3>
+
+                <p>
+                    ${hasData
+                ? "Hãy thay đổi bộ lọc giờ khởi hành, giá vé hoặc trạng thái."
+                : "Vui lòng thử lại sau hoặc thay đổi điều kiện tìm kiếm."}
+                </p>
+
+                <button type="button"
+                        class="reset-filter-btn"
+                        id="emptyResetFilters">
+                    Xóa bộ lọc
+                </button>
+            </div>`;
+
+        renderPagination(0, pageSize);
+
+        document.getElementById("emptyResetFilters")
+            ?.addEventListener("click", resetTripFilters);
 
         return;
     }
 
+    const startIndex = (currentPage - 1) * pageSize;
 
-    resultCount.textContent =
-        `${list.length} chuyến`;
+    const pageItems = lastFilteredTrips.slice(
+        startIndex,
+        startIndex + pageSize
+    );
 
+    tripList.innerHTML = pageItems.map(trip => {
+        const status = getEffectiveTripStatus(trip);
 
-    if (!list.length) {
+        const statusInfo = {
+            ACTIVE: {
+                label: "Còn chỗ",
+                className: "status-active"
+            },
+            DEPARTING_SOON: {
+                label: "Sắp khởi hành",
+                className: "status-soon"
+            },
+            SOLD_OUT: {
+                label: "Hết chỗ",
+                className: "status-sold-out"
+            },
+            UNAVAILABLE: {
+                label: "Không khả dụng",
+                className: "status-unavailable"
+            }
+        }[status];
 
-        tripList.innerHTML =
-            `
-                <div class="empty-state">
+        const availableSeats = Number(
+            trip.availableSeats ?? trip.seats ?? 0
+        );
 
-                    <div class="empty-icon">
-                        🚌
+        const totalSeats = Number(trip.totalSeats ?? 0);
+
+        const tripCode =
+            trip.tripCode || `TRIP-${trip.tripId}`;
+
+        const disabled =
+            status === "SOLD_OUT" ||
+            status === "UNAVAILABLE";
+
+        return `
+            <article class="trip-card">
+                <div class="trip-head">
+                    <div class="operator">
+                        <div class="operator-icon">🚌</div>
+
+                        <div>
+                            <strong>
+                                ${escapeHtml(trip.routeName || "Tuyến xe")}
+                            </strong>
+
+                            <small>
+                                Mã chuyến:
+                                ${escapeHtml(tripCode)}
+                            </small>
+                        </div>
                     </div>
 
-                    <h3>
-                        Không tìm thấy chuyến phù hợp
-                    </h3>
-
-                    <p>
-                        Không có chuyến phù hợp với
-                        <b>
-                            ${escapeHtml(
-                fromInput?.value ||
-                ""
-            )}
-                        </b>
-                        →
-                        <b>
-                            ${escapeHtml(
-                toInput?.value ||
-                ""
-            )}
-                        </b>
-                        vào ngày
-                        <b>
-                            ${formatDate(
-                departureInput?.value
-            )}
-                        </b>.
-                    </p>
-
+                    <span class="trip-status ${statusInfo.className}">
+                        ${statusInfo.label}
+                    </span>
                 </div>
-            `;
 
+                <div class="trip-route">
+                    <div class="time">
+                        <strong>
+                            ${formatDateTime(trip.departureDateTime)}
+                        </strong>
+
+                        <small>
+                            ${formatTripDate(trip.departureDateTime)}
+                        </small>
+
+                        <small>
+                            ${escapeHtml(trip.originStopName || "")}
+                        </small>
+                    </div>
+
+                    <div class="route-line">
+                        <span class="route-arrow">→</span>
+
+                        <small>
+                            ${formatDuration(trip.durationMinutes)}
+                        </small>
+
+                        <span class="route-arrow">→</span>
+                    </div>
+
+                    <div class="time">
+                        <strong>
+                            ${formatDateTime(trip.arrivalDateTime)}
+                        </strong>
+
+                        <small>
+                            ${formatTripDate(trip.arrivalDateTime)}
+                        </small>
+
+                        <small>
+                            ${escapeHtml(trip.destinationStopName || "")}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="trip-bottom">
+                    <div class="trip-meta">
+                        <span>
+                            ▣ Cự ly:
+                            ${Number(trip.distanceKm ?? 0).toFixed(1)} km
+                        </span>
+
+                        <span>
+                            ⏱ ${formatDuration(trip.durationMinutes)}
+                        </span>
+
+                        <span>
+                            💺 Còn ${availableSeats}/${totalSeats} ghế
+                        </span>
+                    </div>
+
+                    <div>
+                        <span class="trip-price">
+                            ${formatMoney(trip.fare)}
+                        </span>
+
+                        <button
+                            class="select-trip-btn"
+                            data-trip-id="${trip.tripId}"
+                            data-trip-code="${escapeHtml(tripCode)}"
+                            ${disabled ? "disabled" : ""}>
+                            ${disabled
+                ? (status === "SOLD_OUT"
+                    ? "Đã hết chỗ"
+                    : "Không khả dụng")
+                : "Chi tiết chuyến"}
+                        </button>
+                    </div>
+                </div>
+            </article>`;
+    }).join("");
+
+    // Nối sang bước chọn ghế.
+    document.querySelectorAll(
+        "#tripList .select-trip-btn:not(:disabled)"
+    ).forEach(button => {
+        button.addEventListener("click", () => {
+            const tripId = button.dataset.tripId;
+            const tripCode = button.dataset.tripCode;
+
+            const trip = currentTripsData.find(
+                item => String(item.tripId) === String(tripId)
+            );
+
+            const from = encodeURIComponent(
+                fromInput?.value.trim() ||
+                trip?.originStopName ||
+                ""
+            );
+
+            const to = encodeURIComponent(
+                toInput?.value.trim() ||
+                trip?.destinationStopName ||
+                ""
+            );
+
+            const date = trip?.departureDateTime
+                ? String(trip.departureDateTime).slice(0, 10)
+                : (departureInput?.value || todayString);
+
+            window.location.href =
+                `/chon-ghe/index.html?tripId=${encodeURIComponent(tripId)}` +
+                `&tripCode=${encodeURIComponent(tripCode)}` +
+                `&from=${from}&to=${to}` +
+                `&date=${encodeURIComponent(date)}`;
+        });
+    });
+
+    renderPagination(totalItems, pageSize);
+}
+
+function renderPagination(totalItems, pageSize) {
+    const container = document.getElementById("tripPagination");
+    if (!container) return;
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(totalItems / pageSize)
+    );
+
+    if (totalItems === 0) {
+        container.innerHTML = "";
         return;
     }
 
-
-    tripList.innerHTML =
-        list
-            .map(
-                trip => {
-
-                    const active =
-                        trip.isActive !== false;
-
-
-                    return `
-                        <article
-                            class="trip-card">
-
-                            <div
-                                class="trip-head">
-
-                                <div
-                                    class="operator">
-
-                                    <div
-                                        class="operator-icon">
-                                        🚌
-                                    </div>
-
-                                    <div>
-
-                                        <strong>
-                                            ${escapeHtml(
-                        trip.routeName ||
-                        ""
-                    )}
-                                        </strong>
-
-                                        <small>
-                                            Mã chuyến:
-                                            ${escapeHtml(
-                        trip.tripCode ||
-                        `TRIP-${trip.tripId}`
-                    )}
-                                        </small>
-
-                                    </div>
-
-                                </div>
-
-                                <span
-                                    class="trip-status"
-                                    style="
-                                    background:#e8f8f0;
-                                    color:#27ae60;
-                                    ">
-
-                                    ${active
-                            ? "Đang hoạt động"
-                            : "Ngừng hoạt động"
-                        }
-
-                                </span>
-
-                            </div>
-
-
-                            <div
-                                class="trip-route">
-
-                                <div
-                                    class="time">
-
-                                    <strong>
-                                        ${formatDateTime(
-                            trip.departureDateTime
-                        )
-                        }
-                                    </strong>
-
-                                    <small>
-                                        ${escapeHtml(
-                            trip.originStopName
-                        )
-                        }
-                                    </small>
-
-                                </div>
-
-
-                                <div
-                                    class="route-line">
-
-                                    <span
-                                        class="route-arrow">
-                                        →
-                                    </span>
-
-                                    <small>
-                                        ${formatDuration(
-                            trip.durationMinutes
-                        )
-                        }
-                                    </small>
-
-                                    <span
-                                        class="route-arrow">
-                                        →
-                                    </span>
-
-                                </div>
-
-
-                                <div
-                                    class="time">
-
-                                    <strong>
-                                        ${formatDateTime(
-                            trip.arrivalDateTime
-                        )
-                        }
-                                    </strong>
-
-                                    <small>
-                                        ${escapeHtml(
-                            trip.destinationStopName
-                        )
-                        }
-                                    </small>
-
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="trip-bottom">
-
-                                <div
-                                    class="trip-meta">
-
-                                    <span>
-                                        ✓ Lộ trình đúng chiều
-                                    </span>
-
-                                    <span>
-                                        ▣ Cự ly:
-                                        ${Number(
-                            trip.distanceKm ||
-                            0
-                        ).toFixed(1)
-                        }
-                                        km
-                                    </span>
-
-                                    <span>
-                                        ⏱
-                                        ${formatDuration(
-                            trip.durationMinutes
-                        )
-                        }
-                                    </span>
-
-                                    <span>
-                                        💺 Còn
-                                        ${Number(
-                            trip.availableSeats ||
-                            0
-                        )
-                        }
-                                        chỗ
-                                    </span>
-
-                                </div>
-
-
-                                <div>
-
-                                    <span
-                                        class="trip-price">
-
-                                        ${formatMoney(
-                            trip.fare
-                        )
-                        }
-
-                                    </span>
-
-                                    <button
-                                        class="select-trip-btn"
-                                        data-trip-id="${trip.tripId
-                        }"
-                                        data-trip-code="${trip.tripCode ||
-                        `TRIP-${trip.tripId}`
-                        }">
-
-                                        Chi tiết chuyến
-
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        </article>
-                    `;
-                }
-            )
-            .join("");
-
-
-    document
-        .querySelectorAll(
-            ".select-trip-btn"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        const tripId =
-                            button.dataset
-                                .tripId;
-
-
-                        const tripCode =
-                            button.dataset
-                                .tripCode;
-
-
-                        const from =
-                            encodeURIComponent(
-                                fromInput?.value ||
-                                ""
-                            );
-
-
-                        const to =
-                            encodeURIComponent(
-                                toInput?.value ||
-                                ""
-                            );
-
-
-                        const date =
-                            departureInput
-                                ?.value ||
-                            todayString;
-
-
-                        window.location.href =
-                            `/chon-ghe/index.html?tripId=${encodeURIComponent(
-                                tripId
-                            )}&tripCode=${encodeURIComponent(
-                                tripCode
-                            )}&from=${from}&to=${to}&date=${date}`;
-                    }
-                );
+    const firstItem = (currentPage - 1) * pageSize + 1;
+    const lastItem = Math.min(
+        currentPage * pageSize,
+        totalItems
+    );
+
+    let buttonsHtml = `
+        <button
+            class="pagination-btn"
+            data-page="${currentPage - 1}"
+            ${currentPage === 1 ? "disabled" : ""}>
+            ‹ Trước
+        </button>`;
+
+    // Giới hạn số nút trang hiển thị để giao diện gọn.
+    const windowSize = 7;
+
+    let startPage = Math.max(1, currentPage - 3);
+    let endPage = Math.min(
+        totalPages,
+        startPage + windowSize - 1
+    );
+
+    startPage = Math.max(
+        1,
+        endPage - windowSize + 1
+    );
+
+    for (let page = startPage; page <= endPage; page++) {
+        buttonsHtml += `
+            <button
+                class="pagination-btn ${page === currentPage ? "active" : ""}"
+                data-page="${page}"
+                ${page === currentPage
+                ? 'aria-current="page"'
+                : ""}>
+                ${page}
+            </button>`;
+    }
+
+    buttonsHtml += `
+        <button
+            class="pagination-btn"
+            data-page="${currentPage + 1}"
+            ${currentPage === totalPages ? "disabled" : ""}>
+            Sau ›
+        </button>`;
+
+    container.innerHTML = `
+        <span class="pagination-info">
+            Hiển thị ${firstItem}–${lastItem} trong ${totalItems} chuyến
+        </span>
+
+        <div class="pagination-buttons">
+            ${buttonsHtml}
+        </div>`;
+
+    container.querySelectorAll("[data-page]").forEach(button => {
+        button.addEventListener("click", () => {
+            const nextPage = Number(button.dataset.page);
+
+            if (
+                nextPage < 1 ||
+                nextPage > totalPages ||
+                nextPage === currentPage
+            ) {
+                return;
             }
-        );
-}
 
+            currentPage = nextPage;
+            renderTrips(lastFilteredTrips);
+
+            document.getElementById("resultsSection")
+                ?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+        });
+    });
+}
 
 // =========================================================
 // FILTER
@@ -948,380 +982,399 @@ function getTimeCategory(
 }
 
 
-function getFilteredTrips() {
+function getEffectiveTripStatus(trip) {
+    const originalStatus = String(
+        trip.status || "ACTIVE"
+    ).toUpperCase();
 
-    const timeRadio =
-        document.querySelector(
-            'input[name="timeFilter"]:checked'
-        );
-
-
-    const priceRadio =
-        document.querySelector(
-            'input[name="priceFilter"]:checked'
-        );
-
-
-    const time =
-        timeRadio
-            ? timeRadio.value
-            : "all";
-
-
-    const price =
-        priceRadio
-            ? priceRadio.value
-            : "all";
-
-
-    return currentTripsData.filter(
-        trip => {
-
-            const timeOk =
-                time === "all" ||
-                trip.timeCategory ===
-                time;
-
-
-            const priceOk =
-                price ===
-                "all" ||
-
-                (
-                    price ===
-                    "low" &&
-                    trip.fare <
-                    100000
-                ) ||
-
-                (
-                    price ===
-                    "mid" &&
-                    trip.fare >=
-                    100000 &&
-                    trip.fare <=
-                    150000
-                ) ||
-
-                (
-                    price ===
-                    "high" &&
-                    trip.fare >
-                    150000
-                );
-
-
-            return (
-                timeOk &&
-                priceOk
-            );
-        }
+    const availableSeats = Number(
+        trip.availableSeats ?? trip.seats ?? 0
     );
+
+    if (
+        trip.isActive === false ||
+        originalStatus === "INACTIVE" ||
+        originalStatus === "CANCELLED"
+    ) {
+        return "UNAVAILABLE";
+    }
+
+    if (
+        availableSeats <= 0 ||
+        originalStatus === "SOLD_OUT"
+    ) {
+        return "SOLD_OUT";
+    }
+
+    if (originalStatus === "DEPARTING_SOON") {
+        return "DEPARTING_SOON";
+    }
+
+    return "ACTIVE";
 }
 
+function getFilteredTrips() {
+    const timeValue =
+        document.querySelector(
+            'input[name="timeFilter"]:checked'
+        )?.value || "all";
+
+    const priceValue =
+        document.querySelector(
+            'input[name="priceFilter"]:checked'
+        )?.value || "all";
+
+    const statusValue =
+        document.querySelector(
+            'input[name="statusFilter"]:checked'
+        )?.value || "all";
+
+    const sortValue =
+        document.getElementById("sortTrips")?.value ||
+        "time-asc";
+
+    const filtered = currentTripsData.filter(trip => {
+        const departureTime =
+            trip.depart ||
+            (
+                trip.departureDateTime
+                    ? new Date(
+                        trip.departureDateTime
+                    ).toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false
+                    })
+                    : ""
+            );
+
+        const timeCategory = getTimeCategory(departureTime);
+        const status = getEffectiveTripStatus(trip);
+        const fare = Number(trip.fare ?? trip.price ?? 0);
+
+        const timeMatches =
+            timeValue === "all" ||
+            timeCategory === timeValue;
+
+        let priceMatches = true;
+
+        if (priceValue === "low") {
+            priceMatches = fare < 100000;
+        } else if (priceValue === "mid") {
+            priceMatches = fare >= 100000 && fare <= 150000;
+        } else if (priceValue === "high") {
+            priceMatches = fare > 150000;
+        }
+
+        const statusMatches =
+            statusValue === "all" ||
+            status === statusValue;
+
+        return timeMatches && priceMatches && statusMatches;
+    });
+
+    // Sắp xếp kết quả đã lọc.
+    filtered.sort((a, b) => {
+        const timeA = new Date(
+            a.departureDateTime || 0
+        ).getTime();
+
+        const timeB = new Date(
+            b.departureDateTime || 0
+        ).getTime();
+
+        const fareA = Number(a.fare ?? a.price ?? 0);
+        const fareB = Number(b.fare ?? b.price ?? 0);
+
+        const durationA = Number(a.durationMinutes ?? 0);
+        const durationB = Number(b.durationMinutes ?? 0);
+
+        switch (sortValue) {
+            case "time-desc":
+                return timeB - timeA;
+
+            case "price-asc":
+                return fareA - fareB;
+
+            case "price-desc":
+                return fareB - fareA;
+
+            case "duration-asc":
+                return durationA - durationB;
+
+            default:
+                return timeA - timeB;
+        }
+    });
+
+    return filtered;
+}
 
 // =========================================================
 // SEARCH
 // =========================================================
 
-async function executeSearch() {
 
-    const from =
-        fromInput
-            ? fromInput.value.trim()
-            : "";
+async function executeSearch(options = {}) {
+    const initialLoad = options.initialLoad === true;
 
+    const from = fromInput?.value.trim() || "";
+    const to = toInput?.value.trim() || "";
+    const departure = departureInput?.value || "";
+    const departureTime = departureTimeInput?.value || "";
 
-    const to =
-        toInput
-            ? toInput.value.trim()
-            : "";
-
-
-    const departure =
-        departureInput
-            ? departureInput.value
-            : "";
-
-
-    const departureTime =
-        departureTimeInput
-            ? departureTimeInput.value
-            : "";
-
-
-    if (!from || !to) {
-
-        if (formMessage) {
-
-            formMessage.style.color =
-                "#e25858";
-
-            formMessage.textContent =
-                "Vui lòng chọn nơi xuất phát và nơi đến.";
+    // Khi người dùng chủ động tìm kiếm, yêu cầu nhập đủ thông tin.
+    // Khi trang vừa mở, cho phép tải danh sách chuyến sắp tới.
+    if (!initialLoad) {
+        if (!from || !to) {
+            if (formMessage) {
+                formMessage.style.color = "#e25858";
+                formMessage.textContent =
+                    "Vui lòng chọn nơi xuất phát và nơi đến.";
+            }
+            return;
         }
 
-        return;
-    }
-
-
-    if (!departure) {
-
-        if (formMessage) {
-
-            formMessage.style.color =
-                "#e25858";
-
-            formMessage.textContent =
-                "Vui lòng chọn ngày đi.";
+        if (!departure) {
+            if (formMessage) {
+                formMessage.style.color = "#e25858";
+                formMessage.textContent = "Vui lòng chọn ngày đi.";
+            }
+            return;
         }
 
-        return;
+        if (departure < todayString) {
+            if (formMessage) {
+                formMessage.style.color = "#e25858";
+                formMessage.textContent =
+                    "Ngày đi không được ở trong quá khứ.";
+            }
+            return;
+        }
     }
-
 
     if (formMessage) {
-
-        formMessage.style.color =
-            "#1685e8";
-
-        formMessage.textContent =
-            "Đang tìm chuyến từ cơ sở dữ liệu...";
+        formMessage.style.color = "#1685e8";
+        formMessage.textContent = initialLoad
+            ? "Đang tải danh sách chuyến đã lên lịch..."
+            : "Đang tìm chuyến từ cơ sở dữ liệu...";
     }
 
+    if (tripList) {
+        tripList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🚌</div>
+                <h3>Đang tải chuyến xe...</h3>
+                <p>Vui lòng chờ trong giây lát.</p>
+            </div>`;
+    }
+
+    if (resultCount) {
+        resultCount.textContent = "Đang tải...";
+    }
 
     try {
+        // API danh sách chấp nhận các tham số tùy chọn.
+        // Không gửi ngày mặc định khi mới mở trang để có thể
+        // tải danh sách chuyến tương lai ở nhiều ngày khác nhau.
+        const params = new URLSearchParams();
 
-        const params =
-            new URLSearchParams();
+        if (from) {
+            params.set("diemDi", from);
+        }
 
+        if (to) {
+            params.set("diemDen", to);
+        }
 
-        params.set(
-            "diemDi",
-            from
-        );
-
-
-        params.set(
-            "diemDen",
-            to
-        );
-
-
-        params.set(
-            "ngay",
-            departure
-        );
-
+        if (!initialLoad && departure) {
+            params.set("ngay", departure);
+        }
 
         if (departureTime) {
-
-            params.set(
-                "gio",
-                departureTime
-            );
+            params.set("gioMin", departureTime);
         }
 
+        params.set("sortBy", "time");
+        params.set("sortOrder", "asc");
+        params.set("pageSize", "100");
 
-        const response =
-            await fetch(
-                `/api/TraCuuTuyenXe/theo-diem?${params.toString()}`
+        async function fetchTripPage(pageNumber) {
+            const pageParams = new URLSearchParams(params);
+            pageParams.set("page", String(pageNumber));
+
+            const response = await fetch(
+                `/api/TraCuuTuyenXe/danh-sach?${pageParams.toString()}`
             );
 
+            const data = await response.json().catch(() => null);
 
-        const data =
-            await response
-                .json()
-                .catch(
-                    () => []
+            if (!response.ok) {
+                throw new Error(
+                    data?.message ||
+                    `Không thể tải danh sách chuyến (HTTP ${response.status}).`
                 );
+            }
 
+            if (!data || !Array.isArray(data.items)) {
+                throw new Error(
+                    "Dữ liệu API không đúng định dạng danh sách chuyến."
+                );
+            }
 
-        if (!response.ok) {
-
-            throw new Error(
-                data?.message ||
-                "Không thể tra cứu chuyến."
-            );
+            return data;
         }
 
+        // Đọc trang đầu tiên
+        const firstPage = await fetchTripPage(1);
 
-        currentTripsData =
-            (
-                Array.isArray(data)
-                    ? data
-                    : []
-            )
-                .map(
-                    item => {
+        let allItems = [...firstPage.items];
 
-                        const departTime =
-                            item.departureDateTime
-                                ? new Date(
-                                    item.departureDateTime
-                                )
-                                    .toTimeString()
-                                    .slice(0, 5)
-                                : "";
-
-
-                        return {
-
-                            tripId:
-                                item.tripId,
-
-                            tripCode:
-                                item.tripCode ||
-                                `TRIP-${item.tripId}`,
-
-                            routeCode:
-                                item.routeCode ||
-                                "",
-
-                            routeName:
-                                item.routeName ||
-                                "",
-
-                            from:
-                                item.originStopName ||
-                                from,
-
-                            to:
-                                item.destinationStopName ||
-                                to,
-
-                            departureDateTime:
-                                item.departureDateTime,
-
-                            arrivalDateTime:
-                                item.arrivalDateTime,
-
-                            depart:
-                                departTime,
-
-                            arrive:
-                                item.arrivalDateTime
-                                    ? new Date(
-                                        item.arrivalDateTime
-                                    )
-                                        .toTimeString()
-                                        .slice(
-                                            0,
-                                            5
-                                        )
-                                    : "",
-
-                            fare:
-                                Number(
-                                    item.fare
-                                ) || 0,
-
-                            price:
-                                Number(
-                                    item.fare
-                                ) || 0,
-
-                            distance:
-                                Number(
-                                    item.distanceKm
-                                ) || 0,
-
-                            durationMinutes:
-                                Number(
-                                    item.durationMinutes
-                                ) || 0,
-
-                            seats:
-                                Number(
-                                    item.availableSeats
-                                ) || 0,
-
-                            availableSeats:
-                                Number(
-                                    item.availableSeats
-                                ) || 0,
-
-                            timeCategory:
-                                getTimeCategory(
-                                    departTime
-                                ),
-
-                            isActive:
-                                item.isActive !==
-                                false
-                        };
-                    }
-                );
-
-    }
-    catch (error) {
-
-        console.error(
-            error
+        const totalPages = Math.max(
+            1,
+            Number(firstPage.totalPages) || 1
         );
 
-        currentTripsData =
-            [];
+        // Nếu API chia thành nhiều trang, tiếp tục tải các trang còn lại.
+        for (let page = 2; page <= totalPages; page++) {
+            const pageData = await fetchTripPage(page);
+            allItems.push(...pageData.items);
+        }
 
+        // Chuyển dữ liệu DTO sang cấu trúc mà giao diện sử dụng.
+        currentTripsData = allItems.map(item => {
+            const status = String(
+                item.status || "ACTIVE"
+            ).toUpperCase();
+
+            const departureDate = item.departureDateTime
+                ? new Date(item.departureDateTime)
+                : null;
+
+            const arrivalDate = item.arrivalDateTime
+                ? new Date(item.arrivalDateTime)
+                : null;
+
+            const departTime =
+                departureDate &&
+                    !Number.isNaN(departureDate.getTime())
+                    ? departureDate.toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false
+                    })
+                    : "";
+
+            const arriveTime =
+                arrivalDate &&
+                    !Number.isNaN(arrivalDate.getTime())
+                    ? arrivalDate.toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false
+                    })
+                    : "";
+
+            return {
+                tripId: item.tripId,
+                tripCode: item.tripCode || `TRIP-${item.tripId}`,
+
+                routeCode: item.routeCode || "",
+                routeName: item.routeName || "",
+
+                originStopName: item.originStopName || "",
+                destinationStopName: item.destinationStopName || "",
+
+                departureDateTime: item.departureDateTime,
+                arrivalDateTime: item.arrivalDateTime,
+
+                depart: departTime,
+                arrive: arriveTime,
+
+                fare: Number(item.fare ?? 0),
+                price: Number(item.fare ?? 0),
+
+                distanceKm: Number(item.distanceKm ?? 0),
+                durationMinutes: Number(item.durationMinutes ?? 0),
+
+                totalSeats: Number(item.totalSeats ?? 0),
+                availableSeats: Number(item.availableSeats ?? 0),
+                seats: Number(item.availableSeats ?? 0),
+
+                status: status,
+                minutesUntilDeparture:
+                    Number(item.minutesUntilDeparture ?? 0),
+
+                stopCount: Number(item.stopCount ?? 0),
+
+                timeCategory: getTimeCategory(departTime),
+
+                isActive:
+                    status !== "INACTIVE" &&
+                    status !== "CANCELLED"
+            };
+        });
+
+        // Tóm tắt khu vực kết quả
+        if (resultSummary) {
+            if (initialLoad && !from && !to) {
+                resultSummary.textContent =
+                    "Danh sách các chuyến đã lên lịch sắp tới";
+            } else {
+                resultSummary.textContent =
+                    `${from || "Mọi điểm đi"} → ${to || "Mọi điểm đến"}` +
+                    (departure
+                        ? ` | Ngày ${formatDate(departure)}`
+                        : " | Các ngày sắp tới") +
+                    (departureTime
+                        ? ` | Từ ${departureTime}`
+                        : "");
+            }
+        }
+
+        // Áp dụng các bộ lọc giờ đi và giá đang có trên giao diện.
+        renderTrips(getFilteredTrips());
 
         if (formMessage) {
+            formMessage.textContent = "";
+        }
 
-            formMessage.style.color =
-                "#e25858";
+    } catch (error) {
+        console.error("Lỗi tải danh sách chuyến:", error);
 
+        currentTripsData = [];
+
+        if (formMessage) {
+            formMessage.style.color = "#e25858";
             formMessage.textContent =
-                error.message ||
-                "Không thể kết nối hệ thống.";
+                error.message || "Không thể kết nối hệ thống.";
+        }
+
+        if (resultCount) {
+            resultCount.textContent = "Lỗi tải dữ liệu";
+        }
+
+        if (tripList) {
+            tripList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    <h3>Không thể tải danh sách chuyến</h3>
+                    <p>
+                        Hãy kiểm tra kết nối và thử tìm kiếm lại.
+                    </p>
+                </div>`;
         }
     }
 
-
-    if (resultSummary) {
-
-        resultSummary.textContent =
-            `${from} → ${to} | Ngày ${formatDate(
-                departure
-            )}${departureTime
-                ? ` | Từ ${departureTime}`
-                : ""
-            }`;
-    }
-
-
-    const filtered =
-        getFilteredTrips();
-
-
-    renderTrips(
-        filtered
-    );
-
-
-    if (formMessage &&
-        currentTripsData.length) {
-
-        formMessage.textContent =
-            "";
-    }
-
-
-    const resultsSection =
-        document.getElementById(
-            "resultsSection"
-        );
-
+    const resultsSection = document.getElementById("resultsSection");
 
     if (resultsSection) {
-
-        resultsSection.scrollIntoView(
-            {
-                behavior:
-                    "smooth"
-            }
-        );
+        resultsSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
     }
 }
-
 
 // =========================================================
 // ESCAPE
@@ -1375,25 +1428,60 @@ if (searchBtn) {
 }
 
 
-document
-    .querySelectorAll(
-        'input[name="timeFilter"], input[name="priceFilter"]'
-    )
-    .forEach(
-        input => {
 
-            input.addEventListener(
-                "change",
-                () => {
+function resetTripFilters() {
+    document.querySelector(
+        'input[name="timeFilter"][value="all"]'
+    )?.click();
 
-                    renderTrips(
-                        getFilteredTrips()
-                    );
-                }
-            );
-        }
-    );
+    document.querySelector(
+        'input[name="priceFilter"][value="all"]'
+    )?.click();
 
+    document.querySelector(
+        'input[name="statusFilter"][value="all"]'
+    )?.click();
+
+    const sortSelect = document.getElementById("sortTrips");
+    const pageSizeSelect = document.getElementById("pageSizeSelect");
+
+    if (sortSelect) {
+        sortSelect.value = "time-asc";
+    }
+
+    if (pageSizeSelect) {
+        pageSizeSelect.value = "6";
+    }
+
+    currentPage = 1;
+    renderTrips(getFilteredTrips());
+}
+
+document.querySelectorAll(
+    'input[name="timeFilter"], ' +
+    'input[name="priceFilter"], ' +
+    'input[name="statusFilter"]'
+).forEach(input => {
+    input.addEventListener("change", () => {
+        currentPage = 1;
+        renderTrips(getFilteredTrips());
+    });
+});
+
+document.getElementById("sortTrips")
+    ?.addEventListener("change", () => {
+        currentPage = 1;
+        renderTrips(getFilteredTrips());
+    });
+
+document.getElementById("pageSizeSelect")
+    ?.addEventListener("change", () => {
+        currentPage = 1;
+        renderTrips(getFilteredTrips());
+    });
+
+document.getElementById("resetTripFilters")
+    ?.addEventListener("click", resetTripFilters);
 
 [
     fromInput,
@@ -1519,14 +1607,16 @@ window.addEventListener(
         }
 
 
-        if (
-            fromParam &&
-            toParam &&
-            departureParam
-        ) {
-
+        if (fromParam && toParam && departureParam) {
+            // Khi người dùng đến từ biểu mẫu tìm kiếm,
+            // sử dụng đầy đủ các điều kiện trên URL.
             executeSearch();
+        } else {
+            // Khi người dùng mở trực tiếp trang Tra cứu chuyến,
+            // tự tải danh sách các chuyến đã lên lịch sắp tới.
+            executeSearch({ initialLoad: true });
         }
+
 
 
         // =====================================================

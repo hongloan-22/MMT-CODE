@@ -1253,79 +1253,88 @@ function initLogout() {
 // =========================================================
 
 function loadCurrentUserInfo() {
+    const user = getCurrentUser();
 
-    const user =
-        getCurrentUser();
-
-    if (!user)
-        return;
-
+    if (!user) return;
 
     const fullName =
         user.fullName ||
-        "Admin";
+        user.FullName ||
+        user.name ||
+        "Người dùng";
 
-
-    const initials =
-        fullName
-            .split(" ")
-            .filter(Boolean)
-            .map(
-                word =>
-                    word[0]
-            )
-            .join("")
-            .slice(0, 2)
-            .toUpperCase();
-
-
-    const roleName =
-        user.roleName ||
+    const role = String(
         user.role ||
-        "Quản trị hệ thống";
+        user.Role ||
+        user.roleCode ||
+        user.RoleCode ||
+        user.roleName ||
+        user.RoleName ||
+        ""
+    ).trim().toUpperCase();
 
+    const roleId = Number(
+        user.roleId || user.RoleId || 0
+    );
 
-    if ($("sidebarUserName")) {
+    let roleText =
+        user.roleName ||
+        user.RoleName ||
+        "";
 
-        $("sidebarUserName")
-            .textContent =
-            fullName;
+    if (
+        role.includes("ADMIN") ||
+        role.includes("QUẢN TRỊ") ||
+        roleId === 1
+    ) {
+        roleText = "Quản trị hệ thống";
+    } else if (
+        role.includes("MANAGER") ||
+        role.includes("QUẢN LÝ") ||
+        roleId === 2
+    ) {
+        roleText = "Quản lý vận hành";
+    } else if (role.includes("DRIVER")) {
+        roleText = "Tài xế";
+    } else if (role.includes("PASSENGER")) {
+        roleText = "Hành khách";
+    } else if (!roleText) {
+        roleText = "Người dùng";
     }
 
+    const parts = fullName.trim().split(/\s+/);
 
-    if ($("sidebarUserRole")) {
+    const initials = parts.length > 1
+        ? (parts[0][0] + parts[parts.length - 1][0])
+            .toUpperCase()
+        : fullName.substring(0, 2).toUpperCase();
 
-        $("sidebarUserRole")
-            .textContent =
-            roleName;
+    const sidebarName = $("sidebarUserName");
+    const sidebarRole = $("sidebarUserRole");
+    const sidebarAvatar = $("sidebarAvatar");
+    const topAvatar = $("topAvatar");
+    const topUserRole = $("topUserRole");
+
+    if (sidebarName) {
+        sidebarName.textContent = fullName;
     }
 
-
-    if ($("sidebarAvatar")) {
-
-        $("sidebarAvatar")
-            .textContent =
-            initials;
+    if (sidebarRole) {
+        sidebarRole.textContent = roleText;
     }
 
-
-    if ($("topAvatar")) {
-
-        $("topAvatar")
-            .textContent =
-            initials;
+    if (sidebarAvatar) {
+        sidebarAvatar.textContent = initials;
     }
 
-
-    if ($("topUserRole")) {
-
-        $("topUserRole")
-            .textContent =
-            roleName;
+    if (topAvatar) {
+        topAvatar.textContent = initials;
     }
 
+    if (topUserRole) {
+        topUserRole.textContent = roleText;
+    }
 }
-
 
 // =========================================================
 // INITIALIZE

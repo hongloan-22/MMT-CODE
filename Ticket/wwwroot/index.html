@@ -8,28 +8,25 @@
 </head>
 <body>
     <!-- Thanh điều hướng -->
-    <header class="navbar">
-        <div class="nav-inner">
-            <a href="#" class="brand" aria-label="Smartbus">
+
+    <header class="navbar ticket-header">
+        <div class="nav-inner header-inner">
+
+            <a href="/index.html" class="brand" aria-label="Smartbus">
                 <span class="brand-icon">🚌</span>
                 <span class="brand-name">Smart<span>bus</span></span>
             </a>
 
             <nav class="nav-menu">
-
-                <a href="/tra-cuu/index.html">
-                    Tra cứu chuyến
-                </a>
-
-                <a href="/quan-ly-ve/index.html">
-                    Chuyến đi của tôi
-                </a>
+                <a href="/tra-cuu/index.html">Tra cứu chuyến</a>
+                <a href="/quan-ly-ve/index.html" class="active">Chuyến đi của tôi</a>
             </nav>
 
             <div class="nav-actions">
-                <button class="help-btn" title="Trợ giúp">?</button>
-                <button class="login-btn" id="loginBtn">Đăng nhập</button>
+                <button class="help-btn" type="button" title="Trợ giúp">?</button>
+                <button class="login-btn" type="button" id="loginBtn">Đăng nhập</button>
             </div>
+
         </div>
     </header>
 
@@ -265,5 +262,62 @@
     </footer>
 
     <script src="script.js"></script>
+
+    <script>
+(function () {
+            const loginBtn = document.getElementById("loginBtn");
+
+            if (!loginBtn) return;
+
+            const sessionRaw = localStorage.getItem("userSession");
+
+            if (!sessionRaw) {
+                loginBtn.textContent = "Đăng nhập";
+
+                loginBtn.onclick = function () {
+                    window.location.href = "/auth/dangnhap.html";
+                };
+
+                return;
+            }
+
+            try {
+                const user = JSON.parse(sessionRaw);
+
+                const role = String(
+                    user.role ||
+                    user.roleCode ||
+                    user.Role ||
+                    user.RoleCode ||
+                    "USER"
+                ).trim().toUpperCase();
+
+                loginBtn.textContent = "👤 " + (user.fullName || "Tài khoản");
+
+                loginBtn.style.backgroundColor = "#e8f8f0";
+                loginBtn.style.color = "#16845b";
+                loginBtn.style.border = "1px solid #16845b";
+                loginBtn.title = "Đăng xuất";
+
+                loginBtn.onclick = function () {
+                    localStorage.removeItem("userSession");
+                    window.location.href = "/auth/dangnhap.html";
+                };
+
+                const manageLink = document.querySelector(
+                    '.nav-menu a[href="/quan-ly-ve/index.html"]'
+                );
+
+                if (manageLink && role !== "USER") {
+                    manageLink.style.display = "none";
+                }
+
+            } catch (error) {
+                localStorage.removeItem("userSession");
+                window.location.href = "/auth/dangnhap.html";
+            }
+})();
+    </script>
+
 </body>
 </html>
