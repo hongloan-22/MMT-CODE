@@ -1,10 +1,24 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --blue: #1685e8;
+    --blue-dark: #0875d1;
+    --blue-light: #eaf6ff;
+    --sky: #dff2ff;
+    --muted: #718096;
+    --border: #e1e8ef;
+    --white: #ffffff;
+}
 :root {
     --primary: #1264e8;
     --primary-dark: #0d53c4;
     --primary-light: #eaf2ff;
     --text: #172033;
     --muted: #718096;
-    --border: #e4e9f0;
     --bg: #f5f8fc;
     --success: #16845b;
     --success-bg: #e9f8f1;
@@ -40,42 +54,57 @@ button { cursor: pointer; }
 }
 
 .brand {
+    text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 9px;
-    text-decoration: none;
-    color: var(--text);
-    font-size: 22px;
+    gap: 8px;
+    min-width: 180px;
+}
+
+.brand-icon {
+    font-size: 32px;
+    filter: saturate(1.2);
+}
+
+.brand-name {
+    color: #1785e8;
+    font-size: 29px;
     font-weight: 800;
+    letter-spacing: -1px;
 }
 
-.brand-icon { font-size: 27px; }
-.brand-name span, .ticket-brand strong span { color: var(--primary); }
-
-.nav-menu {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-}
+    .brand-name span {
+        color: #53b6f4;
+    }
 
 .nav-menu a {
-    color: #536174;
+    color: #405365;
     text-decoration: none;
-    font-size: 14px;
     font-weight: 600;
+    font-size: 15px;
+    transition: .2s;
 }
 
-.nav-menu a.active, .nav-menu a:hover { color: var(--primary); }
+    .nav-menu a:hover {
+        color: var(--blue);
+    }
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
 .help-btn {
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--border);
+    width: 38px;
+    height: 38px;
+    border: 1px solid #dbe7f0;
     border-radius: 50%;
     background: #fff;
-    color: var(--muted);
-    font-weight: 700;
+    color: var(--blue);
+    font-weight: 800;
+    font-size: 17px;
+    cursor: pointer;
 }
 
 .ticket-page {

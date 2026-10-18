@@ -7,6 +7,7 @@
     <title>Smartbus - Đội xe</title>
 
     <link rel="stylesheet" href="style.css">
+    <script src="../js/smartbus-dialog.js"></script>
     <script src="../js/admin-manager-layout.js"></script>
 </head>
 
@@ -73,20 +74,36 @@
 
                 </a>
 
-                <a href="#staff"
+                <a href="../tai-xe-phu-xe/index.html"
                    class="side-link">
 
                     <span>👤</span>
-                    <span>Tài xế / phụ xe</span>
+                    <span>Tài xế / Phụ xe</span>
 
                 </a>
 
             </nav>
 
-            <div class="sidebar-label">BÁO CÁO</div>
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
+
             <nav class="side-nav">
-                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
-                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
             </nav>
 
             <div class="sidebar-bottom">
@@ -218,7 +235,7 @@
                         </div>
 
                         <div>
-                            <span>Tài xế / phụ xe</span>
+                            <span>Tài xế / Phụ xe</span>
                             <strong id="totalStaff">
                                 0
                             </strong>
@@ -313,60 +330,75 @@
                 </div>
 
 
-                <div class="page-card"
-                     id="staff">
+                <!-- KHU VỰC PHÂN CÔNG NHÂN SỰ -->
+                <div class="page-card assignment-panel" id="assignmentPanel">
 
                     <div class="card-head">
-
                         <div>
-
-                            <div class="eyebrow">
-                                NHÂN SỰ
-                            </div>
-
-                            <h2>
-                                Tài xế / phụ xe
-                            </h2>
-
-                            <p>
-                                Danh sách tự động lấy từ các tài khoản có vai trò DRIVER trong Phân quyền.
+                            <div class="eyebrow">PHÂN CÔNG</div>
+                            <h2 id="assignmentTitle">Phân công nhân sự</h2>
+                            <p id="assignmentDescription">
+                                Chọn một xe trong danh sách phía trên để phân công tài xế và phụ xe.
                             </p>
+                        </div>
+                    </div>
 
+                    <div id="assignmentEmpty" class="assignment-empty">
+                        <div class="assignment-empty-icon">🚌</div>
+                        <h3>Chưa chọn xe bus</h3>
+                        <p>Nhấn vào một dòng xe để xem chi tiết và phân công nhân sự.</p>
+                    </div>
+
+                    <form id="inlineStaffForm" class="inline-staff-form" hidden>
+                        <input type="hidden" id="selectedBusId">
+
+                        <div class="assignment-bus-info">
+                            <div>
+                                <span class="field-caption">Mã xe</span>
+                                <strong id="selectedBusCode">—</strong>
+                            </div>
+                            <div>
+                                <span class="field-caption">Biển số</span>
+                                <strong id="selectedBusPlate">—</strong>
+                            </div>
+                            <div>
+                                <span class="field-caption">Số ghế</span>
+                                <strong id="selectedBusSeats">—</strong>
+                            </div>
                         </div>
 
-                    </div>
+                        <div class="assignment-fields">
+                            <label>
+                                Tài xế
+                                <select id="inlineDriver">
+                                    <option value="">-- Chọn tài xế --</option>
+                                </select>
+                            </label>
 
+                            <label>
+                                Phụ xe
+                                <select id="inlineAttendant">
+                                    <option value="">-- Chọn phụ xe --</option>
+                                </select>
+                            </label>
+                        </div>
 
-                    <div class="table-wrap">
+                        <div class="form-note">
+                            Chỉ tài khoản được phân quyền phù hợp mới xuất hiện trong danh sách.
+                            Nhân sự đang được phân công cho xe khác sẽ không thể được chọn.
+                        </div>
 
-                        <table>
-
-                            <thead>
-
-                                <tr>
-
-                                    <th>Họ tên</th>
-
-                                    <th>Email</th>
-
-                                    <th>Số điện thoại</th>
-
-                                    <th>Vai trò</th>
-
-                                    <th>Phân công hiện tại</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody id="staffTableBody">
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
+                        <div class="modal-actions">
+                            <button type="button" class="secondary-btn" id="cancelInlineAssignment">
+                                Hủy
+                            </button>
+                            <button type="submit" class="primary-btn" id="saveInlineAssignment">
+                                Lưu phân công
+                            </button>
+                        </div>
+                    </form>
                 </div>
+
 
             </section>
 

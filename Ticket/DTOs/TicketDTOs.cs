@@ -44,6 +44,11 @@
         public string QRToken { get; set; } = string.Empty;
         public int TripId { get; set; }
     }
+
+    public class UseTicketRequestDto
+    {
+        public string QRToken { get; set; } = string.Empty;
+    }
     public class ChangeTicketRequestDto
     {
         public int NewTripId { get; set; }

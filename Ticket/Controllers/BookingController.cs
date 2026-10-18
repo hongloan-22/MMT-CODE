@@ -258,6 +258,30 @@ namespace Ticket.Controllers
                     });
                 }
 
+                var confirmedSeats = await _context.SeatHolds
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.TripId == trip.Id &&
+                        x.Status == "CONFIRMED" &&
+                        x.Booking != null &&
+                        x.Booking.Status == "CONFIRMED" &&
+                        seatCodes.Contains(x.SeatCode))
+                    .Select(x => x.SeatCode)
+                    .Distinct()
+                    .ToListAsync();
+
+                if (confirmedSeats.Count > 0)
+                {
+                    await transaction.RollbackAsync();
+
+                    return Conflict(new
+                    {
+                        message =
+                            "Một hoặc nhiều ghế đã được đặt. Vui lòng tải lại sơ đồ ghế.",
+                        unavailableSeats = confirmedSeats
+                    });
+                }
+
                 var activeBookingForUser =
                     await _context.Bookings
                         .Where(x =>

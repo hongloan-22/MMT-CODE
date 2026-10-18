@@ -2,7 +2,7 @@
 
 let buses = [];
 let staff = [];
-
+let selectedBusId = null;
 const $ = id =>
     document.getElementById(id);
 
@@ -286,162 +286,246 @@ async function loadStaff() {
 // =========================================================
 
 function renderBuses() {
-
-    const tbody =
-        $("busTableBody");
-
-    if (!tbody)
-        return;
+    const tbody = $("busTableBody");
+    if (!tbody) return;
 
     if (!buses.length) {
-
         tbody.innerHTML = `
             <tr>
-                <td colspan="7"
-                    class="empty-cell">
+                <td colspan="7" class="empty-cell">
                     Chưa có xe trong hệ thống.
                 </td>
-            </tr>
-        `;
-
+            </tr>`;
         return;
     }
 
-    tbody.innerHTML =
-        buses.map(bus => {
+    tbody.innerHTML = buses.map(bus => {
+        const driver = bus.driver
+            ? escapeHtml(bus.driver.fullName)
+            : `<span class="muted-text">Chưa phân công</span>`;
 
-            const driver =
-                bus.driver
-                    ? escapeHtml(
-                        bus.driver.fullName
-                    )
-                    : `<span class="muted-text">
-                        Chưa phân công
-                       </span>`;
+        const attendants = bus.attendants?.length
+            ? bus.attendants.map(x => `
+                <div class="staff-chip">
+                    ${escapeHtml(x.fullName)}
+                    <button type="button"
+                        onclick="event.stopPropagation(); removeStaff(${bus.id}, ${x.assignmentId})">
+                        ×
+                    </button>
+                </div>`).join("")
+            : `<span class="muted-text">Chưa có</span>`;
 
-            const attendants =
-                bus.attendants?.length
-                    ? bus.attendants
-                        .map(
-                            x =>
-                                `
-                                <div class="staff-chip">
-                                    ${escapeHtml(
-                                    x.fullName
-                                )}
-                                    <button
-                                        type="button"
-                                        onclick="removeStaff(
-                                            ${bus.id},
-                                            ${x.assignmentId}
-                                        )">
-                                        ×
-                                    </button>
-                                </div>
-                                `
-                        )
-                        .join("")
-                    : `<span class="muted-text">
-                        Chưa có
-                       </span>`;
+        return `
+            <tr data-bus-id="${bus.id}"
+                class="${Number(selectedBusId) === Number(bus.id) ? "selected" : ""}"
+                onclick="selectBusForAssignment(${bus.id})">
 
-            return `
-                <tr>
-
-                    <td>
-                        <span class="bus-code">
-                            ${escapeHtml(
-                bus.busCode
-            )}
-                        </span>
-                    </td>
-
-                    <td>
-                        <strong>
-                            ${escapeHtml(
-                bus.licensePlate
-            )}
-                        </strong>
-                    </td>
-
-                    <td>
-                        ${bus.seatCount}
-                    </td>
-
-                    <td>
-                        <div class="driver-cell">
-                            ${driver}
-
-                            ${bus.driver
-                    ? `
-                                    <button
-                                        class="remove-link"
-                                        onclick="removeStaff(
-                                            ${bus.id},
-                                            ${bus.driver.assignmentId}
-                                        )">
-                                        Bỏ phân công
-                                    </button>
-                                    `
-                    : ""
-                }
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="staff-list">
-                            ${attendants}
-                        </div>
-                    </td>
-
-                    <td>
-                        ${bus.isActive
-                    ? `
-                                    <span class="status active">
-                                        Hoạt động
-                                    </span>
-                                  `
-                    : `
-                                    <span class="status inactive">
-                                        Ngừng hoạt động
-                                    </span>
-                                  `
-                }
-                    </td>
-
-                    <td>
-
-                        <div class="row-actions">
-
-                            ${bus.isActive
-                    ? `
-                                    <button
-                                        class="mini-btn"
-                                        title="Phân công"
-                                        onclick="openAssignmentModal(${bus.id})">
-                                        👤
-                                    </button>
-
-                                    <button
-                                        class="mini-btn danger"
-                                        title="Ngừng xe"
-                                        onclick="deactivateBus(${bus.id})">
-                                        ×
-                                    </button>
-                                    `
-                    : ""
-                }
-
-                        </div>
-
-                    </td>
-
-                </tr>
-            `;
-        })
-            .join("");
+                <td><span class="bus-code">${escapeHtml(bus.busCode)}</span></td>
+                <td><strong>${escapeHtml(bus.licensePlate)}</strong></td>
+                <td>${bus.seatCount}</td>
+                <td>${driver}</td>
+                <td><div class="staff-list">${attendants}</div></td>
+                <td>
+                    ${bus.isActive
+                ? `<span class="status active">Hoạt động</span>`
+                : `<span class="status inactive">Ngừng hoạt động</span>`}
+                </td>
+                <td>
+                    <div class="row-actions">
+                        ${bus.isActive ? `
+                            <button class="mini-btn"
+                                title="Phân công"
+                                onclick="event.stopPropagation(); selectBusForAssignment(${bus.id})">
+                                👤
+                            </button>
+                            <button class="mini-btn danger"
+                                title="Ngừng xe"
+                                onclick="event.stopPropagation(); deactivateBus(${bus.id})">
+                                ×
+                            </button>` : ""}
+                    </div>
+                </td>
+            </tr>`;
+    }).join("");
 }
 
+
+function selectBusForAssignment(busId) {
+    const bus = buses.find(x => Number(x.id) === Number(busId));
+    if (!bus) return;
+
+    selectedBusId = bus.id;
+
+    $("assignmentPanel").scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+    });
+
+    $("assignmentTitle").textContent =
+        `Phân công nhân sự - ${bus.busCode}`;
+
+    $("assignmentDescription").textContent =
+        "Chọn tài xế và phụ xe cho xe bus đang được chọn.";
+
+    $("selectedBusId").value = bus.id;
+    $("selectedBusCode").textContent = bus.busCode;
+    $("selectedBusPlate").textContent = bus.licensePlate;
+    $("selectedBusSeats").textContent = bus.seatCount;
+
+    $("assignmentEmpty").hidden = true;
+    $("inlineStaffForm").hidden = false;
+
+    renderInlineStaffOptions(bus);
+
+    renderBuses();
+}
+
+function renderInlineStaffOptions(bus) {
+    const driverSelect = $("inlineDriver");
+    const attendantSelect = $("inlineAttendant");
+
+    if (!driverSelect || !attendantSelect) return;
+
+    const currentDriverId = bus.driver?.userId || "";
+    const currentAttendantIds = new Set(
+        (bus.attendants || []).map(x => String(x.userId))
+    );
+
+    function buildOptions(role, currentIds) {
+        const currentSet = new Set(
+            Array.isArray(currentIds)
+                ? currentIds.map(String)
+                : [String(currentIds || "")]
+        );
+
+        return `
+            <option value="">-- Không phân công --</option>
+            ${staff.map(user => {
+            const userId = String(user.userId);
+            const assignment = user.assignment;
+
+            const assignedToOtherBus =
+                assignment &&
+                Number(assignment.busId) !== Number(bus.id);
+
+            const isCurrent = currentSet.has(userId);
+
+            return `
+                    <option value="${escapeHtml(userId)}"
+                        ${assignedToOtherBus && !isCurrent ? "disabled" : ""}
+                        ${isCurrent ? "selected" : ""}>
+                        ${escapeHtml(user.fullName)}
+                        ${assignedToOtherBus ? " (đang được phân công)" : ""}
+                    </option>`;
+        }).join("")}
+        `;
+    }
+
+    driverSelect.innerHTML = buildOptions("DRIVER", currentDriverId);
+    attendantSelect.innerHTML = buildOptions("ATTENDANT", currentAttendantIds);
+}
+
+$("cancelInlineAssignment")?.addEventListener("click", () => {
+    selectedBusId = null;
+
+    $("inlineStaffForm").hidden = true;
+    $("assignmentEmpty").hidden = false;
+
+    $("assignmentTitle").textContent = "Phân công nhân sự";
+    $("assignmentDescription").textContent =
+        "Chọn một xe trong danh sách phía trên để phân công tài xế và phụ xe.";
+
+    renderBuses();
+});
+
+$("inlineStaffForm")?.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const busId = Number($("selectedBusId").value);
+    const driverId = $("inlineDriver").value;
+    const attendantId = $("inlineAttendant").value;
+
+    if (!busId) {
+        toast("❌ Vui lòng chọn xe trước.");
+        return;
+    }
+
+    const bus = buses.find(x => Number(x.id) === busId);
+    if (!bus) {
+        toast("❌ Không tìm thấy thông tin xe.");
+        return;
+    }
+
+    const currentDriverId = bus.driver?.userId
+        ? String(bus.driver.userId)
+        : "";
+
+    const currentAttendantIds = new Set(
+        (bus.attendants || []).map(x => String(x.userId))
+    );
+
+    const requests = [];
+
+    if (driverId && String(driverId) !== currentDriverId) {
+        requests.push({
+            userId: driverId,
+            assignmentType: "DRIVER"
+        });
+    }
+
+    if (attendantId && !currentAttendantIds.has(String(attendantId))) {
+        requests.push({
+            userId: attendantId,
+            assignmentType: "ATTENDANT"
+        });
+    }
+
+    if (!requests.length) {
+        toast("Bạn chưa thay đổi phân công nào.");
+        return;
+    }
+
+    const saveButton = $("saveInlineAssignment");
+    saveButton.disabled = true;
+
+    try {
+        for (const item of requests) {
+            const response = await fetch(`/api/Bus/${busId}/staff`, {
+                method: "POST",
+                headers: authHeaders(true),
+                body: JSON.stringify({
+                    UserId: item.userId,
+                    AssignmentType: item.assignmentType
+                })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Không thể lưu phân công."
+                );
+            }
+        }
+
+        toast("✅ Đã lưu phân công nhân sự.");
+
+        await Promise.all([
+            loadBuses(),
+            loadStaff()
+        ]);
+
+        const refreshedBus = buses.find(x => Number(x.id) === busId);
+
+        if (refreshedBus) {
+            selectBusForAssignment(busId);
+        }
+    } catch (error) {
+        toast("❌ " + (error.message || "Có lỗi khi lưu phân công."));
+    } finally {
+        saveButton.disabled = false;
+    }
+});
 
 // =========================================================
 // RENDER STAFF
@@ -962,10 +1046,10 @@ async function removeStaff(
     assignmentId
 ) {
 
-    const confirmed =
-        confirm(
-            "Bạn có chắc muốn bỏ phân công này?"
-        );
+    const confirmed = await SmartbusDialog.confirm(
+        "Bạn có chắc muốn bỏ phân công này?",
+        { title: "Xác nhận bỏ phân công", confirmText: "Bỏ phân công", danger: true }
+    );
 
     if (!confirmed)
         return;
@@ -1035,10 +1119,10 @@ async function deactivateBus(
     if (!bus)
         return;
 
-    const confirmed =
-        confirm(
-            `Ngừng hoạt động xe ${bus.busCode}?`
-        );
+    const confirmed = await SmartbusDialog.confirm(
+        `Ngừng hoạt động xe ${bus.busCode}?`,
+        { title: "Ngừng hoạt động xe", confirmText: "Ngừng hoạt động", danger: true }
+    );
 
     if (!confirmed)
         return;

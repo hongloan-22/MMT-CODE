@@ -63,6 +63,8 @@ namespace Ticket.Models
 
         public ICollection<TripSchedule> Schedules { get; set; }
             = new List<TripSchedule>();
-
+        // Nhân sự được phân công cho từng chuyến
+        public ICollection<TripStaffAssignment> StaffAssignments { get; set; }
+            = new List<TripStaffAssignment>();
     }
 }

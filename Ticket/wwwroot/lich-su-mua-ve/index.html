@@ -1,0 +1,368 @@
+﻿
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Lịch sử mua vé</title>
+
+    <script>
+                (function () {
+                    try {
+                        const raw = localStorage.getItem("userSession");
+
+                        if (!raw) {
+                            window.location.replace("../auth/dangnhap.html");
+                            return;
+                        }
+
+                        const user = JSON.parse(raw);
+
+                        const role = String(
+                            user.role || user.Role ||
+                            user.roleCode || user.RoleCode ||
+                            user.roleName || user.RoleName || ""
+                        ).trim().toUpperCase();
+
+                        const roleId = Number(user.roleId || user.RoleId || 0);
+
+                        const allowed =
+                            role.includes("ADMIN") ||
+                            role.includes("MANAGER") ||
+                            role.includes("QUẢN TRỊ") ||
+                            role.includes("QUẢN LÝ") ||
+                            roleId === 1 ||
+                            roleId === 2;
+
+                        if (!allowed) {
+                            window.location.replace("../index.html");
+                        }
+                    } catch {
+                        localStorage.removeItem("userSession");
+                        window.location.replace("../auth/dangnhap.html");
+                    }
+                })();
+    </script>
+
+    <link rel="stylesheet" href="../quan-ly-tuyen-tram/style.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="../js/smartbus-dialog.js"></script>
+    <script src="../js/admin-manager-layout.js"></script>
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <aside class="sidebar">
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+
+            <nav class="side-nav">
+                <a href="../index.html" class="side-link">
+                    <span>▦</span><span>Tổng quan</span>
+                </a>
+
+                <a href="../quan-ly-tuyen-tram/index.html" class="side-link">
+                    <span>⇄</span><span>Tuyến &amp; trạm</span>
+                </a>
+
+                <a href="../lap-lich-trinh/index.html" class="side-link">
+                    <span>◷</span><span>Lịch trình</span>
+                </a>
+
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen"
+                   style="display:none">
+                    <span>👤</span><span>Phân quyền</span>
+                </a>
+
+                <a href="../doi-xe/index.html" class="side-link">
+                    <span>🚌</span><span>Đội xe</span>
+                </a>
+
+                <a href="../tai-xe-phu-xe/index.html" class="side-link">
+                    <span>👥</span><span>Tài xế / Phụ xe</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
+
+            <nav class="side-nav">
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="index.html" class="side-link active">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar" id="sidebarAvatar">QL</div>
+                    <div>
+                        <strong id="sidebarUserName">Quản lý</strong>
+                        <small id="sidebarUserRole">Quản lý vận hành</small>
+                    </div>
+                </div>
+
+                <button class="logout-btn" id="logoutBtn" type="button">
+                    ↪ Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <main class="main">
+
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">
+                        Quản trị <span>/</span> Lịch sử mua vé
+                    </div>
+
+                    <h1>Lịch sử mua vé</h1>
+
+                    <p>
+                        Theo dõi vé, hành khách, thanh toán và hoàn tiền
+                        trên toàn hệ thống.
+                    </p>
+                </div>
+
+                <div class="top-actions">
+                    <div class="user-btn">
+                        <span class="avatar small" id="topAvatar">QL</span>
+                        <span id="topUserRole">Quản lý</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="content history-content">
+
+                <div class="page-card history-intro">
+                    <div class="history-intro-icon">🎟</div>
+
+                    <div>
+                        <div class="eyebrow">QUẢN TRỊ VÉ &amp; GIAO DỊCH</div>
+
+                        <h2>Lịch sử mua vé toàn hệ thống</h2>
+
+                        <p>
+                            Tìm kiếm vé theo mã vé, mã đặt chỗ, mã chuyến
+                            hoặc tên hành khách. Có thể lọc trạng thái
+                            vé, thanh toán và hoàn tiền.
+                        </p>
+                    </div>
+
+                    <button class="secondary-btn"
+                            type="button"
+                            id="refreshBtn">
+                        ↻ Làm mới
+                    </button>
+                </div>
+
+                <div class="history-summary stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-icon blue">🎫</div>
+                        <div>
+                            <span>Tổng bản ghi phù hợp</span>
+                            <strong id="totalCount">—</strong>
+                            <small>Theo điều kiện lọc hiện tại</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">▤</div>
+                        <div>
+                            <span>Kết quả trang này</span>
+                            <strong id="pageCount">—</strong>
+                            <small>Số vé đang hiển thị</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">↔</div>
+                        <div>
+                            <span>Trang hiện tại</span>
+                            <strong id="currentPage">—</strong>
+                            <small id="pageDescription">Đang tải dữ liệu</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="page-card history-filter-card">
+
+                    <div class="card-head">
+                        <div>
+                            <div class="eyebrow">TÌM KIẾM &amp; LỌC</div>
+                            <h2>Điều kiện tra cứu</h2>
+                            <p>
+                                Kết quả được truy vấn trực tiếp từ API.
+                            </p>
+                        </div>
+
+                        <button class="secondary-btn"
+                                id="resetFilterBtn"
+                                type="button">
+                            Xóa bộ lọc
+                        </button>
+                    </div>
+
+                    <form id="filterForm" class="history-filter-form">
+
+                        <label class="history-field history-search">
+                            <span>Tìm kiếm</span>
+
+                            <input id="searchInput"
+                                   type="search"
+                                   maxlength="100"
+                                   placeholder="Mã vé, mã booking, mã chuyến hoặc tên hành khách">
+                        </label>
+
+                        <label class="history-field">
+                            <span>Trạng thái vé</span>
+
+                            <select id="ticketStatusFilter">
+                                <option value="">Tất cả trạng thái vé</option>
+                                <option value="VALID">Còn hiệu lực</option>
+                                <option value="USED">Đã sử dụng</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                            </select>
+                        </label>
+
+                        <label class="history-field">
+                            <span>Thanh toán</span>
+
+                            <select id="paymentStatusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="SUCCESS">Thành công</option>
+                                <option value="PENDING">Đang chờ</option>
+                                <option value="FAILED">Thất bại</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                                <option value="NO_TRANSACTION">Chưa có giao dịch</option>
+                            </select>
+                        </label>
+
+                        <label class="history-field">
+                            <span>Hoàn tiền</span>
+
+                            <select id="refundStatusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="PENDING">Đang chờ</option>
+                                <option value="SUCCESS">Đã hoàn tiền</option>
+                                <option value="NO_TRANSACTION">Chưa có giao dịch</option>
+                            </select>
+                        </label>
+
+                        <div class="history-filter-actions">
+                            <span id="resultMessage" aria-live="polite">
+                                Đang tải lịch sử mua vé...
+                            </span>
+
+                            <button class="primary-btn"
+                                    id="applyFilterBtn"
+                                    type="submit">
+                                ⌕ Áp dụng bộ lọc
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="page-card history-table-card">
+
+                    <div class="card-head history-table-head">
+                        <div>
+                            <div class="eyebrow">DANH SÁCH GIAO DỊCH</div>
+                            <h2>Chi tiết các vé đã phát hành</h2>
+                            <p>
+                                Mỗi dòng tương ứng một vé.
+                                Trạng thái hoàn tiền được tra cứu theo vé.
+                            </p>
+                        </div>
+
+                        <span class="history-source-label">
+                            <span></span> Dữ liệu từ hệ thống
+                        </span>
+                    </div>
+
+                    <div id="errorBanner"
+                         class="history-error"
+                         role="alert"
+                         hidden></div>
+
+                    <div class="table-wrap">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Vé / Booking</th>
+                                    <th>Hành khách</th>
+                                    <th>Chuyến / Tuyến</th>
+                                    <th>Hành trình</th>
+                                    <th>Ghế / Giá vé</th>
+                                    <th>Ngày phát hành</th>
+                                    <th>Trạng thái vé</th>
+                                    <th>Thanh toán</th>
+                                    <th>Hoàn tiền</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="historyTableBody">
+                                <tr>
+                                    <td colspan="9">
+                                        <div class="history-empty">
+                                            <span class="history-loader"></span>
+                                            Đang tải dữ liệu...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="history-pagination">
+                        <span id="paginationInfo">Trang 1</span>
+
+                        <div class="pagination-buttons">
+                            <button class="secondary-btn"
+                                    type="button"
+                                    id="prevPageBtn"
+                                    disabled>
+                                ← Trang trước
+                            </button>
+
+                            <button class="secondary-btn"
+                                    type="button"
+                                    id="nextPageBtn"
+                                    disabled>
+                                Trang sau →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <div id="toast" class="history-toast" role="status" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

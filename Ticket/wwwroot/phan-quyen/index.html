@@ -6,50 +6,51 @@
     <title>Smartbus - Quản lý tài khoản</title>
 
     <script>
-                (function () {
-                    const raw = localStorage.getItem("userSession");
+                        (function () {
+                            const raw = localStorage.getItem("userSession");
 
-                    if (!raw) {
-                        window.location.replace("../auth/dangnhap.html");
-                        return;
-                    }
+                            if (!raw) {
+                                window.location.replace("../auth/dangnhap.html");
+                                return;
+                            }
 
-                    try {
-                        const u = JSON.parse(raw);
+                            try {
+                                const u = JSON.parse(raw);
 
-                        const roleName = String(
-                            u.role ||
-                            u.Role ||
-                            u.roleCode ||
-                            u.RoleCode ||
-                            u.roleName ||
-                            ""
-                        ).trim().toUpperCase();
+                                const roleName = String(
+                                    u.role ||
+                                    u.Role ||
+                                    u.roleCode ||
+                                    u.RoleCode ||
+                                    u.roleName ||
+                                    ""
+                                ).trim().toUpperCase();
 
-                        const roleId = Number(
-                            u.roleId ||
-                            u.RoleId ||
-                            0
-                        );
+                                const roleId = Number(
+                                    u.roleId ||
+                                    u.RoleId ||
+                                    0
+                                );
 
-                        const isAdmin =
-                            roleName === "ADMIN" ||
-                            roleName === "QUẢN TRỊ VIÊN" ||
-                            roleId === 1;
+                                const isAdmin =
+                                    roleName === "ADMIN" ||
+                                    roleName === "QUẢN TRỊ VIÊN" ||
+                                    roleId === 1;
 
-                        if (!isAdmin) {
-                            window.location.replace(
-                                "../quan-ly-tuyen-tram/index.html");
-                        }
-                    }
-                    catch (err) {
-                        console.error(err);
-                        window.location.replace("../auth/dangnhap.html");
-                    }
-                })();
+                                if (!isAdmin) {
+                                    window.location.replace(
+                                        "../quan-ly-tuyen-tram/index.html");
+                                }
+                            }
+                            catch (err) {
+                                console.error(err);
+                                window.location.replace("../auth/dangnhap.html");
+                            }
+                        })();
     </script>
 
-    <link rel="stylesheet" href="../quan-ly-tuyen-tram/style.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="../js/smartbus-dialog.js"></script>
     <script src="../js/admin-manager-layout.js"></script>
 </head>
 
@@ -101,25 +102,35 @@
 
                 </a>
 
-                <a href="../doi-xe/index.html#staff"
+                <a href="../tai-xe-phu-xe/index.html"
                    class="side-link">
 
                     <span>👤</span>
-                    <span>Tài xế / phụ xe</span>
+                    <span>Tài xế / Phụ xe</span>
 
                 </a>
             </nav>
 
-            <div class="sidebar-label">BÁO CÁO</div>
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
+
             <nav class="side-nav">
-                   class="side-link">
-
-                    <span>▤</span>
-                    <span>Nhật ký hoạt động</span>
-
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
                 </a>
-                <a href="#" class="side-link"><span>▥</span><span>Doanh thu</span></a>
-                <a href="#" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
             </nav>
 
             <div class="sidebar-bottom">
@@ -162,21 +173,17 @@
             <header class="topbar">
 
                 <div>
-
                     <div class="breadcrumb">
                         Quản trị hệ thống
                         <span>/</span>
-                        Tài khoản
+                        Phân quyền
                     </div>
 
-                    <h1>
-                        Quản lý tài khoản
-                    </h1>
+                    <h1>Phân quyền tài khoản</h1>
 
                     <p>
                         Quản lý người dùng, vai trò và trạng thái tài khoản.
                     </p>
-
                 </div>
 
                 <div class="top-actions">

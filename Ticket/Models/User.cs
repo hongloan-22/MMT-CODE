@@ -61,6 +61,9 @@ namespace Ticket.Models
         public bool IsActive { get; set; } = true;
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
         public virtual ICollection<BusStaffAssignment> BusStaffAssignments { get; set; }
-    = new List<BusStaffAssignment>();
+            = new List<BusStaffAssignment>();
+        // Các chuyến mà nhân viên được phân công
+        public virtual ICollection<TripStaffAssignment> TripStaffAssignments { get; set; }
+            = new List<TripStaffAssignment>();
     }
 }

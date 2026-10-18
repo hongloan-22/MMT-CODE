@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartBusTicketing.DTOs;
 using Ticket.Data;
+using Ticket.Models;
 
 namespace SmartBusTicketing.Services
 {
@@ -13,6 +14,7 @@ namespace SmartBusTicketing.Services
         {
             _context = context;
         }
+
 
         public async Task<List<TripResponseDto>>
             SearchTripsByOriginAsync(
@@ -29,6 +31,7 @@ namespace SmartBusTicketing.Services
             var trips =
                 await _context.Trips
                     .AsNoTracking()
+                    .Include(t => t.Bus)
                     .Include(t => t.Route)
                         .ThenInclude(r =>
                             r!.RouteStops)
@@ -45,6 +48,10 @@ namespace SmartBusTicketing.Services
                         t.Route.IsActive)
                     .ToListAsync();
 
+            var seatAvailabilityByTrip =
+                await GetSeatAvailabilityByTripAsync(
+                    trips,
+                    DateTime.UtcNow);
 
             var origin =
                 request.OriginKeyword?
@@ -243,8 +250,11 @@ namespace SmartBusTicketing.Services
                                 x.DurationMinutes,
 
                             AvailableSeats =
-                                x.Trip
-                                    .AvailableSeats,
+                                seatAvailabilityByTrip.TryGetValue(
+                                    x.Trip.Id,
+                                    out var seatInfo)
+                                    ? seatInfo.AvailableSeats
+                                    : 0,
 
                             IsActive =
                                 x.Trip.IsActive
@@ -260,11 +270,11 @@ namespace SmartBusTicketing.Services
         public async Task<TripOccupancyDto>
             GetTripOccupancyAsync(int tripId)
         {
+            // 1. Lấy thông tin chuyến xe.
             var trip = await _context.Trips
-                .Include(t => t.Bus)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t =>
-                    t.Id == tripId);
+                .Include(t => t.Bus)
+                .FirstOrDefaultAsync(t => t.Id == tripId);
 
             if (trip == null)
             {
@@ -272,42 +282,37 @@ namespace SmartBusTicketing.Services
                     $"Không tìm thấy chuyến xe với ID {tripId}");
             }
 
-            int totalSeats =
-                trip.TotalSeats > 0
-                    ? trip.TotalSeats
-                    : (trip.Bus?.SeatCount ?? 0);
+            // 2. Sử dụng chung quy tắc tính ghế với API tìm chuyến
+            // và API kiểm tra tính toàn vẹn dữ liệu.
+            var nowUtc = DateTime.UtcNow;
 
-            int bookedSeats = await _context.Tickets
-                .Where(t =>
-                    t.TripId == tripId &&
-                    (t.Status == "VALID" ||
-                     t.Status == "USED"))
-                .CountAsync();
+            var seatAvailabilityByTrip =
+                await GetSeatAvailabilityByTripAsync(
+                    new List<Trip> { trip },
+                    nowUtc);
 
-            var now = DateTime.UtcNow;
+            if (!seatAvailabilityByTrip.TryGetValue(
+                    trip.Id, out var seatInfo))
+            {
+                throw new InvalidOperationException(
+                    $"Không thể tính số ghế cho chuyến xe {tripId}");
+            }
 
-            int heldSeats = await _context.SeatHolds
-                .Where(sh =>
-                    sh.TripId == tripId &&
-                    (sh.Status == "CONFIRMED" ||
-                    (sh.Status == "HELD" &&
-                     sh.ExpiresAt > now)))
-                .CountAsync();
+            // 3. Lấy kết quả tính ghế thống nhất.
+            int totalSeats = seatInfo.TotalSeats;
+            int bookedSeats = seatInfo.BookedSeats;
+            int heldSeats = seatInfo.HeldSeats;
+            int availableSeats = seatInfo.AvailableSeats;
 
-            int availableSeats =
-                totalSeats - bookedSeats - heldSeats;
+            // 4. Tính tỷ lệ lấp đầy.
+            // Chỉ tính ghế đã đặt thành công, không tính ghế giữ tạm.
+            double occupancyRate = totalSeats > 0
+                ? Math.Round(
+                    (double)bookedSeats / totalSeats * 100,
+                    2)
+                : 0;
 
-            if (availableSeats < 0)
-                availableSeats = 0;
-
-            double occupancyRate =
-                totalSeats > 0
-                    ? ((double)bookedSeats / totalSeats) * 100
-                    : 0;
-
-            occupancyRate =
-                Math.Round(occupancyRate, 2);
-
+            // 5. Trả kết quả thống kê.
             return new TripOccupancyDto
             {
                 TripId = trip.Id,
@@ -320,6 +325,218 @@ namespace SmartBusTicketing.Services
             };
         }
 
+        private sealed class TripSeatAvailability
+        {
+            public int TotalSeats { get; init; }
+            public int BookedSeats { get; init; }
+            public int HeldSeats { get; init; }
+            public int AvailableSeats { get; init; }
+        }
+
+        private async Task<Dictionary<int, TripSeatAvailability>>
+            GetSeatAvailabilityByTripAsync(
+                IReadOnlyCollection<Trip> trips,
+                DateTime nowUtc)
+        {
+            var result = new Dictionary<int, TripSeatAvailability>();
+
+            if (trips.Count == 0)
+                return result;
+
+            var tripIds = trips.Select(t => t.Id).ToList();
+
+            var busIds = trips
+                .Where(t => t.BusId.HasValue)
+                .Select(t => t.BusId!.Value)
+                .Distinct()
+                .ToList();
+
+            // Lấy cả ghế đang hoạt động và không hoạt động để biết
+            // xe đã được cấu hình ghế hay chưa.
+            var seatRows = await _context.BusSeats
+                .AsNoTracking()
+                .Where(s => busIds.Contains(s.BusId))
+                .Select(s => new
+                {
+                    s.BusId,
+                    s.SeatCode,
+                    s.IsActive
+                })
+                .ToListAsync();
+
+            var seatCodesByBus = seatRows
+                .Where(s => !string.IsNullOrWhiteSpace(s.SeatCode))
+                .GroupBy(s => s.BusId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new
+                    {
+                        HasConfiguration = true,
+                        ActiveSeatCodes = g
+                            .Where(s => s.IsActive)
+                            .Select(s => s.SeatCode.Trim())
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase)
+                    });
+
+            var bookedCodesByTrip =
+                new Dictionary<int, HashSet<string>>();
+
+            var heldCodesByTrip =
+                new Dictionary<int, HashSet<string>>();
+
+            void AddSeatCode(
+                Dictionary<int, HashSet<string>> target,
+                int tripId,
+                string? seatCode)
+            {
+                if (string.IsNullOrWhiteSpace(seatCode))
+                    return;
+
+                if (!target.TryGetValue(tripId, out var seatCodes))
+                {
+                    seatCodes = new HashSet<string>(
+                        StringComparer.OrdinalIgnoreCase);
+                    target[tripId] = seatCodes;
+                }
+
+                seatCodes.Add(seatCode.Trim());
+            }
+
+            // Ghế đã có vé hợp lệ hoặc đã sử dụng.
+            var ticketRows = await _context.Tickets
+                .AsNoTracking()
+                .Where(t =>
+                    tripIds.Contains(t.TripId) &&
+                    (t.Status == "VALID" || t.Status == "USED"))
+                .Select(t => new
+                {
+                    t.TripId,
+                    t.SeatCode
+                })
+                .ToListAsync();
+
+            foreach (var ticket in ticketRows)
+            {
+                AddSeatCode(
+                    bookedCodesByTrip,
+                    ticket.TripId,
+                    ticket.SeatCode);
+            }
+
+            // Ghế có SeatHold và Booking đã được xác nhận.
+            var confirmedRows = await _context.SeatHolds
+                .AsNoTracking()
+                .Where(h =>
+                    tripIds.Contains(h.TripId) &&
+                    h.Status == "CONFIRMED" &&
+                    h.Booking != null &&
+                    h.Booking.Status == "CONFIRMED")
+                .Select(h => new
+                {
+                    h.TripId,
+                    h.SeatCode
+                })
+                .ToListAsync();
+
+            foreach (var hold in confirmedRows)
+            {
+                AddSeatCode(
+                    bookedCodesByTrip,
+                    hold.TripId,
+                    hold.SeatCode);
+            }
+
+            // Ghế giữ tạm còn hạn, gắn với booking vẫn ở trạng thái HELD.
+            var activeHoldRows = await _context.SeatHolds
+                .AsNoTracking()
+                .Where(h =>
+                    tripIds.Contains(h.TripId) &&
+                    h.Status == "HELD" &&
+                    h.ExpiresAt > nowUtc &&
+                    h.Booking != null &&
+                    h.Booking.Status == "HELD")
+                .Select(h => new
+                {
+                    h.TripId,
+                    h.SeatCode
+                })
+                .ToListAsync();
+
+            foreach (var hold in activeHoldRows)
+            {
+                AddSeatCode(
+                    heldCodesByTrip,
+                    hold.TripId,
+                    hold.SeatCode);
+            }
+
+            foreach (var trip in trips)
+            {
+                var hasSeatConfiguration = false;
+                HashSet<string>? activeSeatCodes = null;
+
+                if (trip.BusId.HasValue &&
+                    seatCodesByBus.TryGetValue(
+                        trip.BusId.Value,
+                        out var configuredSeats))
+                {
+                    hasSeatConfiguration = true;
+                    activeSeatCodes = configuredSeats.ActiveSeatCodes;
+                }
+
+                // Thứ tự nguồn dữ liệu thống nhất:
+                // 1) Cấu hình ghế BusSeats nếu đã có;
+                // 2) Sức chứa của xe Bus;
+                // 3) Trip.TotalSeats làm giá trị dự phòng cuối cùng.
+                int busSeatCount = trip.Bus?.SeatCount ?? 0;
+
+                int totalSeats = hasSeatConfiguration
+                    ? activeSeatCodes!.Count
+                    : (busSeatCount > 0
+                        ? busSeatCount
+                        : trip.TotalSeats);
+
+                var bookedCodes =
+                    bookedCodesByTrip.TryGetValue(
+                        trip.Id,
+                        out var booked)
+                        ? booked
+                        : new HashSet<string>(
+                            StringComparer.OrdinalIgnoreCase);
+
+                var heldCodes =
+                    heldCodesByTrip.TryGetValue(
+                        trip.Id,
+                        out var held)
+                        ? held
+                        : new HashSet<string>(
+                            StringComparer.OrdinalIgnoreCase);
+
+                int bookedSeats = bookedCodes.Count(code =>
+                    activeSeatCodes == null ||
+                    activeSeatCodes.Contains(code));
+
+                int heldSeats = heldCodes.Count(code =>
+                    (activeSeatCodes == null ||
+                     activeSeatCodes.Contains(code)) &&
+                    !bookedCodes.Contains(code));
+
+                int availableSeats = Math.Max(
+                    0,
+                    totalSeats - bookedSeats - heldSeats);
+
+                result[trip.Id] = new TripSeatAvailability
+                {
+                    TotalSeats = totalSeats,
+                    BookedSeats = bookedSeats,
+                    HeldSeats = heldSeats,
+                    AvailableSeats = availableSeats
+                };
+            }
+
+            return result;
+        }
+
         // =====================================================
         // US-165 + US-166: LẤY DANH SÁCH CHUYẾN
         // (phân trang + lọc + sắp xếp + trạng thái + đếm ngược)
@@ -328,12 +545,18 @@ namespace SmartBusTicketing.Services
         public async Task<TripListResponseDto> GetTripListAsync(
             TripListRequestDto request)
         {
-            // 1. Chuẩn hóa tham số phân trang
             var page = request.Page < 1 ? 1 : request.Page;
             var pageSize = request.PageSize < 1 ? 20 : request.PageSize;
-            if (pageSize > 100) pageSize = 100;
 
-            // 2. Query cơ bản
+            if (pageSize > 100)
+                pageSize = 100;
+
+            var now = DateTime.Now;
+            var nowUtc = DateTime.UtcNow;
+
+            // 1. Lấy những chuyến đang hoạt động.
+            // Nếu tìm theo ngày, lấy thêm chuyến bắt đầu từ ngày trước
+            // để hỗ trợ các chuyến chạy qua nửa đêm.
             var query = _context.Trips
                 .AsNoTracking()
                 .Include(t => t.Route)
@@ -347,46 +570,40 @@ namespace SmartBusTicketing.Services
                     t.Status == "ACTIVE" &&
                     t.Route != null &&
                     t.Route.IsActive &&
-                    t.BusId != null)
-                .AsQueryable();
+                    t.BusId != null);
 
-            // ✨ US-166: Chỉ hiển thị chuyến còn chỗ
-            if (request.OnlyAvailable == true)
-            {
-                query = query.Where(t => t.AvailableSeats > 0);
-            }
-
-            // Lọc theo ngày
             if (request.DepartureDate.HasValue)
             {
                 var date = request.DepartureDate.Value.Date;
-                query = query.Where(t => t.TripDate.Date == date);
-            }
+                var previousDate = date.AddDays(-1);
 
-            // Lọc theo giá
-            if (request.MinFare.HasValue)
-            {
                 query = query.Where(t =>
-                    t.Route!.Fare >= request.MinFare.Value);
+                    t.TripDate.Date == date ||
+                    t.TripDate.Date == previousDate);
             }
-
-            if (request.MaxFare.HasValue)
+            else
             {
+                // Giữ cả chuyến bắt đầu từ hôm qua nhưng vẫn
+                // đang chạy và có điểm đón trong tương lai.
+                var earliestDate = now.Date.AddDays(-1);
+
                 query = query.Where(t =>
-                    t.Route!.Fare <= request.MaxFare.Value);
+                    t.TripDate.Date >= earliestDate);
             }
 
-            // 3. Load về memory
             var trips = await query.ToListAsync();
 
-            // 4. Filter keyword + giờ
-            var origin = request.OriginKeyword?.Trim().ToLower();
-            var destination = request.DestinationKeyword?.Trim().ToLower();
-            var minTime = request.MinDepartureTime;
-            var now = DateTime.Now;
+            var seatAvailabilityByTrip =
+                await GetSeatAvailabilityByTripAsync(
+                    trips,
+                    nowUtc);
+
+            // 3. Ghép thông tin chuyến với điểm đón/trả,
+            // giờ thực tế theo trạm và số ghế còn trống.
+            var origin = request.OriginKeyword?.Trim();
+            var destination = request.DestinationKeyword?.Trim();
 
             var filtered = trips
-                .Where(t => !minTime.HasValue || t.DepartureTime >= minTime.Value)
                 .Select(t =>
                 {
                     var schedules = t.Schedules
@@ -394,115 +611,195 @@ namespace SmartBusTicketing.Services
                         .OrderBy(s => s.StopOrder)
                         .ToList();
 
-                    var start = string.IsNullOrEmpty(origin)
+                    if (schedules.Count < 2)
+                        return null;
+
+                    var start = string.IsNullOrWhiteSpace(origin)
                         ? schedules.FirstOrDefault()
                         : schedules.FirstOrDefault(s =>
-                            s.BusStop!.Name.ToLower().Contains(origin));
+                            s.BusStop!.Name.Contains(
+                                origin,
+                                StringComparison.CurrentCultureIgnoreCase));
 
-                    var end = string.IsNullOrEmpty(destination)
+                    var end = string.IsNullOrWhiteSpace(destination)
                         ? schedules.LastOrDefault()
                         : schedules.FirstOrDefault(s =>
-                            s.BusStop!.Name.ToLower().Contains(destination));
+                            s.BusStop!.Name.Contains(
+                                destination,
+                                StringComparison.CurrentCultureIgnoreCase));
 
-                    if (start == null || end == null) return null;
-                    if (start.StopOrder >= end.StopOrder) return null;
-
-                    var routeStops = t.Route!.RouteStops
-                        .OrderBy(rs => rs.StopOrder)
-                        .ToList();
-
-                    var routeStart = routeStops.FirstOrDefault(rs => rs.StopId == start.StopId);
-                    var routeEnd = routeStops.FirstOrDefault(rs => rs.StopId == end.StopId);
-
-                    double distanceKm = 0;
-                    if (routeStart != null && routeEnd != null &&
-                        routeEnd.DistanceFromStartKm >= routeStart.DistanceFromStartKm)
+                    if (start == null || end == null ||
+                        start.StopOrder >= end.StopOrder)
                     {
-                        distanceKm = routeEnd.DistanceFromStartKm - routeStart.DistanceFromStartKm;
+                        return null;
                     }
 
-                    int durationMinutes = 0;
-                    if (end.ArrivalTime >= start.DepartureTime)
+                    // Giờ tại trạm được quy đổi sang ngày giờ cụ thể.
+                    // Trạm có giờ nhỏ hơn giờ xuất phát gốc được hiểu
+                    // là trạm thuộc phần chạy sau nửa đêm.
+                    DateTime ToScheduleDateTime(TimeSpan time)
                     {
-                        durationMinutes = (int)(end.ArrivalTime - start.DepartureTime).TotalMinutes;
+                        var value = t.TripDate.Date + time;
+
+                        if (time < t.DepartureTime)
+                            value = value.AddDays(1);
+
+                        return value;
                     }
 
-                    // Xử lý chuyến đêm
-                    var departureDateTime = t.TripDate.Date + t.DepartureTime;
-                    var arrivalDateTime = t.TripDate.Date + end.ArrivalTime;
-                    if (end.ArrivalTime < t.DepartureTime)
+                    var departureDateTime =
+                        ToScheduleDateTime(start.DepartureTime);
+
+                    var arrivalDateTime =
+                        ToScheduleDateTime(end.ArrivalTime);
+
+                    while (arrivalDateTime < departureDateTime)
                     {
                         arrivalDateTime = arrivalDateTime.AddDays(1);
                     }
 
-                    var totalSeats = t.TotalSeats > 0
-                        ? t.TotalSeats
-                        : (t.Bus?.SeatCount ?? 0);
+                    // Không hiển thị chuyến đã rời điểm đón.
+                    if (departureDateTime <= now)
+                        return null;
 
-                    // ✨ US-166: Số phút còn lại đến giờ khởi hành
-                    var minutesUntil = (int)Math.Round(
-                        (departureDateTime - now).TotalMinutes);
-
-                    // ✨ US-166: Trạng thái chuyến
-                    string status;
-                    if (t.AvailableSeats <= 0)
+                    // Nếu người dùng chọn ngày, đối chiếu ngày tại
+                    // điểm đón, không chỉ ngày bắt đầu của cả chuyến.
+                    if (request.DepartureDate.HasValue &&
+                        departureDateTime.Date !=
+                        request.DepartureDate.Value.Date)
                     {
-                        status = "SOLD_OUT";
-                    }
-                    else if (minutesUntil >= 0 && minutesUntil <= 30)
-                    {
-                        status = "DEPARTING_SOON";
-                    }
-                    else
-                    {
-                        status = "ACTIVE";
+                        return null;
                     }
 
-                    // ✨ US-166: Số trạm dừng giữa (không tính điểm đi/đến)
-                    int stopCount = 0;
-                    for (int i = 0; i < schedules.Count; i++)
+                    if (request.MinDepartureTime.HasValue &&
+                        departureDateTime.TimeOfDay <
+                        request.MinDepartureTime.Value)
                     {
-                        var s = schedules[i];
-                        if (s.StopOrder > start.StopOrder &&
-                            s.StopOrder < end.StopOrder)
-                        {
-                            stopCount++;
-                        }
+                        return null;
                     }
+
+                    var fare = t.Route!.Fare;
+
+                    if (request.MinFare.HasValue &&
+                        fare < request.MinFare.Value)
+                    {
+                        return null;
+                    }
+
+                    if (request.MaxFare.HasValue &&
+                        fare > request.MaxFare.Value)
+                    {
+                        return null;
+                    }
+
+
+                    var seatAvailability =
+                        seatAvailabilityByTrip.TryGetValue(
+                            t.Id,
+                            out var calculatedSeats)
+                            ? calculatedSeats
+                            : null;
+
+                    var totalSeats =
+                        seatAvailability?.TotalSeats ?? 0;
+
+                    var availableSeats =
+                        seatAvailability?.AvailableSeats ?? 0;
+
+
+                    if (request.OnlyAvailable == true &&
+                        availableSeats <= 0)
+                    {
+                        return null;
+                    }
+
+                    var minutesUntilDeparture = Math.Max(
+                        0,
+                        (int)Math.Ceiling(
+                            (departureDateTime - now).TotalMinutes));
+
+                    var status = availableSeats <= 0
+                        ? "SOLD_OUT"
+                        : minutesUntilDeparture <= 30
+                            ? "DEPARTING_SOON"
+                            : "ACTIVE";
+
+                    var routeStops = t.Route.RouteStops
+                        .OrderBy(rs => rs.StopOrder)
+                        .ToList();
+
+                    var routeStart = routeStops.FirstOrDefault(
+                        rs => rs.StopId == start.StopId);
+
+                    var routeEnd = routeStops.FirstOrDefault(
+                        rs => rs.StopId == end.StopId);
+
+                    var distanceKm = 0.0;
+
+                    if (routeStart != null &&
+                        routeEnd != null &&
+                        routeEnd.DistanceFromStartKm >=
+                        routeStart.DistanceFromStartKm)
+                    {
+                        distanceKm =
+                            routeEnd.DistanceFromStartKm -
+                            routeStart.DistanceFromStartKm;
+                    }
+
+                    var durationMinutes = (int)Math.Max(
+                        0,
+                        (arrivalDateTime - departureDateTime)
+                            .TotalMinutes);
+
+                    var stopCount = schedules.Count(s =>
+                        s.StopOrder > start.StopOrder &&
+                        s.StopOrder < end.StopOrder);
 
                     return new TripListItemDto
                     {
                         TripId = t.Id,
                         TripCode = t.TripCode,
+
                         RouteCode = t.Route.RouteCode,
                         RouteName = t.Route.RouteName,
+
                         OriginStopName = start.BusStop!.Name,
                         DestinationStopName = end.BusStop!.Name,
+
                         DepartureDateTime = departureDateTime,
                         ArrivalDateTime = arrivalDateTime,
                         DurationMinutes = durationMinutes,
+
                         DistanceKm = distanceKm,
-                        Fare = t.Route.Fare,
+                        Fare = fare,
+
                         TotalSeats = totalSeats,
-                        AvailableSeats = t.AvailableSeats,
+                        AvailableSeats = availableSeats,
+
                         BusCode = t.Bus?.BusCode ?? string.Empty,
                         LicensePlate = t.Bus?.LicensePlate ?? string.Empty,
 
-                        // ✨ US-166
                         Status = status,
-                        MinutesUntilDeparture = minutesUntil,
+                        MinutesUntilDeparture =
+                            minutesUntilDeparture,
                         StopCount = stopCount,
-                        OriginAddress = start.BusStop!.Address ?? string.Empty,
-                        DestinationAddress = end.BusStop!.Address ?? string.Empty
+
+                        OriginAddress =
+                            start.BusStop.Address ?? string.Empty,
+                        DestinationAddress =
+                            end.BusStop.Address ?? string.Empty
                     };
                 })
                 .Where(x => x != null)
                 .Select(x => x!)
                 .ToList();
 
-            // 5. Sắp xếp
+            // 4. Sắp xếp kết quả.
             var sortBy = request.SortBy?.ToLower() ?? "time";
-            var isDesc = string.Equals(request.SortOrder, "desc",
+
+            var isDesc = string.Equals(
+                request.SortOrder,
+                "desc",
                 StringComparison.OrdinalIgnoreCase);
 
             filtered = sortBy switch
@@ -510,23 +807,32 @@ namespace SmartBusTicketing.Services
                 "price" => isDesc
                     ? filtered.OrderByDescending(x => x.Fare).ToList()
                     : filtered.OrderBy(x => x.Fare).ToList(),
+
                 "duration" => isDesc
-                    ? filtered.OrderByDescending(x => x.DurationMinutes).ToList()
-                    : filtered.OrderBy(x => x.DurationMinutes).ToList(),
+                    ? filtered.OrderByDescending(
+                        x => x.DurationMinutes).ToList()
+                    : filtered.OrderBy(
+                        x => x.DurationMinutes).ToList(),
+
                 _ => isDesc
-                    ? filtered.OrderByDescending(x => x.DepartureDateTime).ToList()
-                    : filtered.OrderBy(x => x.DepartureDateTime).ToList()
+                    ? filtered.OrderByDescending(
+                        x => x.DepartureDateTime).ToList()
+                    : filtered.OrderBy(
+                        x => x.DepartureDateTime).ToList()
             };
 
-            // 6. Phân trang
+            // 5. Phân trang.
             var totalCount = filtered.Count;
-            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            var totalPages = (int)Math.Ceiling(
+                (double)totalCount / pageSize);
+
             var items = filtered
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
 
-            // 7. Trả kết quả
+            // 6. Trả kết quả.
             return new TripListResponseDto
             {
                 TotalCount = totalCount,
@@ -543,12 +849,12 @@ namespace SmartBusTicketing.Services
         // =====================================================
         public async Task<DataIntegrityReportDto> CheckDataIntegrityAsync()
         {
+            var now = DateTime.UtcNow;
+
             var report = new DataIntegrityReportDto
             {
-                CheckedAt = DateTime.UtcNow
+                CheckedAt = now
             };
-
-            var now = DateTime.UtcNow;
 
             var trips = await _context.Trips
                 .AsNoTracking()
@@ -558,78 +864,85 @@ namespace SmartBusTicketing.Services
 
             report.TotalTripsChecked = trips.Count;
 
-            var bookedCountByTrip = await _context.Tickets
-                .AsNoTracking()
-                .Where(t => t.Status == "VALID" || t.Status == "USED")
-                .GroupBy(t => t.TripId)
-                .Select(g => new { TripId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.TripId, x => x.Count);
-
-            var heldCountByTrip = await _context.SeatHolds
-                .AsNoTracking()
-                .Where(sh =>
-                    sh.Status == "CONFIRMED" ||
-                    (sh.Status == "HELD" && sh.ExpiresAt > now))
-                .GroupBy(sh => sh.TripId)
-                .Select(g => new { TripId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.TripId, x => x.Count);
+            // Sử dụng chung quy tắc tính ghế với API tìm chuyến.
+            // Ticket VALID/USED và SeatHold CONFIRMED được hợp nhất
+            // theo mã ghế duy nhất để tránh đếm trùng.
+            var seatAvailabilityByTrip =
+                await GetSeatAvailabilityByTripAsync(trips, now);
 
             foreach (var trip in trips)
             {
-                if (trip.Bus != null && trip.Bus.SeatCount > 0)
+                var seatInfo = seatAvailabilityByTrip[trip.Id];
+
+                // 1. Kiểm tra tổng số ghế.
+                // Dùng trực tiếp cùng một nguồn số ghế với API tìm chuyến
+                // và API tỷ lệ lấp đầy để tránh lệch quy tắc dự phòng.
+                var expectedTotalSeats = seatInfo.TotalSeats;
+
+                if (trip.TotalSeats != expectedTotalSeats)
                 {
-                    if (trip.TotalSeats != trip.Bus.SeatCount)
+                    report.Summary.SeatCountMismatch++;
+
+                    report.Issues.Add(new DataIntegrityIssueDto
                     {
-                        report.Summary.SeatCountMismatch++;
-                        report.Issues.Add(new DataIntegrityIssueDto
-                        {
-                            IssueType = "SEAT_COUNT_MISMATCH",
-                            Severity = "HIGH",
-                            TripId = trip.Id,
-                            TripCode = trip.TripCode,
-                            Description = "Trip.TotalSeats khác với Bus.SeatCount",
-                            ExpectedValue = trip.Bus.SeatCount.ToString(),
-                            ActualValue = trip.TotalSeats.ToString()
-                        });
-                    }
+                        IssueType = "SEAT_COUNT_MISMATCH",
+                        Severity = "HIGH",
+                        TripId = trip.Id,
+                        TripCode = trip.TripCode,
+                        Description =
+                            "Trip.TotalSeats khác số ghế kỳ vọng theo cấu hình xe",
+                        ExpectedValue = expectedTotalSeats.ToString(),
+                        ActualValue = trip.TotalSeats.ToString()
+                    });
                 }
 
-                var actualBooked = bookedCountByTrip.TryGetValue(trip.Id, out var bc) ? bc : 0;
+                // 2. Kiểm tra số ghế đã đặt.
+                // Ghế xuất hiện đồng thời trong Tickets và SeatHolds
+                // chỉ được tính một lần theo mã ghế.
+                var actualBooked = seatInfo.BookedSeats;
+
                 if (trip.BookedSeats != actualBooked)
                 {
                     report.Summary.BookedSeatsMismatch++;
+
                     report.Issues.Add(new DataIntegrityIssueDto
                     {
                         IssueType = "BOOKED_SEATS_MISMATCH",
                         Severity = "MEDIUM",
                         TripId = trip.Id,
                         TripCode = trip.TripCode,
-                        Description = "Trip.BookedSeats khác với số vé VALID/USED thực tế",
+                        Description =
+                            "Trip.BookedSeats khác số ghế đã đặt thực tế " +
+                            "(Ticket VALID/USED và SeatHold CONFIRMED, đã loại trùng)",
                         ExpectedValue = actualBooked.ToString(),
                         ActualValue = trip.BookedSeats.ToString()
                     });
                 }
 
-                var actualHeld = heldCountByTrip.TryGetValue(trip.Id, out var hc) ? hc : 0;
-                var expectedAvailable = trip.TotalSeats - actualBooked - actualHeld;
-                if (expectedAvailable < 0) expectedAvailable = 0;
+                // 3. Kiểm tra số ghế còn trống.
+                // Dùng cùng kết quả tính toán với API tìm chuyến.
+                var expectedAvailable = seatInfo.AvailableSeats;
 
                 if (trip.AvailableSeats != expectedAvailable)
                 {
                     report.Summary.AvailableSeatsMismatch++;
+
                     report.Issues.Add(new DataIntegrityIssueDto
                     {
                         IssueType = "AVAILABLE_SEATS_MISMATCH",
                         Severity = "MEDIUM",
                         TripId = trip.Id,
                         TripCode = trip.TripCode,
-                        Description = "Trip.AvailableSeats khác với công thức TotalSeats - Booked - Held",
+                        Description =
+                            "Trip.AvailableSeats khác số ghế còn trống " +
+                            "tính từ mã ghế duy nhất đã đặt và đang giữ",
                         ExpectedValue = expectedAvailable.ToString(),
                         ActualValue = trip.AvailableSeats.ToString()
                     });
                 }
             }
 
+            // 4. Kiểm tra các ghế giữ đã hết hạn nhưng chưa được giải phóng.
             var expiredHolds = await _context.SeatHolds
                 .AsNoTracking()
                 .Include(sh => sh.Trip)
@@ -641,6 +954,7 @@ namespace SmartBusTicketing.Services
             foreach (var hold in expiredHolds)
             {
                 report.Summary.ExpiredSeatHolds++;
+
                 report.Issues.Add(new DataIntegrityIssueDto
                 {
                     IssueType = "EXPIRED_SEAT_HOLDS",
@@ -649,12 +963,15 @@ namespace SmartBusTicketing.Services
                     TripCode = hold.Trip?.TripCode,
                     SeatHoldId = hold.Id,
                     SeatCode = hold.SeatCode,
-                    Description = "Ghế đang giữ (HELD) đã quá hạn nhưng chưa được release",
+                    Description =
+                        "Ghế đang giữ (HELD) đã quá hạn nhưng chưa được release",
                     ExpectedValue = "RELEASED hoặc EXPIRED",
-                    ActualValue = $"{hold.Status} (hết hạn lúc {hold.ExpiresAt:u})"
+                    ActualValue =
+                        $"{hold.Status} (hết hạn lúc {hold.ExpiresAt:u})"
                 });
             }
 
+            // 5. Tổng hợp báo cáo.
             report.TotalIssuesFound = report.Issues.Count;
 
             return report;

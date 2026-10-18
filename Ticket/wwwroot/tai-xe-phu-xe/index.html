@@ -1,0 +1,356 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Smartbus - Tài xế / Phụ xe</title>
+
+    <!-- Dùng lại CSS của trang Đội xe -->
+    <link rel="stylesheet" href="../doi-xe/style.css">
+
+    <!-- Dùng lại logic sidebar quản trị -->
+    <script src="../js/smartbus-dialog.js"></script>
+    <script src="../js/admin-manager-layout.js"></script>
+
+    <!-- Kiểm tra quyền truy cập trang -->
+    <script>
+        (function () {
+            const raw = localStorage.getItem("userSession");
+
+            if (!raw) {
+                window.location.replace("../auth/dangnhap.html");
+                return;
+            }
+
+            try {
+                const user = JSON.parse(raw);
+
+                const role = String(
+                    user.role ||
+                    user.Role ||
+                    user.roleCode ||
+                    user.RoleCode ||
+                    user.roleName ||
+                    user.RoleName ||
+                    ""
+                ).trim().toUpperCase();
+
+                const roleId = Number(user.roleId || user.RoleId || 0);
+
+                const allowed =
+                    role === "ADMIN" ||
+                    role === "MANAGER" ||
+                    role === "QUẢN TRỊ VIÊN" ||
+                    role === "QUẢN LÝ VẬN HÀNH" ||
+                    roleId === 1 ||
+                    roleId === 2;
+
+                if (!allowed) {
+                    window.location.replace("../index.html");
+                }
+            } catch {
+                localStorage.removeItem("userSession");
+                window.location.replace("../auth/dangnhap.html");
+            }
+        })();
+    </script>
+
+    <style>
+        .staff-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .staff-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 18px 22px;
+            border-bottom: 1px solid #edf1f4;
+        }
+
+        .staff-search {
+            width: min(420px, 100%);
+            padding: 12px 14px;
+            border: 1px solid #dce6ef;
+            border-radius: 9px;
+            outline: none;
+            color: #435968;
+            background: #fff;
+        }
+
+            .staff-search:focus {
+                border-color: #1685e8;
+                box-shadow: 0 0 0 3px rgb(22 133 232 / 10%);
+            }
+
+        .driver-role {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: #0875d1;
+            background: #eaf6ff;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .assignment-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            color: #16845b;
+            background: #e8f8f1;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .unassigned-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            color: #a16b00;
+            background: #fff6dd;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .staff-message {
+            padding: 20px;
+            color: #718096;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        @media (max-width: 850px) {
+            .staff-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .staff-toolbar {
+                align-items: stretch;
+            }
+
+            .staff-search {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+
+            <nav class="side-nav">
+                <a href="../index.html" class="side-link">
+                    <span>▦</span>
+                    <span>Tổng quan</span>
+                </a>
+
+                <a href="../quan-ly-tuyen-tram/index.html" class="side-link">
+                    <span>⇄</span>
+                    <span>Tuyến &amp; trạm</span>
+                </a>
+
+                <a href="../lap-lich-trinh/index.html" class="side-link">
+                    <span>◷</span>
+                    <span>Lịch trình</span>
+                </a>
+
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen">
+                    <span>👤</span>
+                    <span>Phân quyền</span>
+                </a>
+
+                <a href="../doi-xe/index.html" class="side-link">
+                    <span>🚌</span>
+                    <span>Đội xe</span>
+                </a>
+
+                <a href="index.html" class="side-link active">
+                    <span>👤</span>
+                    <span>Tài xế / Phụ xe</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
+
+            <nav class="side-nav">
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar" id="sidebarAvatar">QL</div>
+
+                    <div>
+                        <strong id="sidebarUserName">Quản lý</strong>
+                        <small id="sidebarUserRole">Quản lý vận hành</small>
+                    </div>
+                </div>
+
+                <button class="logout-btn" id="logoutBtn" type="button">
+                    ↪ Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <!-- NỘI DUNG CHÍNH -->
+        <main class="main">
+
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">
+                        Quản lý vận hành
+                        <span>/</span>
+                        Tài xế / Phụ xe
+                    </div>
+
+                    <h1>Tài xế / Phụ xe</h1>
+
+                    <p>
+                        Danh sách tài khoản đang được phân quyền Tài xế (DRIVER).
+                    </p>
+                </div>
+
+                <div class="top-actions">
+                    <button class="icon-btn" type="button" title="Trợ giúp">?</button>
+
+                    <div class="user-btn">
+                        <div class="avatar small" id="topAvatar">QL</div>
+                        <span id="topUserRole">Quản lý vận hành</span>
+                        ▾
+                    </div>
+                </div>
+            </header>
+
+            <section class="content">
+
+                <!-- THỐNG KÊ -->
+                <div class="staff-summary">
+
+                    <div class="stat-card">
+                        <div class="stat-icon blue">👤</div>
+                        <div>
+                            <span>Tổng tài xế</span>
+                            <strong id="totalDrivers">0</strong>
+                            <small>Tài khoản có quyền DRIVER</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">✓</div>
+                        <div>
+                            <span>Đã phân công xe</span>
+                            <strong id="assignedDrivers">0</strong>
+                            <small>Có phân công xe hiện tại</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">!</div>
+                        <div>
+                            <span>Chưa phân công xe</span>
+                            <strong id="unassignedDrivers">0</strong>
+                            <small>Chưa có phân công xe hiện tại</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- DANH SÁCH TÀI XẾ -->
+                <div class="page-card">
+
+                    <div class="card-head">
+                        <div>
+                            <div class="eyebrow">NHÂN SỰ</div>
+                            <h2>Danh sách tài xế</h2>
+                            <p>
+                                Dữ liệu lấy từ các tài khoản được phân quyền DRIVER.
+                            </p>
+                        </div>
+
+                        <button class="primary-btn" id="refreshDriversBtn" type="button">
+                            ↻ Làm mới
+                        </button>
+                    </div>
+
+                    <div class="staff-toolbar">
+                        <input type="search"
+                               id="driverSearch"
+                               class="staff-search"
+                               placeholder="Tìm theo tên, email, số điện thoại hoặc mã xe..."
+                               autocomplete="off">
+
+                        <span id="driverCount">0 tài xế</span>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Họ và tên</th>
+                                    <th>Email</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Quyền</th>
+                                    <th>Phân công hiện tại</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="driverTableBody">
+                                <tr>
+                                    <td colspan="6" class="staff-message">
+                                        Đang tải danh sách tài xế...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

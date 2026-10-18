@@ -74,6 +74,170 @@ namespace Ticket.Controllers
             return Ok(tickets.Select(ToDto).ToList());
         }
 
+        // =====================================================
+        // LỊCH SỬ MUA VÉ DÀNH CHO ADMIN / MANAGER
+        // GET: /api/Ticket/history
+        // =====================================================
+        [HttpGet("history")]
+        public async Task<IActionResult> GetTicketHistory(
+            [FromHeader(Name = "X-User-Id")] string? userId,
+            [FromQuery] string? search = null,
+            [FromQuery] string? ticketStatus = null,
+            [FromQuery] string? paymentStatus = null,
+            [FromQuery] string? refundStatus = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized(new { message = "Vui lòng đăng nhập." });
+
+            if (!await _authorization.HasAnyRoleAsync(Request, "ADMIN", "MANAGER"))
+                return StatusCode(403, new { message = "Bạn không có quyền xem lịch sử mua vé." });
+
+            page = Math.Max(1, page);
+            if (pageSize < 1) pageSize = 20;
+            pageSize = Math.Min(pageSize, 100);
+
+            var keyword = search?.Trim().ToLowerInvariant();
+            var normalizedTicketStatus = ticketStatus?.Trim().ToUpperInvariant();
+            var normalizedPaymentStatus = paymentStatus?.Trim().ToUpperInvariant();
+            var normalizedRefundStatus = refundStatus?.Trim().ToUpperInvariant();
+
+            var query = _context.Tickets.AsNoTracking().Where(t => t.Booking != null);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(t =>
+                    t.TicketCode.ToLower().Contains(keyword) ||
+                    t.Booking!.BookingCode.ToLower().Contains(keyword) ||
+                    (t.Booking.User != null && t.Booking.User.FullName.ToLower().Contains(keyword)) ||
+                    (t.Trip != null && t.Trip.TripCode.ToLower().Contains(keyword)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(normalizedTicketStatus) && normalizedTicketStatus != "ALL")
+                query = query.Where(t => t.Status == normalizedTicketStatus);
+
+            if (!string.IsNullOrWhiteSpace(normalizedPaymentStatus) && normalizedPaymentStatus != "ALL")
+            {
+                if (normalizedPaymentStatus == "NONE" || normalizedPaymentStatus == "NO_TRANSACTION")
+                {
+                    query = query.Where(t => !_context.PaymentTransactions.Any(p => p.BookingId == t.BookingId));
+                }
+                else
+                {
+                    query = query.Where(t =>
+                        _context.PaymentTransactions
+                            .Where(p => p.BookingId == t.BookingId)
+                            .OrderByDescending(p => p.CreatedAt)
+                            .ThenByDescending(p => p.Id)
+                            .Select(p => p.Status)
+                            .FirstOrDefault() == normalizedPaymentStatus);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(normalizedRefundStatus) && normalizedRefundStatus != "ALL")
+            {
+                if (normalizedRefundStatus == "NONE" || normalizedRefundStatus == "NO_TRANSACTION")
+                {
+                    query = query.Where(t => !_context.RefundTransactions.Any(r => r.TicketId == t.Id));
+                }
+                else
+                {
+                    query = query.Where(t =>
+                        _context.RefundTransactions
+                            .Where(r => r.TicketId == t.Id)
+                            .OrderByDescending(r => r.CreatedAt)
+                            .ThenByDescending(r => r.Id)
+                            .Select(r => r.Status)
+                            .FirstOrDefault() == normalizedRefundStatus);
+                }
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var tickets = await query
+                .Include(t => t.Booking).ThenInclude(b => b!.User)
+                .Include(t => t.Trip)
+                .Include(t => t.Route)
+                .Include(t => t.DepartureStop)
+                .Include(t => t.ArrivalStop)
+                .OrderByDescending(t => t.IssuedAt)
+                .ThenByDescending(t => t.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var bookingIds = tickets.Select(t => t.BookingId).Distinct().ToList();
+            var ticketIds = tickets.Select(t => t.Id).ToList();
+
+            var paymentRows = bookingIds.Count == 0 ? new List<PaymentTransaction>() :
+                await _context.PaymentTransactions.AsNoTracking()
+                    .Where(p => bookingIds.Contains(p.BookingId))
+                    .OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id)
+                    .ToListAsync();
+
+            var refundRows = ticketIds.Count == 0 ? new List<RefundTransaction>() :
+                await _context.RefundTransactions.AsNoTracking()
+                    .Where(r => ticketIds.Contains(r.TicketId))
+                    .OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id)
+                    .ToListAsync();
+
+            var latestPaymentByBooking = paymentRows.GroupBy(p => p.BookingId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id).First());
+
+            var latestRefundByTicket = refundRows.GroupBy(r => r.TicketId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.CreatedAt).ThenByDescending(r => r.Id).First());
+
+            var items = tickets.Select(t =>
+            {
+                latestPaymentByBooking.TryGetValue(t.BookingId, out var payment);
+                latestRefundByTicket.TryGetValue(t.Id, out var refund);
+
+                return new TicketHistoryItemDto
+                {
+                    TicketId = t.Id,
+                    TicketCode = t.TicketCode,
+                    BookingCode = t.Booking?.BookingCode ?? string.Empty,
+                    BookingStatus = t.Booking?.Status ?? string.Empty,
+                    PassengerName = t.Booking?.User?.FullName ?? "Chưa cập nhật",
+                    TripCode = t.Trip?.TripCode ?? string.Empty,
+                    RouteCode = t.Route?.RouteCode ?? string.Empty,
+                    RouteName = t.Route?.RouteName ?? string.Empty,
+                    TripDate = t.Trip?.TripDate,
+                    DepartureTime = t.Trip != null ? t.Trip.DepartureTime.ToString(@"hh\:mm") : string.Empty,
+                    ArrivalTime = t.Trip != null && t.Trip.ArrivalTime.HasValue ? t.Trip.ArrivalTime.Value.ToString(@"hh\:mm") : string.Empty,
+                    DepartureStop = t.DepartureStop?.Name ?? string.Empty,
+                    ArrivalStop = t.ArrivalStop?.Name ?? string.Empty,
+                    SeatCode = t.SeatCode,
+                    Fare = t.Fare,
+                    TicketStatus = t.Status,
+                    IssuedAt = t.IssuedAt,
+                    UsedAt = t.UsedAt,
+                    PaymentStatus = payment?.Status ?? "NO_TRANSACTION",
+                    PaymentProvider = payment?.Provider ?? string.Empty,
+                    PaymentTransactionCode = payment?.TransactionCode ?? string.Empty,
+                    PaymentAmount = payment?.Amount,
+                    PaidAt = payment?.PaidAt,
+                    RefundStatus = refund?.Status ?? "NO_TRANSACTION",
+                    RefundReason = refund?.Reason ?? string.Empty,
+                    RefundAmount = refund?.Amount,
+                    RefundedAt = refund?.ProcessedAt
+                };
+            }).ToList();
+
+            return Ok(new TicketHistoryResponseDto
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                Items = items
+            });
+        }
+
+        // =====================================================
+        // CHI TIẾT VÉ
+        // =====================================================
         [HttpGet("{ticketId:int}")]
         public async Task<IActionResult> GetTicket(int ticketId)
         {
@@ -156,14 +320,21 @@ namespace Ticket.Controllers
                 var otherTickets = await _context.Tickets.Where(x => x.BookingId == ticket.BookingId && x.Id != ticket.Id).ToListAsync();
                 ticket.Booking.Status = otherTickets.Any(x => x.Status == "VALID") ? "PARTIALLY_CANCELLED" : "CANCELLED";
 
+                // Lấy giao dịch thanh toán thành công mới nhất
                 var payment = await _context.PaymentTransactions
                     .Where(x => x.BookingId == ticket.BookingId && x.Status == "SUCCESS")
-                    .OrderByDescending(x => x.PaidAt ?? x.CreatedAt).FirstOrDefaultAsync();
+                    .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
+                    .ThenByDescending(x => x.Id)
+                    .FirstOrDefaultAsync();
 
                 RefundTransaction? refund = null;
-                if (payment != null && ticket.Fare > 0)
+                var isCashPayment = payment != null && string.Equals(payment.Provider?.Trim(), "Cash", StringComparison.OrdinalIgnoreCase);
+
+                if (payment != null && !isCashPayment && ticket.Fare > 0)
                 {
-                    refund = await _context.RefundTransactions.FirstOrDefaultAsync(x => x.TicketId == ticket.Id && (x.Status == "PENDING" || x.Status == "SUCCESS"));
+                    refund = await _context.RefundTransactions
+                        .FirstOrDefaultAsync(x => x.TicketId == ticket.Id && (x.Status == "PENDING" || x.Status == "SUCCESS"));
+
                     if (refund == null)
                     {
                         refund = new RefundTransaction
@@ -236,6 +407,7 @@ namespace Ticket.Controllers
                 var newDepartureAt = newTrip.TripDate.Date.Add(newTrip.DepartureTime);
                 if (newDepartureAt <= DateTime.Now.AddMinutes(cutoffMinutes))
                     return BadRequest(new { success = false, message = $"Chuyến mới phải còn ít nhất {cutoffMinutes} phút trước giờ khởi hành." });
+
                 if (newTrip.AvailableSeats <= 0) return BadRequest(new { success = false, message = "Chuyến mới đã hết chỗ." });
 
                 var validSeat = await _context.BusSeats.AnyAsync(x => x.BusId == newTrip.BusId && x.SeatCode == newSeatCode && x.IsActive);
@@ -249,6 +421,24 @@ namespace Ticket.Controllers
                 var oldTripId = ticket.TripId;
                 var oldSeatCode = ticket.SeatCode;
                 var oldFare = ticket.Fare;
+
+                // Nếu vé mới rẻ hơn, chỉ tiếp tục khi có thanh toán gốc thành công và không dùng tiền mặt.
+                PaymentTransaction? originalPayment = null;
+
+                if (difference < 0)
+                {
+                    originalPayment = await _context.PaymentTransactions
+                        .Where(x => x.BookingId == ticket.BookingId && x.Status == "SUCCESS")
+                        .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
+                        .ThenByDescending(x => x.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (originalPayment == null)
+                        return BadRequest(new { success = false, message = "Không thể đổi sang vé rẻ hơn vì không tìm thấy giao dịch thanh toán thành công để hoàn chênh lệch." });
+
+                    if (string.Equals(originalPayment.Provider?.Trim(), "Cash", StringComparison.OrdinalIgnoreCase))
+                        return BadRequest(new { success = false, message = "Không hỗ trợ hoàn chênh lệch khi vé được thanh toán bằng tiền mặt. Vui lòng chọn chuyến có giá bằng hoặc cao hơn." });
+                }
 
                 // GHẾ CŨ
                 var oldHold = ticket.Booking.SeatHolds.FirstOrDefault(x => x.TripId == oldTripId && x.SeatCode == oldSeatCode && x.Status == "CONFIRMED");
@@ -303,14 +493,18 @@ namespace Ticket.Controllers
                 });
 
                 RefundTransaction? refund = null;
-                if (difference < 0)
+                if (difference < 0 && originalPayment != null)
                 {
-                    var payment = await _context.PaymentTransactions.Where(x => x.BookingId == ticket.BookingId && x.Status == "SUCCESS").OrderByDescending(x => x.PaidAt ?? x.CreatedAt).FirstOrDefaultAsync();
-                    if (payment != null)
+                    refund = new RefundTransaction
                     {
-                        refund = new RefundTransaction { TicketId = ticket.Id, PaymentTransactionId = payment.Id, Amount = Math.Abs(difference), Reason = "CHANGE_TICKET", Status = "PENDING", CreatedAt = DateTime.UtcNow };
-                        _context.RefundTransactions.Add(refund);
-                    }
+                        TicketId = ticket.Id,
+                        PaymentTransactionId = originalPayment.Id,
+                        Amount = Math.Abs(difference),
+                        Reason = "CHANGE_TICKET",
+                        Status = "PENDING",
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _context.RefundTransactions.Add(refund);
                 }
 
                 if (difference > 0)
@@ -394,6 +588,10 @@ namespace Ticket.Controllers
             if (ticket.Status == "USED") return BadRequest(new { valid = false, message = "Vé đã được sử dụng." });
             if (ticket.Status != "VALID") return BadRequest(new { valid = false, message = "Vé không hợp lệ." });
             if (ticket.Trip == null) return BadRequest(new { valid = false, message = "Không tìm thấy chuyến xe của vé." });
+
+            if (!ticket.Trip.IsActive || string.Equals(ticket.Trip.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { valid = false, message = "Chuyến xe đã ngừng hoạt động hoặc bị hủy. Không thể soát vé." });
+
             if (ticket.TripId != request.TripId) return BadRequest(new { valid = false, message = "Vé không thuộc chuyến xe đang kiểm tra." });
             if (ticket.Trip.TripDate.Date != DateTime.Today) return BadRequest(new { valid = false, message = "Vé không thuộc ngày chạy hiện tại." });
 
@@ -401,10 +599,13 @@ namespace Ticket.Controllers
         }
 
         [HttpPost("{ticketId:int}/use")]
-        public async Task<IActionResult> UseTicket(int ticketId, [FromQuery] int tripId)
+        public async Task<IActionResult> UseTicket(int ticketId, [FromQuery] int tripId, [FromBody] UseTicketRequestDto? request)
         {
             if (!await _authorization.HasAnyRoleAsync(Request, "DRIVER", "MANAGER")) return StatusCode(403, new { valid = false, message = "Bạn không có quyền xác nhận vé." });
             if (tripId <= 0) return BadRequest(new { valid = false, message = "Chưa xác định được chuyến xe." });
+
+            if (request == null || string.IsNullOrWhiteSpace(request.QRToken))
+                return BadRequest(new { valid = false, message = "Thiếu mã QR đã xác minh. Vui lòng quét hoặc nhập lại mã QR." });
 
             var ticket = await _context.Tickets.Include(x => x.QR).Include(x => x.Trip).FirstOrDefaultAsync(x => x.Id == ticketId);
             if (ticket == null) return NotFound(new { valid = false, message = "Không tìm thấy vé." });
@@ -422,11 +623,20 @@ namespace Ticket.Controllers
 
             if (ticket.TripId != tripId) return BadRequest(new { valid = false, message = "Vé không thuộc chuyến đang kiểm tra." });
             if (ticket.Trip == null) return BadRequest(new { valid = false, message = "Không tìm thấy chuyến xe." });
+
+            if (!ticket.Trip.IsActive || string.Equals(ticket.Trip.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { valid = false, message = "Chuyến xe đã ngừng hoạt động hoặc bị hủy. Không thể xác nhận vé." });
+
             if (ticket.Trip.TripDate.Date != DateTime.Today) return BadRequest(new { valid = false, message = "Vé không thuộc ngày chạy hiện tại." });
             if (ticket.Status == "CANCELLED") return BadRequest(new { valid = false, message = "Vé đã bị hủy." });
             if (ticket.Status == "USED") return BadRequest(new { valid = false, message = "Vé đã được sử dụng trước đó." });
             if (ticket.Status != "VALID") return BadRequest(new { valid = false, message = "Vé không hợp lệ." });
-            if (ticket.QR == null || ticket.QR.Status != "ACTIVE") return BadRequest(new { valid = false, message = "QR của vé không còn hiệu lực." });
+            if (ticket.QR == null) return BadRequest(new { valid = false, message = "Vé chưa có mã QR." });
+
+            if (!string.Equals(ticket.QR.QRToken, request.QRToken.Trim(), StringComparison.Ordinal))
+                return BadRequest(new { valid = false, message = "Mã QR không khớp với vé cần xác nhận. Hãy quét lại mã QR." });
+
+            if (ticket.QR.Status != "ACTIVE") return BadRequest(new { valid = false, message = "QR của vé không còn hiệu lực." });
 
             ticket.Status = "USED";
             ticket.UsedAt = DateTime.UtcNow;

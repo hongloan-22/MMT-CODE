@@ -72,7 +72,7 @@ function showToast(
         );
 
     if (!toast) {
-        alert(message);
+        void SmartbusDialog.alert(message, { title: "Thông báo" });
         return;
     }
 
