@@ -5,6 +5,8 @@ namespace Ticket.Models
 {
     public class Trip
     {
+        
+
         [Key]
         public int Id { get; set; }
 
@@ -34,8 +36,11 @@ namespace Ticket.Models
         // Ngày chạy cụ thể
         public DateTime TripDate { get; set; }
 
+
         [Required]
         public TimeSpan DepartureTime { get; set; }
+
+        
 
         // Giờ đến dự kiến
         public TimeSpan? ArrivalTime { get; set; }

@@ -35,6 +35,8 @@ builder.Services.AddScoped<
     BackendAuthorizationService>();
 
 builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<Ticket.Service.RefundService>();
+builder.Services.AddScoped<Ticket.Service.ExchangeService>();
 
 // US-148: BÁO CÁO DOANH THU
 builder.Services.AddScoped<
