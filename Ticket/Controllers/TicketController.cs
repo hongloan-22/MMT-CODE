@@ -70,56 +70,346 @@ namespace Ticket.Controllers
         }
 
         // =====================================================
-// LẤY TOÀN BỘ VÉ CỦA BOOKING
-// GET: /api/Ticket/booking/{bookingId}
-// =====================================================
+        // LỊCH SỬ MUA VÉ DÀNH CHO ADMIN / MANAGER
+        // GET: /api/Ticket/history
+        // =====================================================
+        [HttpGet("history")]
+        public async Task<IActionResult> GetTicketHistory(
+            [FromHeader(Name = "X-User-Id")] string? userId,
+            [FromQuery] string? search = null,
+            [FromQuery] string? ticketStatus = null,
+            [FromQuery] string? paymentStatus = null,
+            [FromQuery] string? refundStatus = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            // 1. Kiểm tra đăng nhập.
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized(new
+                {
+                    message = "Vui lòng đăng nhập."
+                });
+            }
 
-[HttpGet("booking/{bookingId:int}")]
-public async Task<IActionResult>
+            // 2. Chỉ Admin hoặc Quản lý được xem lịch sử toàn hệ thống.
+            if (!await _authorization.HasAnyRoleAsync(
+                    Request, "ADMIN", "MANAGER"))
+            {
+                return StatusCode(403, new
+                {
+                    message =
+                        "Bạn không có quyền xem lịch sử mua vé."
+                });
+            }
+
+            // 3. Chuẩn hóa phân trang và bộ lọc.
+            page = Math.Max(1, page);
+
+            if (pageSize < 1)
+                pageSize = 20;
+
+            pageSize = Math.Min(pageSize, 100);
+
+            var keyword = search?.Trim().ToLowerInvariant();
+
+            var normalizedTicketStatus =
+                ticketStatus?.Trim().ToUpperInvariant();
+
+            var normalizedPaymentStatus =
+                paymentStatus?.Trim().ToUpperInvariant();
+
+            var normalizedRefundStatus =
+                refundStatus?.Trim().ToUpperInvariant();
+
+            // 4. Lấy lịch sử từ bảng Tickets.
+            // Không giới hạn theo UserId của người đang đăng nhập,
+            // vì đây là API lịch sử toàn hệ thống dành cho quản lý.
+            var query = _context.Tickets
+                .AsNoTracking()
+                .Where(t => t.Booking != null);
+
+            // 5. Tìm theo mã vé, mã booking, mã chuyến
+            // hoặc tên hành khách.
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(t =>
+                    t.TicketCode.ToLower().Contains(keyword) ||
+                    t.Booking!.BookingCode.ToLower().Contains(keyword) ||
+                    (t.Booking.User != null &&
+                     t.Booking.User.FullName.ToLower().Contains(keyword)) ||
+                    (t.Trip != null &&
+                     t.Trip.TripCode.ToLower().Contains(keyword)));
+            }
+
+            // 6. Lọc trạng thái vé.
+            if (!string.IsNullOrWhiteSpace(normalizedTicketStatus) &&
+                normalizedTicketStatus != "ALL")
+            {
+                query = query.Where(t =>
+                    t.Status == normalizedTicketStatus);
+            }
+
+
+            // 7. Lọc theo trạng thái của giao dịch thanh toán mới nhất.
+            // Quy tắc sắp xếp phải giống phần lấy trạng thái để hiển thị:
+            // CreatedAt giảm dần, sau đó Id giảm dần.
+            if (!string.IsNullOrWhiteSpace(normalizedPaymentStatus) &&
+                normalizedPaymentStatus != "ALL")
+            {
+                if (normalizedPaymentStatus == "NONE" ||
+                    normalizedPaymentStatus == "NO_TRANSACTION")
+                {
+                    // Chỉ lấy vé thuộc booking chưa có giao dịch thanh toán.
+                    query = query.Where(t =>
+                        !_context.PaymentTransactions.Any(p =>
+                            p.BookingId == t.BookingId));
+                }
+                else
+                {
+                    // Chỉ lọc theo trạng thái của giao dịch mới nhất,
+                    // không lọc theo bất kỳ giao dịch cũ nào.
+                    query = query.Where(t =>
+                        _context.PaymentTransactions
+                            .Where(p => p.BookingId == t.BookingId)
+                            .OrderByDescending(p => p.CreatedAt)
+                            .ThenByDescending(p => p.Id)
+                            .Select(p => p.Status)
+                            .FirstOrDefault() == normalizedPaymentStatus);
+                }
+            }
+
+            // 8. Lọc theo trạng thái của giao dịch hoàn tiền mới nhất
+            // trên từng vé, khớp với trạng thái trả về trong DTO.
+            if (!string.IsNullOrWhiteSpace(normalizedRefundStatus) &&
+                normalizedRefundStatus != "ALL")
+            {
+                if (normalizedRefundStatus == "NONE" ||
+                    normalizedRefundStatus == "NO_TRANSACTION")
+                {
+                    // Chỉ lấy vé chưa có giao dịch hoàn tiền.
+                    query = query.Where(t =>
+                        !_context.RefundTransactions.Any(r =>
+                            r.TicketId == t.Id));
+                }
+                else
+                {
+                    // Chỉ lọc theo giao dịch hoàn tiền mới nhất.
+                    query = query.Where(t =>
+                        _context.RefundTransactions
+                            .Where(r => r.TicketId == t.Id)
+                            .OrderByDescending(r => r.CreatedAt)
+                            .ThenByDescending(r => r.Id)
+                            .Select(r => r.Status)
+                            .FirstOrDefault() == normalizedRefundStatus);
+                }
+            }
+
+            // 9. Đếm tổng bản ghi sau khi lọc.
+            var totalCount = await query.CountAsync();
+
+            // 10. Lấy dữ liệu đúng trang và nạp thông tin liên quan.
+            var tickets = await query
+                .Include(t => t.Booking)
+                    .ThenInclude(b => b!.User)
+                .Include(t => t.Trip)
+                .Include(t => t.Route)
+                .Include(t => t.DepartureStop)
+                .Include(t => t.ArrivalStop)
+                .OrderByDescending(t => t.IssuedAt)
+                .ThenByDescending(t => t.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // 11. Chỉ lấy giao dịch của các booking/vé trong trang.
+            var bookingIds = tickets
+                .Select(t => t.BookingId)
+                .Distinct()
+                .ToList();
+
+            var ticketIds = tickets
+                .Select(t => t.Id)
+                .ToList();
+
+            var paymentRows = bookingIds.Count == 0
+                ? new List<PaymentTransaction>()
+                : await _context.PaymentTransactions
+                    .AsNoTracking()
+                    .Where(p => bookingIds.Contains(p.BookingId))
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ThenByDescending(p => p.Id)
+                    .ToListAsync();
+
+            var refundRows = ticketIds.Count == 0
+                ? new List<RefundTransaction>()
+                : await _context.RefundTransactions
+                    .AsNoTracking()
+                    .Where(r => ticketIds.Contains(r.TicketId))
+                    .OrderByDescending(r => r.CreatedAt)
+                    .ThenByDescending(r => r.Id)
+                    .ToListAsync();
+
+            // Lấy giao dịch mới nhất để hiển thị trạng thái hiện tại.
+            var latestPaymentByBooking = paymentRows
+                .GroupBy(p => p.BookingId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(p => p.CreatedAt)
+                          .ThenByDescending(p => p.Id)
+                          .First());
+
+            var latestRefundByTicket = refundRows
+                .GroupBy(r => r.TicketId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(r => r.CreatedAt)
+                          .ThenByDescending(r => r.Id)
+                          .First());
+
+            // 12. Ánh xạ sang DTO, không trả QRToken hoặc dữ liệu nhạy cảm.
+            var items = tickets.Select(t =>
+            {
+                latestPaymentByBooking.TryGetValue(
+                    t.BookingId, out var payment);
+
+                latestRefundByTicket.TryGetValue(
+                    t.Id, out var refund);
+
+                return new TicketHistoryItemDto
+                {
+                    TicketId = t.Id,
+                    TicketCode = t.TicketCode,
+
+                    BookingCode =
+                        t.Booking?.BookingCode ?? string.Empty,
+
+                    BookingStatus =
+                        t.Booking?.Status ?? string.Empty,
+
+                    PassengerName =
+                        t.Booking?.User?.FullName ?? "Chưa cập nhật",
+
+                    TripCode =
+                        t.Trip?.TripCode ?? string.Empty,
+
+                    RouteCode =
+                        t.Route?.RouteCode ?? string.Empty,
+
+                    RouteName =
+                        t.Route?.RouteName ?? string.Empty,
+
+                    TripDate = t.Trip?.TripDate,
+
+                    DepartureTime = t.Trip != null
+                        ? t.Trip.DepartureTime.ToString(@"hh\:mm")
+                        : string.Empty,
+
+                    ArrivalTime =
+                        t.Trip != null && t.Trip.ArrivalTime.HasValue
+                            ? t.Trip.ArrivalTime.Value.ToString(@"hh\:mm")
+                            : string.Empty,
+
+                    DepartureStop =
+                        t.DepartureStop?.Name ?? string.Empty,
+
+                    ArrivalStop =
+                        t.ArrivalStop?.Name ?? string.Empty,
+
+                    SeatCode = t.SeatCode,
+                    Fare = t.Fare,
+                    TicketStatus = t.Status,
+                    IssuedAt = t.IssuedAt,
+                    UsedAt = t.UsedAt,
+
+                    PaymentStatus =
+                        payment?.Status ?? "NO_TRANSACTION",
+
+                    PaymentProvider =
+                        payment?.Provider ?? string.Empty,
+
+                    PaymentTransactionCode =
+                        payment?.TransactionCode ?? string.Empty,
+
+                    PaymentAmount = payment?.Amount,
+                    PaidAt = payment?.PaidAt,
+
+                    RefundStatus =
+                        refund?.Status ?? "NO_TRANSACTION",
+
+                    RefundReason =
+                        refund?.Reason ?? string.Empty,
+
+                    RefundAmount = refund?.Amount,
+                    RefundedAt = refund?.ProcessedAt
+                };
+            }).ToList();
+
+            // 13. Trả kết quả phân trang.
+            return Ok(new TicketHistoryResponseDto
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+
+                TotalPages = (int)Math.Ceiling(
+                    totalCount / (double)pageSize),
+
+                Items = items
+            });
+        }
+
+        // =====================================================
+        // LẤY TOÀN BỘ VÉ CỦA BOOKING
+        // GET: /api/Ticket/booking/{bookingId}
+        // =====================================================
+
+        [HttpGet("booking/{bookingId:int}")]
+        public async Task<IActionResult>
     GetTicketsByBooking(int bookingId)
-{
-    var userId =
-        Request.Headers["X-User-Id"]
-            .ToString();
-
-    if (string.IsNullOrWhiteSpace(userId))
-    {
-        return Unauthorized(new
         {
-            message =
-                "Vui lòng đăng nhập."
-        });
-    }
+            var userId =
+                Request.Headers["X-User-Id"]
+                    .ToString();
 
-    var tickets =
-        await _context.Tickets
-            .AsNoTracking()
-            .Include(x => x.Booking)
-                .ThenInclude(x => x!.User)
-            .Include(x => x.Trip)
-            .Include(x => x.Route)
-            .Include(x => x.DepartureStop)
-            .Include(x => x.ArrivalStop)
-            .Include(x => x.QR)
-            .Where(x =>
-                x.Booking != null &&
-                x.Booking.Id == bookingId &&
-                x.Booking.UserId == userId)
-            .OrderBy(x => x.SeatCode)
-            .ToListAsync();
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return Unauthorized(new
+                {
+                    message =
+                        "Vui lòng đăng nhập."
+                });
+            }
 
-    if (tickets.Count == 0)
-    {
-        return NotFound(new
-        {
-            message =
-                "Booking chưa có vé điện tử."
-        });
-    }
+            var tickets =
+                await _context.Tickets
+                    .AsNoTracking()
+                    .Include(x => x.Booking)
+                        .ThenInclude(x => x!.User)
+                    .Include(x => x.Trip)
+                    .Include(x => x.Route)
+                    .Include(x => x.DepartureStop)
+                    .Include(x => x.ArrivalStop)
+                    .Include(x => x.QR)
+                    .Where(x =>
+                        x.Booking != null &&
+                        x.Booking.Id == bookingId &&
+                        x.Booking.UserId == userId)
+                    .OrderBy(x => x.SeatCode)
+                    .ToListAsync();
 
-    return Ok(
-        tickets.Select(ToDto).ToList());
-}
+            if (tickets.Count == 0)
+            {
+                return NotFound(new
+                {
+                    message =
+                        "Booking chưa có vé điện tử."
+                });
+            }
+
+            return Ok(
+                tickets.Select(ToDto).ToList());
+        }
 
         // =====================================================
         // CHI TIẾT VÉ
@@ -458,71 +748,58 @@ public async Task<IActionResult>
                         ? "PARTIALLY_CANCELLED"
                         : "CANCELLED";
 
+
                 // =====================================================
-                // TÌM PAYMENT SUCCESS
+                // TÌM GIAO DỊCH THANH TOÁN THÀNH CÔNG MỚI NHẤT
                 // =====================================================
 
                 var payment =
                     await _context.PaymentTransactions
                         .Where(x =>
-                            x.BookingId ==
-                                ticket.BookingId &&
-                            x.Status ==
-                                "SUCCESS")
-                        .OrderByDescending(
-                            x =>
-                                x.PaidAt ??
-                                x.CreatedAt)
+                            x.BookingId == ticket.BookingId &&
+                            x.Status == "SUCCESS")
+                        .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
+                        .ThenByDescending(x => x.Id)
                         .FirstOrDefaultAsync();
 
                 // =====================================================
-                // TẠO YÊU CẦU HOÀN TIỀN
+                // TẠO YÊU CẦU HOÀN TIỀN DEMO
+                // Chỉ áp dụng cho thanh toán không dùng tiền mặt.
                 // =====================================================
 
-                RefundTransaction? refund =
-                    null;
+                RefundTransaction? refund = null;
+
+                var isCashPayment =
+                    payment != null &&
+                    string.Equals(
+                        payment.Provider?.Trim(),
+                        "Cash",
+                        StringComparison.OrdinalIgnoreCase);
 
                 if (payment != null &&
+                    !isCashPayment &&
                     ticket.Fare > 0)
                 {
                     refund =
                         await _context.RefundTransactions
                             .FirstOrDefaultAsync(x =>
-                                x.TicketId ==
-                                    ticket.Id &&
-                                (
-                                    x.Status ==
-                                        "PENDING" ||
-                                    x.Status ==
-                                        "SUCCESS"
-                                ));
+                                x.TicketId == ticket.Id &&
+                                (x.Status == "PENDING" ||
+                                 x.Status == "SUCCESS"));
 
                     if (refund == null)
                     {
-                        refund =
-                            new RefundTransaction
-                            {
-                                TicketId =
-                                    ticket.Id,
+                        refund = new RefundTransaction
+                        {
+                            TicketId = ticket.Id,
+                            PaymentTransactionId = payment.Id,
+                            Amount = ticket.Fare,
+                            Reason = "CANCEL_TICKET",
+                            Status = "PENDING",
+                            CreatedAt = DateTime.UtcNow
+                        };
 
-                                PaymentTransactionId =
-                                    payment.Id,
-
-                                Amount =
-                                    ticket.Fare,
-
-                                Reason =
-                                    "CANCEL_TICKET",
-
-                                Status =
-                                    "PENDING",
-
-                                CreatedAt =
-                                    DateTime.UtcNow
-                            };
-
-                        _context.RefundTransactions
-                            .Add(refund);
+                        _context.RefundTransactions.Add(refund);
                     }
                 }
 
@@ -857,16 +1134,6 @@ public async Task<IActionResult>
                     });
                 }
 
-                if (seatBusy)
-                {
-                    return Conflict(new
-                    {
-                        success = false,
-                        message =
-                            "Ghế đã được giữ hoặc đặt. Vui lòng chọn ghế khác."
-                    });
-                }
-
                 var newFare =
                     newTrip.Route?.Fare ??
                     ticket.Fare;
@@ -874,6 +1141,46 @@ public async Task<IActionResult>
                 var difference =
                     newFare -
                     ticket.Fare;
+
+                // Nếu vé mới rẻ hơn, chỉ tiếp tục khi có thanh toán gốc
+                // thành công và không dùng tiền mặt. Tránh tạo yêu cầu
+                // hoàn tiền mà Admin/Manager không thể xử lý.
+                PaymentTransaction? originalPayment = null;
+
+                if (difference < 0)
+                {
+                    originalPayment =
+                        await _context.PaymentTransactions
+                            .Where(x =>
+                                x.BookingId == ticket.BookingId &&
+                                x.Status == "SUCCESS")
+                            .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
+                            .ThenByDescending(x => x.Id)
+                            .FirstOrDefaultAsync();
+
+                    if (originalPayment == null)
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message =
+                                "Không thể đổi sang vé rẻ hơn vì không tìm thấy giao dịch thanh toán thành công để hoàn chênh lệch."
+                        });
+                    }
+
+                    if (string.Equals(
+                        originalPayment.Provider?.Trim(),
+                        "Cash",
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message =
+                                "Không hỗ trợ hoàn chênh lệch khi vé được thanh toán bằng tiền mặt. Vui lòng chọn chuyến có giá bằng hoặc cao hơn."
+                        });
+                    }
+                }
 
                 var oldTripId =
                     ticket.TripId;
@@ -1067,49 +1374,20 @@ public async Task<IActionResult>
                 RefundTransaction? refund =
                     null;
 
-                if (difference < 0)
+                if (difference < 0 && originalPayment != null)
                 {
-                    var payment =
-                        await _context.PaymentTransactions
-                            .Where(x =>
-                                x.BookingId ==
-                                    ticket.BookingId &&
-                                x.Status ==
-                                    "SUCCESS")
-                            .OrderByDescending(
-                                x =>
-                                    x.PaidAt ??
-                                    x.CreatedAt)
-                            .FirstOrDefaultAsync();
+                    refund =
+                        new RefundTransaction
+                        {
+                            TicketId = ticket.Id,
+                            PaymentTransactionId = originalPayment.Id,
+                            Amount = Math.Abs(difference),
+                            Reason = "CHANGE_TICKET",
+                            Status = "PENDING",
+                            CreatedAt = DateTime.UtcNow
+                        };
 
-                    if (payment != null)
-                    {
-                        refund =
-                            new RefundTransaction
-                            {
-                                TicketId =
-                                    ticket.Id,
-
-                                PaymentTransactionId =
-                                    payment.Id,
-
-                                Amount =
-                                    Math.Abs(
-                                        difference),
-
-                                Reason =
-                                    "CHANGE_TICKET",
-
-                                Status =
-                                    "PENDING",
-
-                                CreatedAt =
-                                    DateTime.UtcNow
-                            };
-
-                        _context.RefundTransactions
-                            .Add(refund);
-                    }
+                    _context.RefundTransactions.Add(refund);
                 }
 
                 // =====================================================
@@ -1563,6 +1841,20 @@ public async Task<IActionResult>
                 });
             }
 
+            if (!ticket.Trip.IsActive ||
+                string.Equals(
+                    ticket.Trip.Status,
+                    "CANCELLED",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new
+                {
+                    valid = false,
+                    message =
+                        "Chuyến xe đã ngừng hoạt động hoặc bị hủy. Không thể soát vé."
+                });
+            }
+
             // =====================================================
             // KIỂM TRA ĐÚNG CHUYẾN
             // =====================================================
@@ -1611,9 +1903,20 @@ public async Task<IActionResult>
 
         [HttpPost("{ticketId:int}/use")]
         public async Task<IActionResult> UseTicket(
-    int ticketId,
-    [FromQuery] int tripId)
+            int ticketId,
+            [FromQuery] int tripId,
+            [FromBody] UseTicketRequestDto? request)
         {
+            if (request == null ||
+                string.IsNullOrWhiteSpace(request.QRToken))
+            {
+                return BadRequest(new
+                {
+                    valid = false,
+                    message = "Thiếu mã QR đã xác minh. Vui lòng quét hoặc nhập lại mã QR."
+                });
+            }
+
             // =====================================================
             // KIỂM TRA QUYỀN
             // =====================================================
@@ -1766,6 +2069,20 @@ public async Task<IActionResult>
                 });
             }
 
+            if (!ticket.Trip.IsActive ||
+                string.Equals(
+                    ticket.Trip.Status,
+                    "CANCELLED",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new
+                {
+                    valid = false,
+                    message =
+                        "Chuyến xe đã ngừng hoạt động hoặc bị hủy. Không thể xác nhận vé."
+                });
+            }
+
             // =====================================================
             // KIỂM TRA NGÀY CHẠY
             // =====================================================
@@ -1826,6 +2143,19 @@ public async Task<IActionResult>
                     valid = false,
                     message =
                         "Vé chưa có mã QR."
+                });
+            }
+
+            if (!string.Equals(
+                    ticket.QR.QRToken,
+                    request.QRToken.Trim(),
+                    StringComparison.Ordinal))
+            {
+                return BadRequest(new
+                {
+                    valid = false,
+                    message =
+                        "Mã QR không khớp với vé cần xác nhận. Hãy quét lại mã QR."
                 });
             }
 

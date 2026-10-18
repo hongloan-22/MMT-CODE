@@ -951,10 +951,10 @@ async function lockUser(userId) {
     }
 
 
-    const confirmed =
-        confirm(
-            `Bạn có chắc muốn khóa tài khoản "${user.fullName}" không?`
-        );
+    const confirmed = await SmartbusDialog.confirm(
+        `Bạn có chắc muốn khóa tài khoản "${user.fullName}" không?`,
+        { title: "Xác nhận khóa tài khoản", confirmText: "Khóa tài khoản", danger: true }
+    );
 
 
     if (!confirmed)
@@ -1026,10 +1026,10 @@ async function unlockUser(userId) {
     if (!user) return;
 
 
-    const confirmed =
-        confirm(
-            `Mở khóa tài khoản "${user.fullName}"?`
-        );
+    const confirmed = await SmartbusDialog.confirm(
+        `Mở khóa tài khoản "${user.fullName}"?`,
+        { title: "Xác nhận mở khóa tài khoản", confirmText: "Mở khóa" }
+    );
 
 
     if (!confirmed)

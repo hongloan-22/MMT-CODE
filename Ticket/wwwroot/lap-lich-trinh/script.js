@@ -1258,11 +1258,10 @@
 
     async function disableSchedule(id) {
 
-        if (
-            !confirm(
-                "Ngừng lịch này? Các chuyến tương lai được sinh từ lịch sẽ bị hủy."
-            )
-        ) {
+        if (!(await SmartbusDialog.confirm(
+            "Ngừng lịch này? Các chuyến tương lai được sinh từ lịch sẽ bị hủy.",
+            { title: "Ngừng lịch cố định", confirmText: "Ngừng lịch", danger: true }
+        ))) {
             return;
         }
 

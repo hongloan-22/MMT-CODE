@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -245,6 +245,21 @@
             line-height: 1.5;
         }
 
+
+        .scanner-status {
+            margin-top: 10px;
+            color: #6f7b8d;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .scanner-status.error {
+            color: #b42318;
+        }
+
+        .scanner-status.success {
+            color: #137547;
+        }
 
         /* =====================================================
            DIVIDER
@@ -604,6 +619,20 @@
                     <div id="reader"></div>
 
                 </div>
+
+                <div id="scannerStatus"
+                     class="scanner-status"
+                     role="status"
+                     aria-live="polite">
+                    Camera sẽ bắt đầu khi trang tải xong. Bạn cũng có thể nhập mã QR thủ công.
+                </div>
+
+                <button class="btn btn-primary"
+                        id="restartScannerBtn"
+                        type="button"
+                        style="display:none; margin-top:10px;">
+                    Quét mã khác
+                </button>
 
 
                 <div class="divider">

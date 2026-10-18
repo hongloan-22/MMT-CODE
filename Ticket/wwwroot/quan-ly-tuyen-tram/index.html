@@ -65,6 +65,7 @@
     </script>
 
     <link rel="stylesheet" href="style.css">
+    <script src="../js/smartbus-dialog.js"></script>
     <script src="../js/admin-manager-layout.js"></script>
 </head>
 <body>
@@ -83,13 +84,13 @@
                 <a href="index.html" class="side-link active">
                     <span>⇄</span><span>Tuyến & trạm</span>
                 </a>
-                <a href="../lap-lich-trinh/index.html" 
+                <a href="../lap-lich-trinh/index.html"
                    class="side-link">
                     <span>◷</span><span>Lịch trình</span>
                 </a>
-                <a href="../phan-quyen/index.html" 
-                   class="side-link" 
-                   id="linkPhanQuyen" 
+                <a href="../phan-quyen/index.html"
+                   class="side-link"
+                   id="linkPhanQuyen"
                    style="display: none;">
                     <span>👤</span><span>Phân quyền</span>
                 </a>
@@ -108,13 +109,26 @@
                 </a>
             </nav>
 
-            <div class="sidebar-label">BÁO CÁO</div>
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
+
             <nav class="side-nav">
                 <a href="../doanh-thu/index.html" class="side-link">
-                    <span>▥</span>
-                    <span>Doanh thu</span>
+                    <span>▥</span><span>Doanh thu</span>
                 </a>
-                <a href="../ty-le-lap-day/index.html" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
             </nav>
 
             <div class="sidebar-bottom">
@@ -126,8 +140,10 @@
                     </div>
                 </div>
                 <!-- Nút đăng xuất mở popup -->
-                <button class="logout-btn" id="logoutBtn" 
-                        type="button">↪ Đăng xuất</button>
+                <button class="logout-btn" id="logoutBtn"
+                        type="button">
+                    ↪ Đăng xuất
+                </button>
             </div>
         </aside>
 

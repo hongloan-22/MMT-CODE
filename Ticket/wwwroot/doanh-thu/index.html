@@ -5,203 +5,236 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smartbus - Báo cáo doanh thu</title>
     <script>
-        (function () {
-            const raw = localStorage.getItem("userSession");
-            if (!raw) {
-                window.location.replace("../auth/dangnhap.html");
-                return;
-            }
-            try {
-                const user = JSON.parse(raw);
-                const role = String(
-                    user.role || user.Role || user.roleCode || user.RoleCode || user.roleName || ""
-                ).trim().toUpperCase();
-                if (role !== "ADMIN" && role !== "MANAGER") {
-                    window.location.replace("../index.html");
-                }
-            } catch (error) {
-                localStorage.removeItem("userSession");
-                window.location.replace("../auth/dangnhap.html");
-            }
-        })();
+                        (function () {
+                            const raw = localStorage.getItem("userSession");
+                            if (!raw) {
+                                window.location.replace("../auth/dangnhap.html");
+                                return;
+                            }
+                            try {
+                                const user = JSON.parse(raw);
+                                const role = String(
+                                    user.role || user.Role || user.roleCode || user.RoleCode || user.roleName || ""
+                                ).trim().toUpperCase();
+                                if (role !== "ADMIN" && role !== "MANAGER") {
+                                    window.location.replace("../index.html");
+                                }
+                            } catch (error) {
+                                localStorage.removeItem("userSession");
+                                window.location.replace("../auth/dangnhap.html");
+                            }
+                        })();
     </script>
     <link rel="stylesheet" href="../quan-ly-tuyen-tram/style.css">
     <link rel="stylesheet" href="style.css">
+    <script src="../js/smartbus-dialog.js"></script>
     <script src="../js/admin-manager-layout.js"></script>
 </head>
 <body>
-<div class="app-shell">
-    <aside class="sidebar">
-        <a class="brand" href="../index.html">
-            <span class="brand-icon">🚌</span>
-            <span class="brand-name">Smart<span>bus</span></span>
-        </a>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
 
-        <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
-        <nav class="side-nav">
-            <a href="../index.html" class="side-link"><span>▦</span><span>Tổng quan</span></a>
-            <a href="../quan-ly-tuyen-tram/index.html" class="side-link"><span>⇄</span><span>Tuyến & trạm</span></a>
-            <a href="../lap-lich-trinh/index.html" class="side-link"><span>◷</span><span>Lịch trình</span></a>
-            <a href="../phan-quyen/index.html" class="side-link" id="linkPhanQuyen" style="display:none"><span>👤</span><span>Phân quyền</span></a>
-            <a href="../doi-xe/index.html" class="side-link"><span>🚌</span><span>Đội xe</span></a>
-            <a href="../tai-xe-phu-xe/index.html" class="side-link"><span>👤</span><span>Tài xế / Phụ xe</span></a>
-        </nav>
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+            <nav class="side-nav">
+                <a href="../index.html" class="side-link"><span>▦</span><span>Tổng quan</span></a>
+                <a href="../quan-ly-tuyen-tram/index.html" class="side-link"><span>⇄</span><span>Tuyến & trạm</span></a>
+                <a href="../lap-lich-trinh/index.html" class="side-link"><span>◷</span><span>Lịch trình</span></a>
+                <a href="../phan-quyen/index.html" class="side-link" id="linkPhanQuyen" style="display:none"><span>👤</span><span>Phân quyền</span></a>
+                <a href="../doi-xe/index.html" class="side-link"><span>🚌</span><span>Đội xe</span></a>
+                <a href="../tai-xe-phu-xe/index.html" class="side-link"><span>👤</span><span>Tài xế / Phụ xe</span></a>
+            </nav>
 
-        <div class="sidebar-label">BÁO CÁO</div>
-        <nav class="side-nav">
-            <a href="index.html" class="side-link active"><span>▥</span><span>Doanh thu</span></a>
-            <a href="../ty-le-lap-day/index.html" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
-        </nav>
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
 
-        <div class="sidebar-bottom">
-            <div class="account-mini">
-                <div class="avatar" id="sidebarAvatar">QL</div>
-                <div>
-                    <strong id="sidebarUserName">Quản lý</strong>
-                    <small id="sidebarUserRole">Quản lý vận hành</small>
-                </div>
-            </div>
-            <button class="logout-btn" id="logoutBtn" type="button">↪ Đăng xuất</button>
-        </div>
-    </aside>
+            <nav class="side-nav">
+                <a href="index.html" class="side-link active">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
 
-    <main class="main">
-        <header class="topbar">
-            <div>
-                <div class="breadcrumb">Quản lý vận hành <span>/</span> Báo cáo doanh thu</div>
-                <h1>Báo cáo doanh thu</h1>
-                <p>Theo dõi doanh thu bán vé theo thời gian và tuyến xe.</p>
-            </div>
-            <div class="top-actions">
-                <button class="icon-btn" title="Trợ giúp">?</button>
-                <button class="user-btn" type="button"><span class="avatar small" id="topAvatar">QL</span><span id="topUserRole">Quản lý</span> ▾</button>
-            </div>
-        </header>
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
 
-        <section class="content revenue-content">
-            <div class="page-card filter-card">
-                <div class="card-head">
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar" id="sidebarAvatar">QL</div>
                     <div>
-                        <div class="eyebrow">BỘ LỌC BÁO CÁO</div>
-                        <h2>Điều kiện thống kê</h2>
-                        <p>Lọc doanh thu theo khoảng thời gian và tuyến xe.</p>
-                    </div>
-                    <button class="secondary-btn" id="resetFilterBtn" type="button">↻ Đặt lại</button>
-                </div>
-
-                <div class="filter-grid">
-                    <label class="filter-field">
-                        <span>Từ ngày</span>
-                        <input id="fromDate" type="date">
-                    </label>
-                    <label class="filter-field">
-                        <span>Đến ngày</span>
-                        <input id="toDate" type="date">
-                    </label>
-                    <label class="filter-field">
-                        <span>Tuyến xe</span>
-                        <select id="routeFilter">
-                            <option value="">Tất cả tuyến</option>
-                        </select>
-                    </label>
-                    <div class="quick-filter">
-                        <span>Khoảng nhanh</span>
-                        <div>
-                            <button type="button" data-range="7">7 ngày</button>
-                            <button type="button" data-range="30" class="selected">30 ngày</button>
-                            <button type="button" data-range="month">Tháng này</button>
-                        </div>
+                        <strong id="sidebarUserName">Quản lý</strong>
+                        <small id="sidebarUserRole">Quản lý vận hành</small>
                     </div>
                 </div>
-
-                <div class="filter-actions">
-                    <span id="reportPeriod">Đang tải báo cáo...</span>
-                    <button class="primary-btn" id="applyFilterBtn" type="button">⌕ Xem báo cáo</button>
-                </div>
+                <button class="logout-btn" id="logoutBtn" type="button">↪ Đăng xuất</button>
             </div>
+        </aside>
 
-            <div class="stats-grid revenue-stats">
-                <div class="stat-card">
-                    <div class="stat-icon blue">₫</div>
-                    <div><span>Doanh thu thực nhận</span><strong id="netRevenue">0 đ</strong><small>Sau khi trừ hoàn tiền</small></div>
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Quản lý vận hành <span>/</span> Báo cáo doanh thu</div>
+                    <h1>Báo cáo doanh thu</h1>
+                    <p>Theo dõi doanh thu bán vé theo thời gian và tuyến xe.</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">↗</div>
-                    <div><span>Doanh thu bán vé</span><strong id="grossRevenue">0 đ</strong><small>Tổng giao dịch thành công</small></div>
+                <div class="top-actions">
+                    <button class="icon-btn" title="Trợ giúp">?</button>
+                    <button class="user-btn" type="button"><span class="avatar small" id="topAvatar">QL</span><span id="topUserRole">Quản lý</span> ▾</button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon yellow">▤</div>
-                    <div><span>Giao dịch thành công</span><strong id="transactionCount">0</strong><small>Thanh toán đã ghi nhận</small></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon cyan">↔</div>
-                    <div><span>Giá trị giao dịch TB</span><strong id="averageTransaction">0 đ</strong><small>Trên mỗi giao dịch</small></div>
-                </div>
-            </div>
+            </header>
 
-            <div class="report-grid">
-                <div class="page-card chart-card">
-                    <div class="card-head compact">
+            <section class="content revenue-content">
+                <div class="page-card filter-card">
+                    <div class="card-head">
                         <div>
-                            <div class="eyebrow">XU HƯỚNG</div>
-                            <h2>Doanh thu theo ngày</h2>
-                            <p>Biểu đồ trực quan doanh thu trong khoảng thời gian đã chọn.</p>
+                            <div class="eyebrow">BỘ LỌC BÁO CÁO</div>
+                            <h2>Điều kiện thống kê</h2>
+                            <p>Lọc doanh thu theo khoảng thời gian và tuyến xe.</p>
                         </div>
-                        <span class="chart-note" id="chartNote">0 ngày</span>
+                        <button class="secondary-btn" id="resetFilterBtn" type="button">↻ Đặt lại</button>
                     </div>
-                    <div class="chart-shell">
-                        <div class="chart-y-axis" id="chartYAxis"></div>
-                        <div class="chart-area">
-                            <div class="chart-grid-lines" id="chartGridLines"></div>
-                            <svg class="revenue-line-chart" id="revenueLineChart" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-label="Biểu đồ doanh thu"></svg>
-                            <div class="chart-empty" id="chartEmpty" hidden>
-                                <div class="empty-icon">▥</div>
-                                <strong>Chưa có dữ liệu doanh thu</strong>
-                                <span>Không có giao dịch phù hợp với điều kiện thống kê.</span>
+
+                    <div class="filter-grid">
+                        <label class="filter-field">
+                            <span>Từ ngày</span>
+                            <input id="fromDate" type="date">
+                        </label>
+                        <label class="filter-field">
+                            <span>Đến ngày</span>
+                            <input id="toDate" type="date">
+                        </label>
+                        <label class="filter-field">
+                            <span>Tuyến xe</span>
+                            <select id="routeFilter">
+                                <option value="">Tất cả tuyến</option>
+                            </select>
+                        </label>
+                        <div class="quick-filter">
+                            <span>Khoảng nhanh</span>
+                            <div>
+                                <button type="button" data-range="7">7 ngày</button>
+                                <button type="button" data-range="30" class="selected">30 ngày</button>
+                                <button type="button" data-range="month">Tháng này</button>
                             </div>
                         </div>
                     </div>
-                    <div class="chart-axis" id="chartAxis"></div>
+
+                    <div class="filter-actions">
+                        <span id="reportPeriod">Đang tải báo cáo...</span>
+                        <button class="primary-btn" id="applyFilterBtn" type="button">⌕ Xem báo cáo</button>
+                    </div>
                 </div>
 
-                <div class="page-card route-card">
+                <div class="print-report-header" id="printReportHeader">
+                    <h1 id="printReportTitle">BÁO CÁO DOANH THU SMARTBUS</h1>
+                    <p id="printReportMeta"></p>
+                    <p id="printReportGeneratedAt"></p>
+                </div>
+
+                <div class="stats-grid revenue-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">₫</div>
+                        <div><span>Doanh thu thực nhận</span><strong id="netRevenue">0 đ</strong><small>Sau khi trừ hoàn tiền</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">↗</div>
+                        <div><span>Doanh thu bán vé</span><strong id="grossRevenue">0 đ</strong><small>Tổng giao dịch thành công</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">▤</div>
+                        <div><span>Giao dịch thành công</span><strong id="transactionCount">0</strong><small>Thanh toán đã ghi nhận</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">↔</div>
+                        <div><span>Giá trị giao dịch TB</span><strong id="averageTransaction">0 đ</strong><small>Trên mỗi giao dịch</small></div>
+                    </div>
+                </div>
+
+                <div class="report-grid">
+                    <div class="page-card chart-card">
+                        <div class="card-head compact">
+                            <div>
+                                <div class="eyebrow">XU HƯỚNG</div>
+                                <h2>Doanh thu theo ngày</h2>
+                                <p>Biểu đồ trực quan doanh thu trong khoảng thời gian đã chọn.</p>
+                            </div>
+                            <span class="chart-note" id="chartNote">0 ngày</span>
+                        </div>
+                        <div class="chart-shell">
+                            <div class="chart-y-axis" id="chartYAxis"></div>
+                            <div class="chart-area">
+                                <div class="chart-grid-lines" id="chartGridLines"></div>
+                                <svg class="revenue-line-chart" id="revenueLineChart" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-label="Biểu đồ doanh thu"></svg>
+                                <div class="chart-empty" id="chartEmpty" hidden>
+                                    <div class="empty-icon">▥</div>
+                                    <strong>Chưa có dữ liệu doanh thu</strong>
+                                    <span>Không có giao dịch phù hợp với điều kiện thống kê.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-axis" id="chartAxis"></div>
+                    </div>
+
+                    <div class="page-card route-card">
+                        <div class="card-head compact">
+                            <div>
+                                <div class="eyebrow">HIỆU QUẢ TUYẾN</div>
+                                <h2>Doanh thu theo tuyến</h2>
+                            </div>
+                        </div>
+                        <div class="route-list" id="routeRevenueList"></div>
+                    </div>
+                </div>
+
+                <div class="page-card">
                     <div class="card-head compact">
                         <div>
-                            <div class="eyebrow">HIỆU QUẢ TUYẾN</div>
-                            <h2>Doanh thu theo tuyến</h2>
+                            <div class="eyebrow">CHI TIẾT</div>
+                            <h2>Tổng hợp báo cáo</h2>
+                            <p>Doanh thu được tổng hợp từ các giao dịch thanh toán thành công.</p>
+                        </div>
+                        <div class="report-header-actions">
+                            <button class="secondary-btn export-btn" id="exportExcelBtn" type="button" disabled>
+                                ↓ Xuất Excel
+                            </button>
+                            <button class="secondary-btn export-btn" id="exportPdfBtn" type="button" disabled>
+                                ▧ Xuất PDF
+                            </button>
+                            <div class="report-badge" id="refundBadge">Hoàn tiền: 0 đ</div>
                         </div>
                     </div>
-                    <div class="route-list" id="routeRevenueList"></div>
-                </div>
-            </div>
-
-            <div class="page-card">
-                <div class="card-head compact">
-                    <div>
-                        <div class="eyebrow">CHI TIẾT</div>
-                        <h2>Tổng hợp báo cáo</h2>
-                        <p>Doanh thu được tổng hợp từ các giao dịch thanh toán thành công.</p>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Doanh thu</th>
+                                    <th>Số giao dịch</th>
+                                    <th>Giá trị TB</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dailyTableBody"></tbody>
+                        </table>
                     </div>
-                    <div class="report-badge" id="refundBadge">Hoàn tiền: 0 đ</div>
                 </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Ngày</th>
-                                <th>Doanh thu</th>
-                                <th>Số giao dịch</th>
-                                <th>Giá trị TB</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dailyTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
-</div>
-<div class="toast" id="toast"></div>
-<script src="script.js"></script>
+            </section>
+        </main>
+    </div>
+    <div class="toast" id="toast"></div>
+    <!-- SheetJS dùng để tạo file Excel .xlsx ở phía trình duyệt -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

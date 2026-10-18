@@ -15,64 +15,65 @@
     <link rel="stylesheet"
           href="style.css">
 
+    <script src="../js/smartbus-dialog.js"></script>
     <script src="../js/admin-manager-layout.js"></script>
 
     <script>
-                (function () {
+                        (function () {
 
-                    const raw =
-                        localStorage.getItem("userSession");
+                            const raw =
+                                localStorage.getItem("userSession");
 
-                    if (!raw) {
+                            if (!raw) {
 
-                        window.location.replace(
-                            "../auth/dangnhap.html"
-                        );
+                                window.location.replace(
+                                    "../auth/dangnhap.html"
+                                );
 
-                        return;
-                    }
+                                return;
+                            }
 
-                    try {
+                            try {
 
-                        const user =
-                            JSON.parse(raw);
+                                const user =
+                                    JSON.parse(raw);
 
-                        const role =
-                            String(
-                                user.role ||
-                                user.roleCode ||
-                                ""
-                            )
-                                .trim()
-                                .toUpperCase();
+                                const role =
+                                    String(
+                                        user.role ||
+                                        user.roleCode ||
+                                        ""
+                                    )
+                                        .trim()
+                                        .toUpperCase();
 
-                        if (
-                            role !== "ADMIN" &&
-                            role !== "MANAGER"
-                        ) {
+                                if (
+                                    role !== "ADMIN" &&
+                                    role !== "MANAGER"
+                                ) {
 
-                            window.location.replace(
-                                "../index.html"
-                            );
+                                    window.location.replace(
+                                        "../index.html"
+                                    );
 
-                            return;
-                        }
+                                    return;
+                                }
 
-                    }
-                    catch (error) {
+                            }
+                            catch (error) {
 
-                        console.error(error);
+                                console.error(error);
 
-                        localStorage.removeItem(
-                            "userSession"
-                        );
+                                localStorage.removeItem(
+                                    "userSession"
+                                );
 
-                        window.location.replace(
-                            "../auth/dangnhap.html"
-                        );
-                    }
+                                window.location.replace(
+                                    "../auth/dangnhap.html"
+                                );
+                            }
 
-                })();
+                        })();
     </script>
 
 </head>

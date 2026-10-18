@@ -1,5 +1,8 @@
 const $ = id => document.getElementById(id);
 
+// Payload của lần báo cáo đã tải thành công gần nhất.
+let currentReportData = null;
+
 function getSession() {
     try {
         const raw = localStorage.getItem("userSession");
@@ -59,6 +62,142 @@ function toast(message) {
 }
 
 
+function setExportButtonsEnabled(enabled) {
+    ["exportExcelBtn", "exportPdfBtn"].forEach(id => {
+        const button = $(id);
+        if (button) button.disabled = !enabled;
+    });
+}
+
+function getSelectedRouteName(data = currentReportData) {
+    if (!data) return "";
+
+    // routeId từ payload phản ánh bộ lọc đã dùng để tạo báo cáo;
+    // không dùng giá trị dropdown có thể vừa bị đổi nhưng chưa áp dụng.
+    const selectedRouteId = data.routeId;
+    if (selectedRouteId === null || selectedRouteId === undefined || selectedRouteId === "") {
+        return "Tất cả tuyến";
+    }
+
+    const route = (data.routes || []).find(item =>
+        String(item.id) === String(selectedRouteId)
+    );
+
+    return route
+        ? `${route.code} — ${route.name}`
+        : `Tuyến ID ${selectedRouteId}`;
+}
+
+function buildExportFileBase(data = currentReportData) {
+    if (!data) return "Smartbus_BaoCaoDoanhThu";
+    return `Smartbus_BaoCaoDoanhThu_${data.from}_${data.to}`;
+}
+
+function setPrintReportHeader(data) {
+    if (!data) return;
+
+    const routeName = getSelectedRouteName(data);
+    const meta = `Thời gian: ${formatDate(data.from)} – ${formatDate(data.to)} | Tuyến: ${routeName}`;
+    const generatedAt = new Intl.DateTimeFormat("vi-VN", {
+        dateStyle: "short",
+        timeStyle: "short"
+    }).format(new Date());
+
+    $("printReportTitle").textContent = "BÁO CÁO DOANH THU SMARTBUS";
+    $("printReportMeta").textContent = meta;
+    $("printReportGeneratedAt").textContent = `Ngày xuất báo cáo: ${generatedAt}`;
+}
+
+function exportRevenueExcel() {
+    if (!currentReportData) {
+        toast("Vui lòng tải báo cáo trước khi xuất Excel.");
+        return;
+    }
+
+    if (!window.XLSX) {
+        toast("Không tải được thư viện Excel. Hãy kiểm tra kết nối Internet rồi thử lại.");
+        return;
+    }
+
+    const data = currentReportData;
+    const workbook = XLSX.utils.book_new();
+    const exportDate = new Intl.DateTimeFormat("vi-VN").format(new Date());
+    const summaryRows = [
+        ["BÁO CÁO DOANH THU SMARTBUS"],
+        ["Ngày xuất báo cáo", exportDate],
+        ["Từ ngày", data.from],
+        ["Đến ngày", data.to],
+        ["Tuyến xe", getSelectedRouteName(data)],
+        [],
+        ["Chỉ tiêu", "Giá trị"],
+        ["Doanh thu bán vé", Number(data.grossRevenue || 0)],
+        ["Tổng tiền hoàn thành công", Number(data.refundAmount || 0)],
+        ["Doanh thu thực nhận", Number(data.netRevenue || 0)],
+        ["Số giao dịch thanh toán thành công", Number(data.transactionCount || 0)],
+        ["Giá trị giao dịch trung bình", Number(data.averageTransaction || 0)]
+    ];
+
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    summarySheet["!cols"] = [{ wch: 34 }, { wch: 28 }];
+    ["B8", "B9", "B10", "B12"].forEach(cell => {
+        if (summarySheet[cell]) summarySheet[cell].z = '#,##0 "đ"';
+    });
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Tong quan");
+
+    const dailyRows = [
+        ["Ngày", "Doanh thu bán vé (VNĐ)", "Số giao dịch", "Giá trị trung bình (VNĐ)"],
+        ...(data.daily || []).map(item => {
+            const revenue = Number(item.revenue || 0);
+            const transactions = Number(item.transactions || 0);
+            return [item.date ? formatDate(item.date) : "", revenue, transactions,
+            transactions > 0 ? revenue / transactions : 0];
+        })
+    ];
+    const dailySheet = XLSX.utils.aoa_to_sheet(dailyRows);
+    dailySheet["!cols"] = [{ wch: 16 }, { wch: 26 }, { wch: 17 }, { wch: 29 }];
+    for (let row = 2; row <= dailyRows.length; row++) {
+        ["B", "D"].forEach(col => {
+            if (dailySheet[`${col}${row}`]) dailySheet[`${col}${row}`].z = '#,##0 "đ"';
+        });
+    }
+    XLSX.utils.book_append_sheet(workbook, dailySheet, "Theo ngay");
+
+    const routeRows = [
+        ["Mã tuyến", "Tên tuyến", "Doanh thu bán vé (VNĐ)", "Số giao dịch"],
+        ...(data.byRoute || []).map(item => [
+            item.routeCode || "",
+            item.routeName || "",
+            Number(item.revenue || 0),
+            Number(item.transactions || 0)
+        ])
+    ];
+    const routeSheet = XLSX.utils.aoa_to_sheet(routeRows);
+    routeSheet["!cols"] = [{ wch: 18 }, { wch: 38 }, { wch: 28 }, { wch: 17 }];
+    for (let row = 2; row <= routeRows.length; row++) {
+        if (routeSheet[`C${row}`]) routeSheet[`C${row}`].z = '#,##0 "đ"';
+    }
+    XLSX.utils.book_append_sheet(workbook, routeSheet, "Theo tuyen");
+
+    XLSX.writeFile(workbook, `${buildExportFileBase(data)}.xlsx`, {
+        compression: true
+    });
+    toast("Đã tạo báo cáo Excel.");
+}
+
+function exportRevenuePdf() {
+    if (!currentReportData) {
+        toast("Vui lòng tải báo cáo trước khi xuất PDF.");
+        return;
+    }
+
+    setPrintReportHeader(currentReportData);
+    toast("Trong hộp thoại in, chọn ‘Save as PDF’ hoặc ‘Lưu thành PDF’.");
+
+    // Dùng chức năng in sẵn của trình duyệt để giữ đúng font tiếng Việt,
+    // không cần thư viện tạo PDF hoặc xử lý font ngoài.
+    window.print();
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -69,6 +208,8 @@ function escapeHtml(value) {
 }
 
 function showReportError(message) {
+    currentReportData = null;
+    setExportButtonsEnabled(false);
     // Không để lại số liệu của lần tải trước khi API lỗi.
     [
         "netRevenue",
@@ -286,6 +427,9 @@ async function loadReport() {
         return;
     }
 
+    currentReportData = null;
+    setExportButtonsEnabled(false);
+
     const params = new URLSearchParams({ from, to });
 
     if (routeId) {
@@ -415,6 +559,10 @@ async function loadReport() {
         // Các nút đặt lại bộ lọc chỉ được gắn một lần trên mỗi phần tử.
         bindEmptyActions();
 
+        // Chỉ cho phép xuất báo cáo sau khi dữ liệu đã tải và hợp lệ.
+        currentReportData = data;
+        setExportButtonsEnabled(true);
+
     } catch (error) {
         console.error("Lỗi tải báo cáo doanh thu:", error);
 
@@ -432,6 +580,16 @@ async function loadReport() {
 
 function bindEvents() {
     $("applyFilterBtn").addEventListener("click", loadReport);
+    $("exportExcelBtn")?.addEventListener("click", exportRevenueExcel);
+    $("exportPdfBtn")?.addEventListener("click", exportRevenuePdf);
+
+    // Khi thay bộ lọc nhưng chưa tải lại báo cáo, tránh xuất nhầm dữ liệu cũ.
+    ["fromDate", "toDate", "routeFilter"].forEach(id => {
+        $(id)?.addEventListener("change", () => {
+            currentReportData = null;
+            setExportButtonsEnabled(false);
+        });
+    });
     $("resetFilterBtn").addEventListener("click", () => {
         setDefaultDates(30);
         $("routeFilter").value = "";

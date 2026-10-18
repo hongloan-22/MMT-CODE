@@ -193,13 +193,42 @@
 
 
         // =====================================================
-        // ĐĂNG XUẤT
+        // LIÊN KẾT HỒ SƠ CÁ NHÂN
+        // Dùng chung trên các trang quản trị có sidebar.
         // =====================================================
+
+        const sidebarBottom =
+            document.querySelector(".sidebar-bottom");
 
         const logoutBtn =
             document.getElementById(
                 "logoutBtn"
             );
+
+        if (
+            sidebarBottom &&
+            !document.getElementById("linkHoSoCaNhan")
+        ) {
+            const profileLink = document.createElement("a");
+            profileLink.id = "linkHoSoCaNhan";
+            profileLink.href = "../ho-so/index.html";
+            profileLink.textContent = "👤 Hồ sơ cá nhân";
+            profileLink.style.display = "block";
+            profileLink.style.width = "100%";
+            profileLink.style.boxSizing = "border-box";
+            profileLink.style.textAlign = "center";
+            profileLink.style.textDecoration = "none";
+            profileLink.style.border = "1px solid #dceaf4";
+            profileLink.style.background = "#f4faff";
+            profileLink.style.borderRadius = "9px";
+            profileLink.style.padding = "9px";
+            profileLink.style.margin = "0 0 9px";
+            profileLink.style.color = "#167cc7";
+            profileLink.style.fontSize = "13px";
+            profileLink.style.fontWeight = "700";
+
+            sidebarBottom.insertBefore(profileLink, logoutBtn || null);
+        }
 
         if (
             logoutBtn &&
@@ -211,12 +240,12 @@
 
             logoutBtn.addEventListener(
                 "click",
-                function () {
+                async function () {
 
-                    const confirmed =
-                        window.confirm(
-                            "Xác nhận đăng xuất?"
-                        );
+                    const confirmed = await SmartbusDialog.confirm(
+                        "Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?",
+                        { title: "Xác nhận đăng xuất", confirmText: "Đăng xuất", danger: true }
+                    );
 
                     if (!confirmed)
                         return;

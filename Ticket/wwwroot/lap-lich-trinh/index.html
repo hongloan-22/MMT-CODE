@@ -15,52 +15,53 @@
 
     <!-- Kiểm tra quyền truy cập -->
     <script>
-                        (function () {
-                            const raw = localStorage.getItem("userSession");
+                                (function () {
+                                    const raw = localStorage.getItem("userSession");
 
-                            if (!raw) {
-                                window.location.replace("../auth/dangnhap.html");
-                                return;
-                            }
+                                    if (!raw) {
+                                        window.location.replace("../auth/dangnhap.html");
+                                        return;
+                                    }
 
-                            try {
-                                const user = JSON.parse(raw);
+                                    try {
+                                        const user = JSON.parse(raw);
 
-                                const role = String(
-                                    user.role ||
-                                    user.Role ||
-                                    user.roleCode ||
-                                    user.RoleCode ||
-                                    user.roleName ||
-                                    user.RoleName ||
-                                    ""
-                                ).trim().toUpperCase();
+                                        const role = String(
+                                            user.role ||
+                                            user.Role ||
+                                            user.roleCode ||
+                                            user.RoleCode ||
+                                            user.roleName ||
+                                            user.RoleName ||
+                                            ""
+                                        ).trim().toUpperCase();
 
-                                const roleId = Number(
-                                    user.roleId || user.RoleId || 0
-                                );
+                                        const roleId = Number(
+                                            user.roleId || user.RoleId || 0
+                                        );
 
-                                const isAdmin =
-                                    role.includes("ADMIN") ||
-                                    role.includes("QUẢN TRỊ") ||
-                                    roleId === 1;
+                                        const isAdmin =
+                                            role.includes("ADMIN") ||
+                                            role.includes("QUẢN TRỊ") ||
+                                            roleId === 1;
 
-                                const isManager =
-                                    role.includes("MANAGER") ||
-                                    role.includes("QUẢN LÝ") ||
-                                    roleId === 2;
+                                        const isManager =
+                                            role.includes("MANAGER") ||
+                                            role.includes("QUẢN LÝ") ||
+                                            roleId === 2;
 
-                                if (!isAdmin && !isManager) {
-                                    window.location.replace("../index.html");
-                                }
-                            } catch (error) {
-                                console.error(error);
-                                localStorage.removeItem("userSession");
-                                window.location.replace("../auth/dangnhap.html");
-                            }
-                        })();
+                                        if (!isAdmin && !isManager) {
+                                            window.location.replace("../index.html");
+                                        }
+                                    } catch (error) {
+                                        console.error(error);
+                                        localStorage.removeItem("userSession");
+                                        window.location.replace("../auth/dangnhap.html");
+                                    }
+                                })();
     </script>
 
+    <script src="../js/smartbus-dialog.js"></script>
     <script src="../js/admin-manager-layout.js" defer></script>
 </head>
 
@@ -138,13 +139,26 @@
                 </a>
             </nav>
 
-            <div class="sidebar-label">
-                BÁO CÁO
-            </div>
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
 
             <nav class="side-nav">
-                <a href="../doanh-thu/index.html" class="side-link"><span>▥</span><span>Doanh thu</span></a>
-                <a href="../ty-le-lap-day/index.html" class="side-link"><span>◔</span><span>Tỷ lệ lấp đầy</span></a>
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="../quan-ly-hoan-tien/index.html" class="side-link">
+                    <span>↩</span>
+                    <span>Quản lý hoàn tiền</span>
+                </a>
+
             </nav>
 
             <div class="sidebar-bottom">

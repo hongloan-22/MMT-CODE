@@ -986,16 +986,14 @@ document
                 // XÁC NHẬN
                 // =================================================
 
-                const confirmed =
-                    window.confirm(
-                        `Xác nhận hủy vé?\n\n` +
-                        `Mã vé: ${ticket.ticketCode}\n` +
-                        `Ghế: ${ticket.seatCode}\n` +
-                        `Điểm đi: ${ticket.departureStop}\n` +
-                        `Điểm đến: ${ticket.arrivalStop}\n\n` +
-                        `Vé phải được hủy trước giờ khởi hành ` +
-                        `ít nhất ${info.cutoffMinutes} phút.`
-                    );
+                const confirmed = await SmartbusDialog.confirm(
+                    `Mã vé: ${ticket.ticketCode}\n` +
+                    `Ghế: ${ticket.seatCode}\n` +
+                    `Điểm đi: ${ticket.departureStop}\n` +
+                    `Điểm đến: ${ticket.arrivalStop}\n\n` +
+                    `Vé phải được hủy trước giờ khởi hành ít nhất ${info.cutoffMinutes} phút.`,
+                    { title: "Xác nhận hủy vé", confirmText: "Hủy vé", danger: true }
+                );
 
                 if (!confirmed) {
                     return;

@@ -1,0 +1,137 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Hồ sơ cá nhân</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="style.css">
+    <script>
+                (function () {
+                    try {
+                        const raw = localStorage.getItem("userSession");
+                        if (!raw) {
+                            window.location.replace("../auth/dangnhap.html");
+                            return;
+                        }
+                        const user = JSON.parse(raw);
+                        const userId = user.userId || user.UserId || user.id || user.Id;
+                        if (!userId) {
+                            localStorage.removeItem("userSession");
+                            window.location.replace("../auth/dangnhap.html");
+                        }
+                    } catch {
+                        localStorage.removeItem("userSession");
+                        window.location.replace("../auth/dangnhap.html");
+                    }
+                })();
+    </script>
+</head>
+<body class="profile-page">
+    <header class="navbar ticket-header">
+        <div class="nav-inner header-inner">
+            <a href="../index.html" class="brand" aria-label="Smartbus">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+            <nav class="nav-menu">
+                <a href="../index.html">Trang chủ</a>
+                <a href="../quan-ly-ve/index.html" id="myTripsLink">Chuyến đi của tôi</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="login-btn profile-logout" type="button" id="profileLogout">Đăng xuất</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="profile-main">
+        <div class="profile-breadcrumb"><a href="../index.html">Trang chủ</a><span>/</span> Hồ sơ cá nhân</div>
+
+        <section class="profile-heading">
+            <div class="profile-heading-icon">👤</div>
+            <div>
+                <span class="profile-eyebrow">TÀI KHOẢN SMARTBUS</span>
+                <h1>Hồ sơ cá nhân</h1>
+                <p>Xem và cập nhật thông tin tài khoản của bạn.</p>
+            </div>
+        </section>
+
+        <section class="profile-layout">
+            <aside class="profile-summary-card">
+                <div class="profile-avatar" id="profileAvatar">SB</div>
+                <h2 id="summaryName">Đang tải...</h2>
+                <p id="summaryEmail" class="profile-summary-email"> </p>
+                <span class="profile-role" id="summaryRole">Tài khoản</span>
+                <div class="profile-summary-divider"></div>
+                <div class="profile-meta-row">
+                    <span>Trạng thái</span>
+                    <strong id="summaryStatus">—</strong>
+                </div>
+                <div class="profile-meta-row">
+                    <span>Ngày tạo</span>
+                    <strong id="summaryCreatedAt">—</strong>
+                </div>
+                <div class="profile-note">
+                    Thông tin ở đây chỉ áp dụng cho tài khoản bạn đang đăng nhập.
+                </div>
+            </aside>
+
+            <section class="profile-form-card">
+                <div class="profile-card-heading">
+                    <div>
+                        <h2>Thông tin tài khoản</h2>
+                        <p>Các trường có dấu * là bắt buộc.</p>
+                    </div>
+                    <span class="profile-edit-badge">Có thể chỉnh sửa</span>
+                </div>
+
+                <form id="profileForm" novalidate>
+                    <div class="profile-form-grid">
+                        <label class="profile-field profile-field-wide" for="fullName">
+                            <span>Họ và tên <b>*</b></span>
+                            <input id="fullName" name="fullName" type="text" minlength="2" maxlength="100" autocomplete="name" required placeholder="Nhập họ và tên">
+                            <small>Nhập từ 2 đến 100 ký tự.</small>
+                        </label>
+
+                        <label class="profile-field" for="email">
+                            <span>Email đăng nhập <b>*</b></span>
+                            <input id="email" name="email" type="email" maxlength="100" autocomplete="email" required placeholder="name@example.com">
+                            <small>Email phải chưa được sử dụng bởi tài khoản khác.</small>
+                        </label>
+
+                        <label class="profile-field" for="phone">
+                            <span>Số điện thoại <b>*</b></span>
+                            <input id="phone" name="phone" type="tel" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" autocomplete="tel" required placeholder="0123456789">
+                            <small>Sử dụng đúng 10 chữ số.</small>
+                        </label>
+                    </div>
+
+                    <div class="profile-form-footer">
+                        <p id="profileMessage" class="profile-message" role="status" aria-live="polite"></p>
+                        <div class="profile-actions">
+                            <button type="button" class="profile-reset-btn" id="resetProfileBtn">Hoàn tác</button>
+                            <button type="submit" class="profile-save-btn" id="saveProfileBtn">Lưu thay đổi</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="profile-security-note">
+                    <span class="profile-security-icon">🔒</span>
+                    <div>
+                        <strong>Bảo vệ tài khoản</strong>
+                        <p>Mật khẩu và thông tin giấy tờ không hiển thị trên trang hồ sơ này.</p>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <footer class="profile-footer">
+        <span>© 2026 Smartbus</span>
+        <a href="../index.html">Quay về trang chủ</a>
+    </footer>
+
+    <script src="../js/smartbus-dialog.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

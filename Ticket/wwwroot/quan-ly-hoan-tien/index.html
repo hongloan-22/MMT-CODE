@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smartbus - Quản lý hoàn tiền</title>
+    <script>
+        (function () {
+            const raw = localStorage.getItem("userSession");
+            if (!raw) {
+                window.location.replace("../auth/dangnhap.html");
+                return;
+            }
+            try {
+                const user = JSON.parse(raw);
+                const role = String(
+                    user.role || user.Role || user.roleCode || user.RoleCode ||
+                    user.roleName || user.RoleName || ""
+                ).trim().toUpperCase();
+                if (role !== "ADMIN" && role !== "MANAGER") {
+                    window.location.replace("../index.html");
+                }
+            } catch (error) {
+                localStorage.removeItem("userSession");
+                window.location.replace("../auth/dangnhap.html");
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="../quan-ly-tuyen-tram/style.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="../js/smartbus-dialog.js"></script>
+    <script src="../js/admin-manager-layout.js"></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
+            </a>
+
+            <div class="sidebar-label">QUẢN LÝ VẬN HÀNH</div>
+            <nav class="side-nav">
+                <a href="../index.html" class="side-link"><span>▦</span><span>Tổng quan</span></a>
+                <a href="../quan-ly-tuyen-tram/index.html" class="side-link"><span>⇄</span><span>Tuyến &amp; trạm</span></a>
+                <a href="../lap-lich-trinh/index.html" class="side-link"><span>◷</span><span>Lịch trình</span></a>
+                <a href="../phan-quyen/index.html" class="side-link" id="linkPhanQuyen" style="display:none"><span>👤</span><span>Phân quyền</span></a>
+                <a href="../doi-xe/index.html" class="side-link"><span>🚌</span><span>Đội xe</span></a>
+                <a href="../tai-xe-phu-xe/index.html" class="side-link"><span>👤</span><span>Tài xế / Phụ xe</span></a>
+            </nav>
+
+            <div class="sidebar-label">BÁO CÁO &amp; GIAO DỊCH</div>
+
+            <nav class="side-nav">
+                <a href="../doanh-thu/index.html" class="side-link">
+                    <span>▥</span><span>Doanh thu</span>
+                </a>
+
+                <a href="../ty-le-lap-day/index.html" class="side-link">
+                    <span>◔</span><span>Tỷ lệ lấp đầy</span>
+                </a>
+
+                <a href="../lich-su-mua-ve/index.html" class="side-link">
+                    <span>🎟</span><span>Lịch sử mua vé</span>
+                </a>
+
+                <a href="index.html" class="side-link active"><span>↩</span><span>Quản lý hoàn tiền</span></a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="account-mini">
+                    <div class="avatar" id="sidebarAvatar">QL</div>
+                    <div>
+                        <strong id="sidebarUserName">Quản lý</strong>
+                        <small id="sidebarUserRole">Quản lý vận hành</small>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn" type="button">↪ Đăng xuất</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Quản lý vận hành <span>/</span> Hoàn tiền</div>
+                    <h1>Quản lý hoàn tiền</h1>
+                    <p>Kiểm tra các yêu cầu hoàn tiền đang chờ xử lý của những vé thanh toán không dùng tiền mặt.</p>
+                </div>
+                <div class="top-actions">
+                    <button class="icon-btn" type="button" title="Trợ giúp" aria-label="Trợ giúp">?</button>
+                    <button class="user-btn" type="button"><span class="avatar small" id="topAvatar">QL</span><span id="topUserRole">Quản lý</span> ▾</button>
+                </div>
+            </header>
+
+            <section class="content refund-content">
+                <div class="refund-notice">
+                    <span class="notice-icon">ℹ</span>
+                    <div><strong>Lưu ý về xử lý hoàn tiền</strong><p>Nút xử lý hiện cập nhật trạng thái trong hệ thống để phục vụ demo; chưa thực hiện chuyển tiền thật qua cổng thanh toán.</p></div>
+                </div>
+
+                <div class="stats-grid refund-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">↩</div>
+                        <div><span>Yêu cầu đang chờ</span><strong id="pendingCount">—</strong><small>Trạng thái PENDING</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon yellow">₫</div>
+                        <div><span>Tổng tiền yêu cầu</span><strong id="pendingAmount">—</strong><small>Tổng các yêu cầu đang hiển thị</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon cyan">◷</div>
+                        <div><span>Cập nhật gần nhất</span><strong id="lastUpdated">Chưa tải</strong><small>Dữ liệu lấy từ máy chủ</small></div>
+                    </div>
+                </div>
+
+                <div class="page-card refund-card">
+                    <div class="card-head refund-card-head">
+                        <div>
+                            <div class="eyebrow">DANH SÁCH YÊU CẦU</div>
+                            <h2>Yêu cầu hoàn tiền chờ xử lý</h2>
+                            <p>Chỉ hiển thị các yêu cầu đang ở trạng thái chờ xử lý và thanh toán không dùng tiền mặt.</p>
+                        </div>
+                        <button class="primary-btn" id="refreshBtn" type="button">↻ Làm mới</button>
+                    </div>
+
+                    <div class="refund-toolbar">
+                        <label class="refund-search">
+                            <span>⌕</span>
+                            <input id="refundSearch" type="search" placeholder="Tìm mã hoàn tiền, mã vé, mã đặt vé, giao dịch..." autocomplete="off">
+                        </label>
+                        <span class="result-count" id="resultCount">Đang tải dữ liệu...</span>
+                    </div>
+
+                    <div class="table-wrap refund-table-wrap">
+                        <table class="refund-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã yêu cầu</th>
+                                    <th>Mã vé</th>
+                                    <th>Mã đặt vé</th>
+                                    <th>Phương thức</th>
+                                    <th>Mã giao dịch</th>
+                                    <th>Lý do</th>
+                                    <th>Số tiền</th>
+                                    <th>Ngày yêu cầu</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="refundTableBody">
+                                <tr><td colspan="10" class="table-message">Đang tải danh sách yêu cầu hoàn tiền...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mobile-hint">Trên màn hình nhỏ, vuốt ngang bảng để xem đầy đủ các cột.</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+</body>
+</html>

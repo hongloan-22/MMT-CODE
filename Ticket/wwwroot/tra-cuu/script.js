@@ -1668,16 +1668,15 @@ window.addEventListener(
 
 
                 loginBtn.onclick =
-                    event => {
+                    async event => {
 
                         event.preventDefault();
 
 
-                        if (
-                            confirm(
-                                "Bạn có chắc chắn muốn đăng xuất?"
-                            )
-                        ) {
+                        if (await SmartbusDialog.confirm(
+                            "Bạn có chắc chắn muốn đăng xuất?",
+                            { title: "Xác nhận đăng xuất", confirmText: "Đăng xuất", danger: true }
+                        )) {
 
                             localStorage.removeItem(
                                 "userSession"

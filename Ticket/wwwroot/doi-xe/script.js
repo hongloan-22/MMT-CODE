@@ -327,8 +327,8 @@ function renderBuses() {
                 <td><div class="staff-list">${attendants}</div></td>
                 <td>
                     ${bus.isActive
-                        ? `<span class="status active">Hoạt động</span>`
-                        : `<span class="status inactive">Ngừng hoạt động</span>`}
+                ? `<span class="status active">Hoạt động</span>`
+                : `<span class="status inactive">Ngừng hoạt động</span>`}
                 </td>
                 <td>
                     <div class="row-actions">
@@ -1046,10 +1046,10 @@ async function removeStaff(
     assignmentId
 ) {
 
-    const confirmed =
-        confirm(
-            "Bạn có chắc muốn bỏ phân công này?"
-        );
+    const confirmed = await SmartbusDialog.confirm(
+        "Bạn có chắc muốn bỏ phân công này?",
+        { title: "Xác nhận bỏ phân công", confirmText: "Bỏ phân công", danger: true }
+    );
 
     if (!confirmed)
         return;
@@ -1119,10 +1119,10 @@ async function deactivateBus(
     if (!bus)
         return;
 
-    const confirmed =
-        confirm(
-            `Ngừng hoạt động xe ${bus.busCode}?`
-        );
+    const confirmed = await SmartbusDialog.confirm(
+        `Ngừng hoạt động xe ${bus.busCode}?`,
+        { title: "Ngừng hoạt động xe", confirmText: "Ngừng hoạt động", danger: true }
+    );
 
     if (!confirmed)
         return;

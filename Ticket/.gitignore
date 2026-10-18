@@ -5,24 +5,12 @@ obj/
 *.user
 *.suo
 
-<<<<<<< Updated upstream
-## File cơ sở dữ liệu tạm thời
+# SQL Server and local SQLite database files
 *.mdf
 *.ldf
-
-# ==========================================
-# SQLite Database Files (Tránh xung đột Git)
-# ==========================================
-*.db
-*.db-shm
-*.db-wal
-ticket.db
-=======
-# Local SQLite databases and sidecar files
 *.db
 *.db-shm
 *.db-wal
 
-# Secrets / local environment
+# Local secrets / environment-specific configuration
 appsettings.Local.json
->>>>>>> Stashed changes

@@ -20,6 +20,7 @@
             <nav class="nav-menu">
                 <a href="/tra-cuu/index.html">Tra cứu chuyến</a>
                 <a href="/quan-ly-ve/index.html" class="active">Chuyến đi của tôi</a>
+                <a href="/ho-so/index.html" id="profileNavLink" style="display:none">Hồ sơ cá nhân</a>
             </nav>
 
             <div class="nav-actions">
@@ -265,57 +266,62 @@
 
     <script>
 (function () {
-            const loginBtn = document.getElementById("loginBtn");
+                    const loginBtn = document.getElementById("loginBtn");
 
-            if (!loginBtn) return;
+                    if (!loginBtn) return;
 
-            const sessionRaw = localStorage.getItem("userSession");
+                    const sessionRaw = localStorage.getItem("userSession");
 
-            if (!sessionRaw) {
-                loginBtn.textContent = "Đăng nhập";
+                    const profileNavLink = document.getElementById("profileNavLink");
 
-                loginBtn.onclick = function () {
-                    window.location.href = "/auth/dangnhap.html";
-                };
+                    if (!sessionRaw) {
+                        if (profileNavLink) profileNavLink.style.display = "none";
+                        loginBtn.textContent = "Đăng nhập";
 
-                return;
-            }
+                        loginBtn.onclick = function () {
+                            window.location.href = "/auth/dangnhap.html";
+                        };
 
-            try {
-                const user = JSON.parse(sessionRaw);
+                        return;
+                    }
 
-                const role = String(
-                    user.role ||
-                    user.roleCode ||
-                    user.Role ||
-                    user.RoleCode ||
-                    "USER"
-                ).trim().toUpperCase();
+                    try {
+                        const user = JSON.parse(sessionRaw);
 
-                loginBtn.textContent = "👤 " + (user.fullName || "Tài khoản");
+                        const role = String(
+                            user.role ||
+                            user.roleCode ||
+                            user.Role ||
+                            user.RoleCode ||
+                            "USER"
+                        ).trim().toUpperCase();
 
-                loginBtn.style.backgroundColor = "#e8f8f0";
-                loginBtn.style.color = "#16845b";
-                loginBtn.style.border = "1px solid #16845b";
-                loginBtn.title = "Đăng xuất";
+                        if (profileNavLink) profileNavLink.style.display = "";
 
-                loginBtn.onclick = function () {
-                    localStorage.removeItem("userSession");
-                    window.location.href = "/auth/dangnhap.html";
-                };
+                        loginBtn.textContent = "👤 " + (user.fullName || "Tài khoản");
 
-                const manageLink = document.querySelector(
-                    '.nav-menu a[href="/quan-ly-ve/index.html"]'
-                );
+                        loginBtn.style.backgroundColor = "#e8f8f0";
+                        loginBtn.style.color = "#16845b";
+                        loginBtn.style.border = "1px solid #16845b";
+                        loginBtn.title = "Đăng xuất";
 
-                if (manageLink && role !== "USER") {
-                    manageLink.style.display = "none";
-                }
+                        loginBtn.onclick = function () {
+                            localStorage.removeItem("userSession");
+                            window.location.href = "/auth/dangnhap.html";
+                        };
 
-            } catch (error) {
-                localStorage.removeItem("userSession");
-                window.location.href = "/auth/dangnhap.html";
-            }
+                        const manageLink = document.querySelector(
+                            '.nav-menu a[href="/quan-ly-ve/index.html"]'
+                        );
+
+                        if (manageLink && role !== "USER") {
+                            manageLink.style.display = "none";
+                        }
+
+                    } catch (error) {
+                        localStorage.removeItem("userSession");
+                        window.location.href = "/auth/dangnhap.html";
+                    }
 })();
     </script>
 

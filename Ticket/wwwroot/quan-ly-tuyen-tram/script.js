@@ -2592,11 +2592,10 @@ async function deleteRoute(
         return;
 
 
-    if (
-        !confirm(
-            `Bạn có chắc muốn xóa tuyến "${route.code} - ${route.name}"?`
-        )
-    ) {
+    if (!(await SmartbusDialog.confirm(
+        `Bạn có chắc muốn xóa tuyến "${route.code} - ${route.name}"?`,
+        { title: "Xác nhận xóa tuyến", confirmText: "Xóa tuyến", danger: true }
+    ))) {
 
         return;
     }
@@ -2701,11 +2700,10 @@ async function deleteStation(
     }
 
 
-    if (
-        !confirm(
-            "Bạn có chắc chắn muốn xóa trạm này khỏi tuyến?"
-        )
-    ) {
+    if (!(await SmartbusDialog.confirm(
+        "Bạn có chắc chắn muốn xóa trạm này khỏi tuyến?",
+        { title: "Xác nhận xóa trạm", confirmText: "Xóa trạm", danger: true }
+    ))) {
 
         return;
     }
