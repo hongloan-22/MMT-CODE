@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -46,22 +46,28 @@
             gap: 20px;
         }
 
-
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             text-decoration: none;
-            color: #172033;
-            font-size: 20px;
-            font-weight: 700;
+            padding: 0 12px 28px;
         }
 
+        .brand-icon {
+            font-size: 31px;
+        }
 
-            .brand span {
-                color: #2196f3;
+        .brand-name {
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: #1785e8;
+        }
+
+            .brand-name span {
+                color: #53b6f4;
             }
-
 
         .header-right {
             display: flex;
@@ -239,6 +245,21 @@
             line-height: 1.5;
         }
 
+
+        .scanner-status {
+            margin-top: 10px;
+            color: #6f7b8d;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .scanner-status.error {
+            color: #b42318;
+        }
+
+        .scanner-status.success {
+            color: #137547;
+        }
 
         /* =====================================================
            DIVIDER
@@ -507,14 +528,10 @@
         <div class="header-inner">
 
 
-            <a href="../index.html"
-               class="brand">
-
-                🚌 Smart
-                <span>bus</span>
-
+            <a class="brand" href="../index.html">
+                <span class="brand-icon">🚌</span>
+                <span class="brand-name">Smart<span>bus</span></span>
             </a>
-
 
             <div class="header-right">
 
@@ -523,71 +540,44 @@
                     DRIVER
                 </span>
 
-
                 <button class="logout-btn"
                         id="driverLogout"
                         type="button">
-
                     Đăng xuất
-
                 </button>
-
             </div>
-
         </div>
-
     </header>
-
-
     <!-- =====================================================
          MAIN
     ===================================================== -->
 
     <main class="container">
-
-
         <div class="page-title">
-
             <small>
                 DRIVER / NHÂN VIÊN KIỂM TRA
             </small>
-
-
             <h1>
                 Kiểm tra vé bằng QR
             </h1>
-
-
             <p>
                 Quét mã QR và xác nhận vé thuộc đúng
                 chuyến đang kiểm tra.
             </p>
-
         </div>
-
-
         <div class="layout">
-
-
             <!-- =================================================
                  LEFT
             ================================================= -->
 
             <section class="card">
-
-
                 <h2>
                     Chuyến đang kiểm tra
                 </h2>
-
-
                 <div class="field">
-
                     <label for="tripSelect">
                         Chuyến xe
                     </label>
-
-
                     <select id="tripSelect">
 
                         <option value="">
@@ -613,9 +603,7 @@
 
                     <div id="selectedTripInfo"
                          class="selected-trip-info">
-
                         —
-
                     </div>
 
                 </div>
@@ -631,6 +619,20 @@
                     <div id="reader"></div>
 
                 </div>
+
+                <div id="scannerStatus"
+                     class="scanner-status"
+                     role="status"
+                     aria-live="polite">
+                    Camera sẽ bắt đầu khi trang tải xong. Bạn cũng có thể nhập mã QR thủ công.
+                </div>
+
+                <button class="btn btn-primary"
+                        id="restartScannerBtn"
+                        type="button"
+                        style="display:none; margin-top:10px;">
+                    Quét mã khác
+                </button>
 
 
                 <div class="divider">

@@ -63,33 +63,7 @@ namespace Ticket.Controllers
         // gọi tham số from / to và chỉ đọc dữ liệu doanh thu).
         // =====================================================
 
-        [HttpGet("/api/statistics/revenue")]
-        public async Task<IActionResult> GetRevenueForReportPage(
-            [FromQuery] DateTime? from,
-            [FromQuery] DateTime? to,
-            [FromQuery] int? routeId,
-            [FromQuery] string? groupBy,
-            [FromQuery] bool? includeTransactions)
-        {
-            return await BuildRevenueReportAsync(
-                from,
-                to,
-                routeId,
-                groupBy,
-                includeTransactions);
-        }
-
-        // =====================================================
-        // GET: /api/reports/revenue/export/excel
-        //
-        // US-154: Xuất báo cáo doanh thu ra file Excel (.xlsx).
-        //
-        // Dùng CHÍNH bộ lọc của màn hình báo cáo (BR-26):
-        //   - Cùng quy tắc kiểm tra quyền với GetRevenue
-        //   - Cùng khoảng ngày mặc định (30 ngày gần nhất)
-        //   - fromDate > toDate -> 400 (BR-28)
-        // =====================================================
-
+      
         [HttpGet("revenue/export/excel")]
         public async Task<IActionResult> ExportExcel(
             [FromQuery] DateTime? fromDate,

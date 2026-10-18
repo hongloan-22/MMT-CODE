@@ -73,6 +73,40 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await db.Database.EnsureCreatedAsync();
+
+        // Tạo bảng nếu database hiện tại chưa có bảng này.
+        await db.Database.ExecuteSqlRawAsync("""
+    CREATE TABLE IF NOT EXISTS "TripStaffAssignments" (
+        "Id" INTEGER NOT NULL
+            CONSTRAINT "PK_TripStaffAssignments"
+            PRIMARY KEY AUTOINCREMENT,
+
+        "TripId" INTEGER NOT NULL,
+        "UserId" TEXT NOT NULL,
+        "AssignmentType" TEXT NOT NULL,
+        "AssignedAt" TEXT NOT NULL,
+        "IsActive" INTEGER NOT NULL,
+
+        CONSTRAINT "FK_TripStaffAssignments_Trips_TripId"
+            FOREIGN KEY ("TripId")
+            REFERENCES "Trips" ("Id")
+            ON DELETE RESTRICT,
+
+        CONSTRAINT "FK_TripStaffAssignments_users_UserId"
+            FOREIGN KEY ("UserId")
+            REFERENCES "users" ("user_id")
+            ON DELETE RESTRICT
+    );
+    """);
+
+        // Ngăn trùng vai trò trong cùng một chuyến.
+        await db.Database.ExecuteSqlRawAsync("""
+    CREATE UNIQUE INDEX IF NOT EXISTS
+        "IX_TripStaffAssignments_TripId_AssignmentType"
+    ON "TripStaffAssignments" ("TripId", "AssignmentType")
+    WHERE "IsActive" = 1;
+    """);
+
         await DbInitializer.SeedAsync(db);
     }
     catch (Exception ex)

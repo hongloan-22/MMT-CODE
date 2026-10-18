@@ -45,15 +45,25 @@ button { cursor: pointer; }
 .brand {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     text-decoration: none;
-    color: var(--text);
-    font-size: 22px;
-    font-weight: 800;
+    padding: 0 12px 28px;
 }
 
-.brand-icon { font-size: 27px; }
-.brand-name span { color: var(--primary); }
+.brand-icon {
+    font-size: 31px;
+}
+
+.brand-name {
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #1785e8;
+}
+
+    .brand-name span {
+        color: #53b6f4;
+    }
 
 .nav-menu {
     flex: 1;
@@ -659,3 +669,177 @@ wwwroot/quan-ly-ve/style.css
         min-height: 100px;
         resize: none;
     }
+
+
+/* =========================================
+   SMARTBUS - THANH MENU ĐỒNG BỘ VỚI TRANG CHỦ
+   Áp dụng cho Quản lý vé và Vé điện tử
+   ========================================= */
+
+.navbar.ticket-header {
+    height: 76px;
+    background: #ffffff;
+    border-bottom: 1px solid #e7eef5;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+    .navbar.ticket-header .nav-inner {
+        width: min(1240px, calc(100% - 40px));
+        height: 100%;
+        min-height: 0;
+        margin: auto;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        flex-wrap: nowrap;
+        box-sizing: border-box;
+    }
+
+    .navbar.ticket-header .brand {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 180px;
+        color: inherit;
+    }
+
+    .navbar.ticket-header .brand-icon {
+        font-size: 32px;
+        filter: saturate(1.2);
+    }
+
+    .navbar.ticket-header .brand-name {
+        color: #1785e8;
+        font-size: 29px;
+        font-weight: 800;
+        letter-spacing: -1px;
+    }
+
+        .navbar.ticket-header .brand-name span {
+            color: #53b6f4;
+        }
+
+    .navbar.ticket-header .nav-menu {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 34px;
+        flex: 1;
+        width: auto;
+        order: initial;
+        overflow-x: visible;
+        padding-bottom: 0;
+    }
+
+        .navbar.ticket-header .nav-menu a {
+            color: #405365;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+
+            .navbar.ticket-header .nav-menu a:hover,
+            .navbar.ticket-header .nav-menu a.active {
+                color: #1785e8;
+            }
+
+    .navbar.ticket-header .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: 0;
+    }
+
+    .navbar.ticket-header .help-btn {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border: 1px solid #dbe7f0;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #1785e8;
+        font-weight: 800;
+        font-size: 17px;
+        cursor: pointer;
+    }
+
+    .navbar.ticket-header .login-btn {
+        border: none;
+        background: #1785e8;
+        color: #ffffff;
+        padding: 12px 24px;
+        border-radius: 9px;
+        font-size: 15px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .navbar.ticket-header .login-btn:hover {
+            background: #086fc8;
+            transform: translateY(-1px);
+        }
+
+/* Responsive: giữ cách bố trí của trang chủ */
+@media (max-width: 1050px) {
+    .navbar.ticket-header .nav-inner {
+        gap: 16px;
+    }
+
+    .navbar.ticket-header .nav-menu {
+        gap: 16px;
+    }
+}
+
+@media (max-width: 800px) {
+    .navbar.ticket-header {
+        height: auto;
+    }
+
+        .navbar.ticket-header .nav-inner {
+            min-height: 72px;
+            height: auto;
+            flex-wrap: wrap;
+            padding: 12px 0;
+            gap: 12px;
+        }
+
+        .navbar.ticket-header .brand {
+            min-width: auto;
+        }
+
+        .navbar.ticket-header .nav-menu {
+            order: 3;
+            width: 100%;
+            flex: 0 0 100%;
+            overflow-x: auto;
+            justify-content: flex-start;
+            padding-bottom: 4px;
+        }
+
+        .navbar.ticket-header .nav-actions {
+            margin-left: auto;
+        }
+}
+
+@media (max-width: 520px) {
+    .navbar.ticket-header .nav-actions .help-btn {
+        display: none;
+    }
+
+    .navbar.ticket-header .login-btn {
+        padding: 10px 15px;
+    }
+
+    .navbar.ticket-header .nav-menu {
+        gap: 22px;
+    }
+}
