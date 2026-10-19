@@ -12,7 +12,6 @@ namespace Ticket.Service
         {
             _context = context;
         }
-
         public Task<bool> CancelTicketAsync(int ticketId, string userId, string reason)
         {
             return Task.FromResult(true);
