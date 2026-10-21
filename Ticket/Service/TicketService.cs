@@ -12,6 +12,8 @@ namespace Ticket.Service
         {
             _context = context;
         }
+
+        // Hàm này để Controller gọi, không cần làm gì phức tạp vì logic đã nằm ở TicketController
         public Task<bool> CancelTicketAsync(int ticketId, string userId, string reason)
         {
             return Task.FromResult(true);

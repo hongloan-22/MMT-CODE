@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Ticket.Models;
 using TicketEntity = Ticket.Models.Ticket;
@@ -30,6 +30,7 @@ namespace Ticket.Data
         // TRIP / SCHEDULE
         // =========================
         public DbSet<Trip> Trips { get; set; } = null!;
+        public DbSet<BusGpsPosition> BusGpsPositions { get; set; } = null!;
         public DbSet<TripSchedule> TripSchedules { get; set; } = null!;
         public DbSet<Bus> Buses { get; set; } = null!;
         public DbSet<BusSeat> BusSeats { get; set; } = null!;

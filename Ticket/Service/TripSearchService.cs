@@ -67,7 +67,9 @@ namespace SmartBusTicketing.Services
             var result =
     trips
 
+        // =============================================
         // KHÔNG HIỂN THỊ CHUYẾN ĐÃ QUÁ GIỜ KHỞI HÀNH
+        // =============================================
         .Where(t =>
             t.TripDate.Date > currentDate ||
 
@@ -75,7 +77,10 @@ namespace SmartBusTicketing.Services
                 t.TripDate.Date == currentDate &&
                 t.DepartureTime > currentTime
             ))
+
+        // =============================================
         // LỌC NGÀY KHÁCH CHỌN
+        // =============================================
         .Where(t =>
             !request.DepartureDate.HasValue ||
             t.TripDate.Date ==
@@ -202,6 +207,8 @@ namespace SmartBusTicketing.Services
                             TripId =
                                 x.Trip.Id,
 
+                            RouteId = x.Trip.RouteId,
+
                             RouteCode =
                                 x.Trip.Route!
                                     .RouteCode,
@@ -259,7 +266,9 @@ namespace SmartBusTicketing.Services
             return result;
         }
 
-        // THỐNG KÊ TỶ LỆ LẤP ĐẦY CHUYẾN XE 
+        // =====================================================
+        // THỐNG KÊ TỶ LỆ LẤP ĐẦY CHUYẾN XE (US-160)
+        // =====================================================
         public async Task<TripOccupancyDto>
             GetTripOccupancyAsync(int tripId)
         {
@@ -836,8 +845,10 @@ namespace SmartBusTicketing.Services
             };
         }
 
+        // =====================================================
         // US-159: KIỂM TRA TÍNH HỢP LỆ DỮ LIỆU
         // GET: /api/Statistics/data-integrity-check
+        // =====================================================
         public async Task<DataIntegrityReportDto> CheckDataIntegrityAsync()
         {
             var now = DateTime.UtcNow;

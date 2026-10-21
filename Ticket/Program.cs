@@ -74,6 +74,20 @@ using (var scope = app.Services.CreateScope())
     {
         await db.Database.EnsureCreatedAsync();
 
+        // Bảng theo dõi GPS: tạo bổ sung an toàn cho cả SQLite đã tồn tại.
+        await db.Database.ExecuteSqlRawAsync("""
+            CREATE TABLE IF NOT EXISTS "BusGpsPositions" (
+                "Id" INTEGER NOT NULL CONSTRAINT "PK_BusGpsPositions" PRIMARY KEY AUTOINCREMENT,
+                "TripId" INTEGER NOT NULL,
+                "Latitude" REAL NOT NULL,
+                "Longitude" REAL NOT NULL,
+                "SpeedKmh" REAL NULL,
+                "RecordedAtUtc" TEXT NOT NULL,
+                FOREIGN KEY ("TripId") REFERENCES "Trips" ("Id") ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS "IX_BusGpsPositions_TripId_RecordedAtUtc" ON "BusGpsPositions" ("TripId", "RecordedAtUtc");
+            """);
+
         // Tạo bảng nếu database hiện tại chưa có bảng này.
         await db.Database.ExecuteSqlRawAsync("""
     CREATE TABLE IF NOT EXISTS "TripStaffAssignments" (

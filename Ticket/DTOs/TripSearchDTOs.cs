@@ -15,6 +15,8 @@ namespace SmartBusTicketing.DTOs
     {
         public int TripId { get; set; }
 
+        public int RouteId { get; set; }
+
         public string RouteCode { get; set; } = string.Empty;
 
         public string RouteName { get; set; } = string.Empty;

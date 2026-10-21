@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smartbus - Tra cứu tuyến xe</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="gps-map.css">
 </head>
 <body>
     <header class="navbar">
@@ -17,6 +19,7 @@
             <nav class="nav-menu">
                 <a href="/tra-cuu/index.html">Tra cứu chuyến</a>
                 <a href="/quan-ly-ve/index.html">Chuyến đi của tôi</a>
+                <a href="/tai-xe-phu-xe/gps-gui-vi.html">Gửi GPS (tài xế)</a>
             </nav>
 
             <div class="nav-actions">
@@ -224,6 +227,26 @@
             </div>
         </section>
 
+        <section class="gps-section" aria-labelledby="gpsHeading">
+            <div class="gps-heading">
+                <div><span class="section-label">BẢN ĐỒ TRỰC TIẾP</span><h2 id="gpsHeading">Tìm trạm và theo dõi xe buýt</h2>
+                <p>Tìm trạm theo tên/địa chỉ, xem trạm trên bản đồ và vị trí GPS mới nhất của các chuyến đang được cập nhật.</p></div>
+                <button type="button" id="locateMeBtn" class="search-btn">Dùng vị trí của tôi</button>
+            </div>
+            <div class="trip-map-search" aria-label="Tìm chuyến xe trên bản đồ">
+                <div class="trip-map-fields">
+                    <label>Điểm đi<input id="gpsOrigin" type="search" placeholder="Ví dụ: Bến xe Gia Lâm" autocomplete="off"></label>
+                    <label>Điểm đến<input id="gpsDestination" type="search" placeholder="Ví dụ: Bến xe Yên Nghĩa" autocomplete="off"></label>
+                    <label>Ngày đi<input id="gpsDepartureDate" type="date"></label>
+                    <button id="gpsTripSearchBtn" type="button" class="search-btn">Tìm chuyến</button>
+                </div>
+                <div id="gpsTripResults" class="gps-trip-results" role="status">Nhập điểm đi, điểm đến và ngày đi để tìm chuyến rồi xem lộ trình trên bản đồ.</div>
+            </div>
+            <div class="gps-tools"><label for="stopSearch">Tìm trạm xe buýt</label><input id="stopSearch" type="search" placeholder="Nhập tên trạm hoặc địa chỉ…"><span id="gpsStatus" role="status">Đang tải dữ liệu bản đồ…</span></div>
+            <div class="gps-layout"><div id="stopResults" class="stop-results"><p>Đang tải danh sách trạm…</p></div><div id="busMap" aria-label="Bản đồ trạm xe buýt và vị trí xe theo GPS"></div></div>
+            <p class="gps-footnote">Vị trí xe chỉ hiển thị khi thiết bị trên xe đã gửi GPS gần đây. Trình duyệt cần kết nối Internet để tải bản đồ; GPS của người dùng yêu cầu HTTPS hoặc localhost.</p>
+        </section>
+
         <section class="notice-section">
             <div class="notice-card">
                 <div class="notice-icon">✓</div>
@@ -259,6 +282,8 @@
         </div>
     </footer>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="gps-map.js"></script>
     <script src="../js/smartbus-dialog.js"></script>
     <script src="script.js"></script>
 </body>
